@@ -1,0 +1,4 @@
+[submodule ".build"]
+	path = .build
+	url = https://github.com/Microsoft/cookie.gulp.git
+	branch = master

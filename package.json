@@ -1,0 +1,25 @@
+{
+  "name": "donuts.node",
+  "version": "1.0.0",
+  "description": "A sweet framework for node.js.",
+  "main": "index.js",
+  "scripts": {
+    "clean-build": "gulp clean-build",
+    "build": "gulp build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Microsoft/donuts.node.git"
+  },
+  "author": "Microsoft Corporation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Microsoft/donuts.node/issues"
+  },
+  "homepage": "https://github.com/Microsoft/donuts.node#readme",
+  "devDependencies": {
+    "@types/node": "^10.11.7",
+    "cookie.gulp": "file:.build",
+    "typescript": "^3.1.3"
+  }
+}

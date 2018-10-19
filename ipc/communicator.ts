@@ -3,18 +3,15 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDictionary } from "donut.node/common";
-import { AsyncRequestHandler, ICommunicator, IRoutePattern } from "donut.node/remoting";
-import { ICommunicatorConstructorOptions, ChannelType } from "donut.node/ipc";
-import { IChannelProxy, IMessage } from "./common";
+import { IDictionary } from "../common";
+import { AsyncRequestHandler, ICommunicator, IRoutePattern } from "../remoting";
+import { ICommunicatorConstructorOptions, ChannelType, IChannelProxy, IMessage } from ".";
 
 import * as uuidv4 from "uuid/v4";
 
-import * as utils from "../../utilities/utils";
-import ProcessChannelProxy from "./proxy/process";
-import ElectronWebContentsChannelProxy from "./proxy/electron-web-contents";
-import ElectronIpcRendererChannelProxy from "./proxy/electron-ipc-renderer";
-import SocketChannelProxy from "./proxy/socket";
+import * as utils from "../utils";
+import { ProcessChannelProxy } from "./proxy/process";
+import { SocketChannelProxy } from "./proxy/socket";
 
 interface IPromiseResolver {
     resolve: (value?: any) => void;
@@ -29,14 +26,9 @@ interface IRoute {
 function generateChannelProxy(channel: any): IChannelProxy {
     if (utils.isNullOrUndefined(channel)) {
         throw new Error("channel must be supplied.");
+
     } else if (ProcessChannelProxy.isValidChannel(channel)) {
         return new ProcessChannelProxy(channel);
-
-    } else if (ElectronWebContentsChannelProxy.isValidChannel(channel)) {
-        return new ElectronWebContentsChannelProxy(channel);
-
-    } else if (ElectronIpcRendererChannelProxy.isValidChannel(channel)) {
-        return new ElectronIpcRendererChannelProxy(channel);
 
     } else if (SocketChannelProxy.isValidChannel(channel)) {
         return new SocketChannelProxy(channel);
@@ -69,10 +61,10 @@ export class Communicator implements ICommunicator {
         this.ongoingPromiseDict = Object.create(null);
 
         this.id = uuidv4();
-        
+
         if (options) {
-            if (String.isString(options.id)
-                && !String.isEmptyOrWhitespace(options.id)) {
+            if (utils.isString(options.id)
+                && !utils.string.isEmptyOrWhitespace(options.id)) {
                 this.id = options.id;
             }
         }
@@ -88,7 +80,7 @@ export class Communicator implements ICommunicator {
             throw new Error("pattern must be provided.");
         }
 
-        if (!Function.isFunction(asyncHandler)) {
+        if (!utils.isFunction(asyncHandler)) {
             throw new Error("asyncHandler must be a function.");
         }
 
@@ -123,7 +115,7 @@ export class Communicator implements ICommunicator {
     public sendAsync<TRequest, TResponse>(path: string, content: TRequest): Promise<TResponse> {
         this.validateDisposal();
 
-        if (String.isEmptyOrWhitespace(path)) {
+        if (utils.string.isEmptyOrWhitespace(path)) {
             throw new Error("path must be a string and not empty/whitespaces.");
         }
 
@@ -134,7 +126,7 @@ export class Communicator implements ICommunicator {
                 body: content
             };
 
-            if (!this.channelProxy.sendMessage(msg)) {
+            if (!this.channelProxy.sendData(msg)) {
                 reject(new Error("Failed to send request. The remote channel may be closed."));
                 return;
             }
@@ -170,7 +162,7 @@ export class Communicator implements ICommunicator {
         }
     }
 
-    private onMessageAsync = async (channel: ChannelType, msg: IMessage): Promise<void> => {
+    private onMessageAsync = async (channel: IChannelProxy, msg: IMessage): Promise<void> => {
         const promise = this.ongoingPromiseDict[msg.id];
 
         if (promise) {
@@ -192,7 +184,7 @@ export class Communicator implements ICommunicator {
                     succeeded = false;
                 }
 
-                if (!this.channelProxy.sendMessage({
+                if (!this.channelProxy.sendData({
                     id: msg.id,
                     path: msg.path,
                     succeeded: succeeded,

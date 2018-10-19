@@ -3,96 +3,91 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDictionary } from "donut.node/common";
+import { IDictionary } from "../common";
 import {
     ILog,
     ILogger,
-    ILoggingSettings,
     Severity
-} from "donut.node/logging";
+} from ".";
 
-import { IConsoleLoggerSettings } from "./loggers/console";
+import * as path from "path";
 
-import * as utils from "../../utilities/utils";
+import * as utils from "../utils";
+import { ConsoleLogger } from "./loggers/console";
 
-export enum Severities {
-    Event = "event",
-    Verbose = "verbose",
-    Information = "info",
-    Warning = "warning",
-    Error = "error",
-    Critical = "critical"
-}
+export class Log implements ILog {
+    private static _default: ILog;
 
-const defaultLoggingSettings: ILoggingSettings = {
-    logCallerInfo: true,
-    loggers: [
-        <IConsoleLoggerSettings>{
-            name: "console",
-            component: "logging.logger.console",
-            logAllProperties: false,
-            logCallerInfo: true
-        }
-    ]
-};
-
-export async function createAsync(loggingSettings?: ILoggingSettings): Promise<ILog> {
-    if (!utils.isNullOrUndefined(loggingSettings)
-        && !Object.isObject(loggingSettings)) {
-        throw new Error("loggingSettings must be an Object implementing ILoggingSettings.");
-    }
-
-    loggingSettings = loggingSettings || defaultLoggingSettings;
-    const log = new Log(loggingSettings.logCallerInfo, loggingSettings.properties);
-
-    if (!loggingSettings.loggers) {
-        return log;
-    }
-
-    if (!Object.isObject(loggingSettings.loggers)) {
-        throw new Error("loggingSettings.loggers must be an object implementing IDicionary<ILoggerSettings>.");
-    }
-
-    for (const loggerSettings of loggingSettings.loggers) {
-        let logger: ILogger;
-
-        if (sfxModuleManager !== undefined) {
-            logger = await sfxModuleManager.getComponentAsync<ILogger>(
-                loggerSettings.component,
-                loggerSettings);
-        } else {
-            const loggerModule = require("./loggers/" + loggerSettings.component.substr(loggerSettings.component.lastIndexOf(".") + 1));
-
-            if (loggerModule.default !== undefined) {
-                logger = new loggerModule.default(loggerSettings);
-            } else {
-                logger = new (loggerModule[loggerSettings.component])(loggerSettings);
-            }
-        }
-
-        if (!logger) {
-            throw new Error(`failed to load logger, ${loggerSettings.component}, named '${loggerSettings.name}'.`);
-        }
-
-        await log.addLoggerAsync(logger);
-    }
-
-    return log;
-}
-
-class Log implements ILog {
     private loggers: Array<ILogger>;
 
     private defaultProperties: IDictionary<any>;
 
     private readonly logCallerInfo: boolean;
 
-    private static stringifier(obj: any): string {
-        if (obj instanceof Error) {
-            obj = obj.toJSON();
+    private static prepareStackTraceOverride(error: Error, structuredStackTrace: Array<NodeJS.CallSite>): any {
+        return structuredStackTrace;
+    }
+
+    private static getCallerModuleInfo(): utils.ICallerInfo {
+        const previousPrepareStackTraceFn = Error.prepareStackTrace;
+
+        try {
+            Error.prepareStackTrace = Log.prepareStackTraceOverride;
+
+            const callStack: Array<NodeJS.CallSite> = <any>(new Error()).stack;
+
+            for (let callStackIndex = 0; callStackIndex < callStack.length; callStackIndex++) {
+                const stack = callStack[callStackIndex];
+                const stackFileName = stack.getFileName();
+
+                if (!stackFileName.startsWith(path.dirname(module.filename))) {
+                    return {
+                        fileName: stackFileName,
+                        functionName: stack.getFunctionName(),
+                        typeName: stack.getTypeName(),
+                        lineNumber: stack.getLineNumber(),
+                        columnNumber: stack.getColumnNumber()
+                    };
+                }
+            }
+
+            return undefined;
+        } finally {
+            Error.prepareStackTrace = previousPrepareStackTraceFn;
+        }
+    }
+
+    public static get default(): ILog {
+        if (!Log._default) {
+            Log._default = new Log();
         }
 
-        return utils.defaultStringifier(obj);
+        return Log._default;
+    }
+
+    public static set default(log: ILog) {
+        Log._default = log;
+    }
+
+    private static stringifier(obj: any): string {
+        if (obj instanceof Error) {
+            const errorObj = Object.create(null);
+
+            errorObj.message = obj.message;
+            errorObj.name = obj.name;
+
+            if ("stack" in obj) {
+                errorObj.stack = obj.stack;
+            }
+
+            if ("code" in obj) {
+                errorObj.code = obj["code"];
+            }
+
+            obj = errorObj;
+        }
+
+        return utils.string.stringifier(obj);
     }
 
     public get disposed(): boolean {
@@ -101,24 +96,24 @@ class Log implements ILog {
 
     constructor(includeCallerInfo?: boolean, defaultProperties?: IDictionary<any>) {
         if (!utils.isNullOrUndefined(defaultProperties)
-            && !Object.isObject(defaultProperties)) {
+            && !utils.isObject(defaultProperties)) {
             throw new Error("defaultProperties must be an object.");
         }
 
         this.loggers = [];
         this.defaultProperties = defaultProperties;
         this.logCallerInfo = includeCallerInfo === true;
+
+        this.addLogger(new ConsoleLogger());
     }
 
     public async writeMoreAsync(properties: IDictionary<string>, severity: Severity, messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        this.validateDisposal();
-
-        if (!String.isString(messageOrFormat)) {
+        if (!utils.isString(messageOrFormat)) {
             return;
         }
 
         if (Array.isArray(params) && params.length > 0) {
-            messageOrFormat = utils.formatEx(Log.stringifier, messageOrFormat, ...params);
+            messageOrFormat = utils.string.formatEx(Log.stringifier, messageOrFormat, ...params);
         }
 
         properties = this.generateProperties(properties);
@@ -131,53 +126,47 @@ class Log implements ILog {
     }
 
     public writeInfoAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severities.Information, messageOrFormat, ...params);
+        return this.writeAsync(Severity.Information, messageOrFormat, ...params);
     }
 
     public writeVerboseAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severities.Verbose, messageOrFormat, ...params);
+        return this.writeAsync(Severity.Verbose, messageOrFormat, ...params);
     }
 
     public writeWarningAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severities.Warning, messageOrFormat, ...params);
+        return this.writeAsync(Severity.Warning, messageOrFormat, ...params);
     }
 
     public writeErrorAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severities.Error, messageOrFormat, ...params);
+        return this.writeAsync(Severity.Error, messageOrFormat, ...params);
     }
 
     public writeCriticalAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severities.Critical, messageOrFormat, ...params);
+        return this.writeAsync(Severity.Critical, messageOrFormat, ...params);
     }
 
     public async writeExceptionAsync(exception: Error, properties?: IDictionary<string>): Promise<void> {
-        this.validateDisposal();
-
         properties = this.generateProperties(properties);
 
         await Promise.all(this.loggers.map((logger) => logger.writeExceptionAsync(properties, exception)));
     }
 
     public async writeEventAsync(name: string, properties?: IDictionary<string>): Promise<void> {
-        this.validateDisposal();
-
-        if (!String.isString(name)) {
+        if (!utils.isString(name)) {
             return;
         }
 
         properties = this.generateProperties(properties);
 
-        await Promise.all(this.loggers.map((logger) => logger.writeAsync(properties, Severities.Event, name)));
+        await Promise.all(this.loggers.map((logger) => logger.writeAsync(properties, Severity.Event, name)));
     }
 
     public async writeMetricAsync(name: string, value?: number, properties?: IDictionary<string>): Promise<void> {
-        this.validateDisposal();
-
-        if (!String.isString(name)) {
+        if (!utils.isString(name)) {
             return;
         }
 
-        if (!Number.isNumber(value)) {
+        if (!utils.isNumber(value)) {
             value = 1;
         }
 
@@ -186,17 +175,99 @@ class Log implements ILog {
         await Promise.all(this.loggers.map((logger) => logger.writeMetricAsync(properties, name, value)));
     }
 
-    public async removeLoggerAsync(name: string): Promise<ILogger> {
-        this.validateDisposal();
+    public writeMore(properties: IDictionary<string>, severity: Severity, messageOrFormat: string, ...params: Array<any>): void {
+        if (!utils.isString(messageOrFormat)) {
+            return;
+        }
 
-        if (!String.isString(name)) {
+        if (Array.isArray(params) && params.length > 0) {
+            messageOrFormat = utils.string.formatEx(Log.stringifier, messageOrFormat, ...params);
+        }
+
+        properties = this.generateProperties(properties);
+
+        for (const logger of this.loggers) {
+            logger.write(properties, severity, messageOrFormat);
+        }
+    }
+
+    public write(severity: Severity, messageOrFormat: string, ...params: Array<any>): void {
+        this.writeMore(null, severity, messageOrFormat, ...params);
+    }
+
+    public writeInfo(messageOrFormat: string, ...params: Array<any>): void {
+        this.write(Severity.Information, messageOrFormat, ...params);
+    }
+
+    public writeVerbose(messageOrFormat: string, ...params: Array<any>): void {
+        this.write(Severity.Verbose, messageOrFormat, ...params);
+    }
+
+    public writeWarning(messageOrFormat: string, ...params: Array<any>): void {
+        this.write(Severity.Warning, messageOrFormat, ...params);
+    }
+
+    public writeError(messageOrFormat: string, ...params: Array<any>): void {
+        this.write(Severity.Error, messageOrFormat, ...params);
+    }
+
+    public writeCritical(messageOrFormat: string, ...params: Array<any>): void {
+        this.write(Severity.Critical, messageOrFormat, ...params);
+    }
+
+    public writeException(exception: Error, properties?: IDictionary<string>): void {
+        properties = this.generateProperties(properties);
+
+        for (const logger of this.loggers) {
+            logger.writeException(properties, exception);
+        }
+    }
+
+    public writeEvent(name: string, properties?: IDictionary<string>): void {
+        if (!utils.isString(name)) {
+            return;
+        }
+
+        properties = this.generateProperties(properties);
+
+        for (const logger of this.loggers) {
+            logger.write(properties, Severity.Event, name);
+        }
+    }
+
+    public writeMetric(name: string, value?: number, properties?: IDictionary<string>): void {
+        if (!utils.isString(name)) {
+            return;
+        }
+
+        if (!utils.isNumber(value)) {
+            value = 1;
+        }
+
+        properties = this.generateProperties(properties);
+
+        for (const logger of this.loggers) {
+            logger.writeMetricAsync(properties, name, value);
+        }
+    }
+
+    public async removeLoggerAsync(name: string): Promise<ILogger> {
+        return this.removeLogger(name);
+    }
+
+    public async addLoggerAsync(logger: ILogger): Promise<void> {
+        this.addLogger(logger);
+    }
+
+    public removeLogger(name: string): ILogger {
+        if (!utils.isString(name)) {
             throw new Error("name must be supplied.");
         }
 
         for (let loggerIndex = 0; loggerIndex < this.loggers.length; loggerIndex++) {
             const logger = this.loggers[loggerIndex];
 
-            if (name === await logger.name) {
+            if (name === logger.name) {
                 return this.loggers.splice(loggerIndex, 1)[0];
             }
         }
@@ -204,29 +275,16 @@ class Log implements ILog {
         return undefined;
     }
 
-    public async addLoggerAsync(logger: ILogger): Promise<void> {
-        this.validateDisposal();
-
+    public addLogger(logger: ILogger): void {
         if (!logger) {
             throw new Error("logger must be provided.");
         }
 
-        if (!Object.isObject(logger)) {
+        if (!utils.isObject(logger)) {
             throw new Error("logger must be an object implementing ILogger.");
         }
 
         this.loggers.push(logger);
-    }
-
-    public async disposeAsync(): Promise<void> {
-        this.defaultProperties = undefined;
-        this.loggers = undefined;
-    }
-
-    private validateDisposal() {
-        if (this.disposed) {
-            throw new Error("Already disposed.");
-        }
     }
 
     private generateProperties(properties: IDictionary<string>): IDictionary<string> {
@@ -236,30 +294,33 @@ class Log implements ILog {
             finalProperties = Object.create(this.defaultProperties);
         }
 
-        if (Object.isObject(properties)) {
+        if (utils.isObject(properties)) {
             finalProperties = finalProperties || Object.create(null);
             finalProperties = Object.assign(finalProperties, properties);
         }
 
         if (this.logCallerInfo) {
-            const callerInfo = utils.getCallerInfo();
-            const typeName = callerInfo.typeName || "";
-            let functionName = callerInfo.functionName;
+            const callerInfo = Log.getCallerModuleInfo();
 
-            if (!functionName) {
-                functionName = `<Anonymous>@{${callerInfo.lineNumber},${callerInfo.columnNumber}}`;
+            if (callerInfo) {
+                const typeName = callerInfo.typeName || "";
+                let functionName = callerInfo.functionName;
+
+                if (!functionName) {
+                    functionName = `<Anonymous>@{${callerInfo.lineNumber},${callerInfo.columnNumber}}`;
+                }
+
+                finalProperties = finalProperties || Object.create(null);
+                finalProperties["Caller.FileName"] = callerInfo.fileName;
+
+                if (!utils.string.isEmptyOrWhitespace(typeName)) {
+                    finalProperties["Caller.Name"] = `${typeName}.`;
+                } else {
+                    finalProperties["Caller.Name"] = "";
+                }
+
+                finalProperties["Caller.Name"] += `${functionName}()`;
             }
-
-            finalProperties = finalProperties || Object.create(null);
-            finalProperties["Caller.FileName"] = callerInfo.fileName;
-
-            if (!String.isEmptyOrWhitespace(typeName)) {
-                finalProperties["Caller.Name"] = `${typeName}.`;
-            } else {
-                finalProperties["Caller.Name"] = "";
-            }
-
-            finalProperties["Caller.Name"] += `${functionName}()`;
         }
 
         return finalProperties;

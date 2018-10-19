@@ -3,13 +3,13 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IMessage } from "../common";
 import { ChildProcess } from "child_process";
 
-import * as utils from "../../../utilities/utils";
-import ChannelProxyBase from "./channel-proxy-base";
+import * as utils from "../../utils";
+import { ChannelProxyBase } from "./channel-proxy-base";
+import * as log from "../../logging";
 
-export default class ProcessChannelProxy extends ChannelProxyBase<ChildProcess> {
+export class ProcessChannelProxy extends ChannelProxyBase<ChildProcess> {
     // Process and ChildProcess share the same functions but ChildProcess has more detailed type information.
     //
     // Process:
@@ -21,11 +21,11 @@ export default class ProcessChannelProxy extends ChannelProxyBase<ChildProcess> 
     // https://nodejs.org/docs/latest-v8.x/api/child_process.html#child_process_subprocess_send_message_sendhandle_options_callback
     public static isValidChannel(channel: any): channel is ChildProcess {
         return !utils.isNullOrUndefined(channel)
-            && Function.isFunction(channel.kill)
-            && Number.isNumber(channel.pid)
-            && Function.isFunction(channel.send)
-            && Function.isFunction(channel.on)
-            && Function.isFunction(channel.removeListener);
+            && utils.isFunction(channel.kill)
+            && utils.isNumber(channel.pid)
+            && utils.isFunction(channel.send)
+            && utils.isFunction(channel.on)
+            && utils.isFunction(channel.removeListener);
     }
 
     public disposeAsync(): Promise<void> {
@@ -36,12 +36,12 @@ export default class ProcessChannelProxy extends ChannelProxyBase<ChildProcess> 
         return super.disposeAsync();
     }
 
-    public sendMessage(msg: IMessage): boolean {
+    public sendData(data: any): boolean {
         if (this.disposed) {
             throw new Error("Channel proxy already disposed.");
         }
 
-        return this.channel.send(JSON.stringify(msg));
+        return this.channel.send(JSON.stringify(data));
     }
 
     constructor(channel: ChildProcess) {
@@ -51,6 +51,13 @@ export default class ProcessChannelProxy extends ChannelProxyBase<ChildProcess> 
     }
 
     private onMessage = (message) => {
-        this.triggerDataHandler(this.channel, JSON.parse(message));
+        if (utils.isString(message)) {
+            try {
+                this.triggerDataHandler(JSON.parse(message));
+            } catch (error) {
+                log.writeException(error);
+                throw error;
+            }
+        }
     }
 }

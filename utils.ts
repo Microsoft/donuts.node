@@ -47,11 +47,20 @@ export function isFunction(value: any): value is Function {
 
 /**
  * Check if the value is an object.
- * @param value The object to check.
+ * @param value The value to check.
  * @returns True if the value is an object. Otherwise, false.
  */
 export function isObject(value: any): value is object {
     return value !== null && typeof value === "object";
+}
+
+/**
+ * Check if the value is a number.
+ * @param value The value to check
+ * @returns True if the value is a number. Otherwise, false.
+ */
+export function isNumber(value: any): value is number {
+    return typeof value === "number";
 }
 
 export namespace string {
@@ -109,6 +118,10 @@ export namespace string {
                 return str;
             }
         }
+    }
+
+    export function stringifier(obj: any): string {
+        return defaultStringifier(obj);
     }
 
     /**
@@ -266,8 +279,14 @@ export namespace array {
     }
 }
 
-export function pick<T>(arg: T, defaultValue: T): T {
-    return (arg === undefined || arg === null) ? defaultValue : arg;
+/**
+ * Pick the either non-null/non-undefined value between value and defaultValue.
+ * @param value The actual value.
+ * @param defaultValue The default value if the value is null/undefined.
+ * @returns The non-null/non-undefined value between value and defaultValue.
+ */
+export function pick<T>(value: T, defaultValue: T): T {
+    return (value === undefined || value === null) ? defaultValue : value;
 }
 
 export interface ICallerInfo {
@@ -282,7 +301,7 @@ function prepareStackTraceOverride(error: Error, structuredStackTrace: Array<Nod
     return structuredStackTrace;
 }
 
-export function getCallerInfo(): ICallerInfo {
+export function getCallerModuleInfo(): ICallerInfo {
     const previousPrepareStackTraceFn = Error.prepareStackTrace;
 
     try {

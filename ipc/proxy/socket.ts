@@ -3,18 +3,18 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IMessage } from "../common";
 import { Socket } from "net";
 
-import * as utils from "../../../utilities/utils";
-import ChannelProxyBase from "./channel-proxy-base";
+import * as utils from "../../utils";
+import { ChannelProxyBase } from "./channel-proxy-base";
+import * as log from "../../logging";
 
-export default class SocketChannelProxy extends ChannelProxyBase<Socket> {
+export class SocketChannelProxy extends ChannelProxyBase<Socket> {
     public static isValidChannel(channel: any): channel is Socket {
         return !utils.isNullOrUndefined(channel)
-            && Function.isFunction(channel.write)
-            && Function.isFunction(channel.on)
-            && Function.isFunction(channel.removeListener);
+            && utils.isFunction(channel.write)
+            && utils.isFunction(channel.on)
+            && utils.isFunction(channel.removeListener);
     }
 
     public disposeAsync(): Promise<void> {
@@ -25,12 +25,12 @@ export default class SocketChannelProxy extends ChannelProxyBase<Socket> {
         return super.disposeAsync();
     }
 
-    public sendMessage(msg: IMessage): boolean {
+    public sendData(data: any): boolean {
         if (this.disposed) {
             throw new Error("Channel proxy already disposed.");
         }
 
-        return this.channel.write(JSON.stringify(msg));
+        return this.channel.write(JSON.stringify(data));
     }
 
     constructor(channel: Socket) {
@@ -40,10 +40,13 @@ export default class SocketChannelProxy extends ChannelProxyBase<Socket> {
     }
 
     private onChannelData = (data: Buffer) => {
-        if (String.isString(data)) {
+        if (utils.isString(data)) {
             try {
-                this.triggerDataHandler(this.channel, JSON.parse(data));
-            } catch { }
+                this.triggerDataHandler(JSON.parse(data));
+            } catch (error) {
+                log.writeException(error);
+                throw error;
+            }
         }
     }
 }

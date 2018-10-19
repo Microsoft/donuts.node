@@ -3,10 +3,12 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IChannelProxy, ChannelProxyDataHandler, IMessage } from "../common";
-import { ChannelType } from "donut.node/ipc";
+import { IChannelProxy, ChannelProxyDataHandler, ChannelType } from "..";
 
-export default abstract class ChannelProxyBase<TChannel extends ChannelType> implements IChannelProxy {
+import * as utils from "../../utils";
+import * as log from "../../logging";
+
+export abstract class ChannelProxyBase<TChannel extends ChannelType> implements IChannelProxy {
     protected dataHandler: ChannelProxyDataHandler;
 
     private _channel: TChannel;
@@ -30,21 +32,29 @@ export default abstract class ChannelProxyBase<TChannel extends ChannelType> imp
         return Promise.resolve();
     }
 
-    public abstract sendMessage(msg: IMessage): boolean;
+    public abstract sendData(data: any): boolean;
 
-    public setDataHandler(handler: ChannelProxyDataHandler): void {
+    public setDataHandler(handler: ChannelProxyDataHandler): ChannelProxyDataHandler {
         if (this.disposed
             && handler !== undefined
             && handler !== null) {
             throw new Error("Channel proxy already disposed.");
         }
 
+        const oldHandler = this.dataHandler;
+
         this.dataHandler = handler;
+        return oldHandler;
     }
 
-    protected triggerDataHandler(channel: ChannelType, data: any): void {
-        if (Function.isFunction(this.dataHandler)) {
-            this.dataHandler(channel, data);
+    protected triggerDataHandler(data: any): void {
+        if (utils.isFunction(this.dataHandler)) {
+            try {
+                this.dataHandler(this, data);
+            } catch (error) {
+                log.writeException(error);
+                throw error;
+            }
         }
     }
 }

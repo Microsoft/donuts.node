@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IRoutePattern } from "donut.node/remoting";
+import { IRoutePattern } from "..";
 
 export default class RegexPattern implements IRoutePattern {
     private readonly pattern: RegExp;

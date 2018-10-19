@@ -3,23 +3,38 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { ChannelType, ICommunicatorConstructorOptions } from "donut.node/ipc";
-import { IModuleInfo, IModule } from "donut.node/module-manager";
-import { ICommunicator } from "donut.node/remoting";
+import { IDisposable } from "../common";
 
-import * as appUtils from "../../utilities/appUtils";
+import { ChildProcess } from "child_process";
+import { Socket } from "net";
 
-(<IModule>exports).getModuleMetadata = (components): IModuleInfo => {
-    components.register<any>({
-        name: "ipc.communicator",
-        version: appUtils.getAppVersion(),
-        descriptor: async (channel: ChannelType, options?: ICommunicatorConstructorOptions): Promise<ICommunicator> =>
-            import("./communicator").then((module) => module.Communicator.fromChannel(channel, options))
-    });
+export type ChannelType = NodeJS.Process | ChildProcess | Socket;
 
-    return {
-        name: "ipc",
-        version: appUtils.getAppVersion(),
-        loadingMode: "Always"
-    };
-};
+export interface ICommunicatorConstructorOptions {
+    id?: string;
+
+    /**
+     * Timeout if the remoting operation takes too long. Default: infinity.
+     */
+    timeout?: number;
+}
+
+export interface IMessage {
+    id: string;
+    succeeded?: boolean;
+    path?: string;
+    body?: any;
+}
+
+export interface IChannelProxy extends IDisposable {
+    readonly channel: ChannelType;
+    
+    sendData(data: any): boolean;
+    setDataHandler(handler: ChannelProxyDataHandler): ChannelProxyDataHandler;
+}
+
+export interface ChannelProxyDataHandler {
+    (channel: IChannelProxy, data: any): void;
+}
+
+export const UuidNamespace = "65ef6f94-e6c9-4c95-8360-6d29de87b1dd";

@@ -7,7 +7,7 @@ import { Socket } from "net";
 
 import * as utils from "../../utils";
 import { ChannelProxyBase } from "./channel-proxy-base";
-import * as log from "../../logging";
+import { Log } from "../../logging/log";
 
 export class SocketChannelProxy extends ChannelProxyBase<Socket> {
     public static isValidChannel(channel: any): channel is Socket {
@@ -44,7 +44,7 @@ export class SocketChannelProxy extends ChannelProxyBase<Socket> {
             try {
                 this.triggerDataHandler(JSON.parse(data));
             } catch (error) {
-                log.writeException(error);
+                Log.instance.writeExceptionAsync(error);
                 throw error;
             }
         }

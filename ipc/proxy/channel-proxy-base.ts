@@ -6,7 +6,7 @@
 import { IChannelProxy, ChannelProxyDataHandler, ChannelType } from "..";
 
 import * as utils from "../../utils";
-import * as log from "../../logging";
+import { Log } from "../../logging/log";
 
 export abstract class ChannelProxyBase<TChannel extends ChannelType> implements IChannelProxy {
     protected dataHandler: ChannelProxyDataHandler;
@@ -52,7 +52,7 @@ export abstract class ChannelProxyBase<TChannel extends ChannelType> implements 
             try {
                 this.dataHandler(this, data);
             } catch (error) {
-                log.writeException(error);
+                Log.instance.writeExceptionAsync(error);
                 throw error;
             }
         }

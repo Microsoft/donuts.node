@@ -9,9 +9,8 @@ import { ICommunicatorConstructorOptions, ChannelType, IChannelProxy, IMessage }
 
 import * as uuidv4 from "uuid/v4";
 
+import { Log } from "../logging/log";
 import * as utils from "../utils";
-import { ProcessChannelProxy } from "./proxy/process";
-import { SocketChannelProxy } from "./proxy/socket";
 
 interface IPromiseResolver {
     resolve: (value?: any) => void;
@@ -23,21 +22,6 @@ interface IRoute {
     asyncHandler: AsyncRequestHandler;
 }
 
-function generateChannelProxy(channel: any): IChannelProxy {
-    if (utils.isNullOrUndefined(channel)) {
-        throw new Error("channel must be supplied.");
-
-    } else if (ProcessChannelProxy.isValidChannel(channel)) {
-        return new ProcessChannelProxy(channel);
-
-    } else if (SocketChannelProxy.isValidChannel(channel)) {
-        return new SocketChannelProxy(channel);
-
-    } else {
-        throw new Error("Unknown channel type. Only supports NodeJS.Process, NodeJS.ChildProcess, NodeJS.Socket, Electron.IpcRenderer, Electron.WebContents.");
-    }
-}
-
 export class Communicator implements ICommunicator {
     public readonly id: string;
 
@@ -46,13 +30,6 @@ export class Communicator implements ICommunicator {
     private routes: Array<IRoute>;
 
     private channelProxy: IChannelProxy;
-
-    public static fromChannel(
-        channel: ChannelType,
-        options?: ICommunicatorConstructorOptions)
-        : ICommunicator {
-        return new Communicator(generateChannelProxy(channel), options);
-    }
 
     constructor(
         channelProxy: IChannelProxy,

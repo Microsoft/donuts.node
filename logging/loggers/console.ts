@@ -16,13 +16,11 @@ export interface IConsoleLoggerSettings extends ILoggerSettings {
 }
 
 export class ConsoleLogger implements ILogger {
+    public readonly name: string;
+
     private readonly settings: IConsoleLoggerSettings;
 
     private console: Console;
-
-    public get name(): string {
-        return this.settings.name;
-    }
 
     constructor(settings?: IConsoleLoggerSettings, targetConsole?: Console) {
         if (!utils.isObject(settings)) {
@@ -35,6 +33,7 @@ export class ConsoleLogger implements ILogger {
         this.settings = settings;
         this.settings.logAllProperties = utils.pick(settings.logAllProperties, true);
         this.settings.logCallerInfo = utils.pick(settings.logCallerInfo, true);
+        this.name = this.settings.name;
 
         if (utils.isNullOrUndefined(targetConsole)) {
             this.console = console;
@@ -44,18 +43,6 @@ export class ConsoleLogger implements ILogger {
     }
 
     public async writeAsync(properties: IDictionary<string>, severity: Severity, message: string): Promise<void> {
-        this.write(properties, severity, message);
-    }
-
-    public async writeExceptionAsync(properties: IDictionary<string>, error: Error): Promise<void> {
-        this.writeException(properties, error);
-    }
-
-    public async writeMetricAsync(properties: IDictionary<string>, name: string, value: number): Promise<void> {
-        this.writeMetric(properties, name, value);
-    }
-
-    public write(properties: IDictionary<string>, severity: Severity, message: string): void {
         const consoleMsg: string = this.formatConsoleMsg(properties, message);
 
         switch (severity) {
@@ -84,7 +71,7 @@ export class ConsoleLogger implements ILogger {
         }
     }
 
-    public writeException(properties: IDictionary<string>, error: Error): void {
+    public async writeExceptionAsync(properties: IDictionary<string>, error: Error): Promise<void> {
         let exceptionMsg: string = "";
 
         exceptionMsg += error.name + ": " + error.message;
@@ -94,7 +81,7 @@ export class ConsoleLogger implements ILogger {
         this.console.error(this.formatConsoleMsg(properties, exceptionMsg));
     }
 
-    public writeMetric(properties: IDictionary<string>, name: string, value: number): void {
+    public async writeMetricAsync(properties: IDictionary<string>, name: string, value: number): Promise<void> {
         this.console.info(this.formatConsoleMsg(properties, name + ": " + value.toString()));
     }
 

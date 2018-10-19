@@ -16,7 +16,7 @@ import * as utils from "../utils";
 import { ConsoleLogger } from "./loggers/console";
 
 export class Log implements ILog {
-    private static _default: ILog;
+    private static _instance: ILog;
 
     private loggers: Array<ILogger>;
 
@@ -57,16 +57,12 @@ export class Log implements ILog {
         }
     }
 
-    public static get default(): ILog {
-        if (!Log._default) {
-            Log._default = new Log();
+    public static get instance(): ILog {
+        if (!Log._instance) {
+            Log._instance = new Log();
         }
 
-        return Log._default;
-    }
-
-    public static set default(log: ILog) {
-        Log._default = log;
+        return Log._instance;
     }
 
     private static stringifier(obj: any): string {
@@ -104,7 +100,7 @@ export class Log implements ILog {
         this.defaultProperties = defaultProperties;
         this.logCallerInfo = includeCallerInfo === true;
 
-        this.addLogger(new ConsoleLogger());
+        this.addLoggerAsync(new ConsoleLogger());
     }
 
     public async writeMoreAsync(properties: IDictionary<string>, severity: Severity, messageOrFormat: string, ...params: Array<any>): Promise<void> {
@@ -175,91 +171,7 @@ export class Log implements ILog {
         await Promise.all(this.loggers.map((logger) => logger.writeMetricAsync(properties, name, value)));
     }
 
-    public writeMore(properties: IDictionary<string>, severity: Severity, messageOrFormat: string, ...params: Array<any>): void {
-        if (!utils.isString(messageOrFormat)) {
-            return;
-        }
-
-        if (Array.isArray(params) && params.length > 0) {
-            messageOrFormat = utils.string.formatEx(Log.stringifier, messageOrFormat, ...params);
-        }
-
-        properties = this.generateProperties(properties);
-
-        for (const logger of this.loggers) {
-            logger.write(properties, severity, messageOrFormat);
-        }
-    }
-
-    public write(severity: Severity, messageOrFormat: string, ...params: Array<any>): void {
-        this.writeMore(null, severity, messageOrFormat, ...params);
-    }
-
-    public writeInfo(messageOrFormat: string, ...params: Array<any>): void {
-        this.write(Severity.Information, messageOrFormat, ...params);
-    }
-
-    public writeVerbose(messageOrFormat: string, ...params: Array<any>): void {
-        this.write(Severity.Verbose, messageOrFormat, ...params);
-    }
-
-    public writeWarning(messageOrFormat: string, ...params: Array<any>): void {
-        this.write(Severity.Warning, messageOrFormat, ...params);
-    }
-
-    public writeError(messageOrFormat: string, ...params: Array<any>): void {
-        this.write(Severity.Error, messageOrFormat, ...params);
-    }
-
-    public writeCritical(messageOrFormat: string, ...params: Array<any>): void {
-        this.write(Severity.Critical, messageOrFormat, ...params);
-    }
-
-    public writeException(exception: Error, properties?: IDictionary<string>): void {
-        properties = this.generateProperties(properties);
-
-        for (const logger of this.loggers) {
-            logger.writeException(properties, exception);
-        }
-    }
-
-    public writeEvent(name: string, properties?: IDictionary<string>): void {
-        if (!utils.isString(name)) {
-            return;
-        }
-
-        properties = this.generateProperties(properties);
-
-        for (const logger of this.loggers) {
-            logger.write(properties, Severity.Event, name);
-        }
-    }
-
-    public writeMetric(name: string, value?: number, properties?: IDictionary<string>): void {
-        if (!utils.isString(name)) {
-            return;
-        }
-
-        if (!utils.isNumber(value)) {
-            value = 1;
-        }
-
-        properties = this.generateProperties(properties);
-
-        for (const logger of this.loggers) {
-            logger.writeMetricAsync(properties, name, value);
-        }
-    }
-
     public async removeLoggerAsync(name: string): Promise<ILogger> {
-        return this.removeLogger(name);
-    }
-
-    public async addLoggerAsync(logger: ILogger): Promise<void> {
-        this.addLogger(logger);
-    }
-
-    public removeLogger(name: string): ILogger {
         if (!utils.isString(name)) {
             throw new Error("name must be supplied.");
         }
@@ -275,7 +187,7 @@ export class Log implements ILog {
         return undefined;
     }
 
-    public addLogger(logger: ILogger): void {
+    public async addLoggerAsync(logger: ILogger): Promise<void> {
         if (!logger) {
             throw new Error("logger must be provided.");
         }

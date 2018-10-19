@@ -7,7 +7,7 @@ import { ChildProcess } from "child_process";
 
 import * as utils from "../../utils";
 import { ChannelProxyBase } from "./channel-proxy-base";
-import * as log from "../../logging";
+import { Log } from "../../logging/log";
 
 export class ProcessChannelProxy extends ChannelProxyBase<ChildProcess> {
     // Process and ChildProcess share the same functions but ChildProcess has more detailed type information.
@@ -55,7 +55,7 @@ export class ProcessChannelProxy extends ChannelProxyBase<ChildProcess> {
             try {
                 this.triggerDataHandler(JSON.parse(message));
             } catch (error) {
-                log.writeException(error);
+                Log.instance.writeExceptionAsync(error);
                 throw error;
             }
         }

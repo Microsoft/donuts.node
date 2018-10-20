@@ -19,8 +19,7 @@
   "homepage": "https://github.com/Microsoft/donuts.node#readme",
   "devDependencies": {
     "@types/node": "^10.11.7",
-    "cookie.gulp": "file:.build",
-    "typescript": "^3.1.3"
+    "cookie.gulp": "file:.build"
   },
   "dependencies": {
     "uuid": "^3.3.2"

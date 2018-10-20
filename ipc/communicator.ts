@@ -5,11 +5,10 @@
 
 import { IDictionary } from "../common";
 import { AsyncRequestHandler, ICommunicator, IRoutePattern } from "../remoting";
-import { ICommunicatorConstructorOptions, ChannelType, IChannelProxy, IMessage } from ".";
+import { ICommunicatorConstructorOptions, IChannelProxy, IMessage } from ".";
 
 import * as uuidv4 from "uuid/v4";
 
-import { Log } from "../logging/log";
 import * as utils from "../utils";
 
 interface IPromiseResolver {

@@ -39,14 +39,17 @@ export class SocketChannelProxy extends ChannelProxyBase<Socket> {
         this.channel.on("data", this.onChannelData);
     }
 
-    private onChannelData = (data: Buffer) => {
-        if (utils.isString(data)) {
-            try {
-                this.triggerDataHandler(JSON.parse(data));
-            } catch (error) {
-                Log.instance.writeExceptionAsync(error);
-                throw error;
+    private onChannelData = (data: Buffer | string) => {
+        try {
+            if (Buffer.isBuffer(data)) {
+                data = data.toString("utf8");
             }
+
+            this.triggerDataHandler(JSON.parse(data));
+            
+        } catch (error) {
+            Log.instance.writeExceptionAsync(error);
+            throw error;
         }
     }
 }

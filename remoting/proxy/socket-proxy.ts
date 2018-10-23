@@ -6,10 +6,10 @@
 import { Socket } from "net";
 
 import * as utils from "../../utils";
-import { ChannelProxyBase } from "./channel-proxy-base";
+import { ChannelProxy } from "./channel-proxy";
 import { Log } from "../../logging/log";
 
-export class SocketChannelProxy extends ChannelProxyBase<Socket> {
+export class SocketProxy extends ChannelProxy<Socket> {
     public static isValidChannel(channel: any): channel is Socket {
         return !utils.isNullOrUndefined(channel)
             && utils.isFunction(channel.write)

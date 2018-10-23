@@ -6,10 +6,10 @@
 import { ChildProcess } from "child_process";
 
 import * as utils from "../../utils";
-import { ChannelProxyBase } from "./channel-proxy-base";
+import { ChannelProxy } from "./channel-proxy";
 import { Log } from "../../logging/log";
 
-export class ProcessChannelProxy extends ChannelProxyBase<ChildProcess> {
+export class ProcessProxy extends ChannelProxy<ChildProcess> {
     // Process and ChildProcess share the same functions but ChildProcess has more detailed type information.
     //
     // Process:

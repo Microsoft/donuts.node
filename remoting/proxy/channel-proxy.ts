@@ -3,12 +3,12 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IChannelProxy, ChannelProxyDataHandler, ChannelType } from "..";
+import { IChannelProxy, ChannelProxyDataHandler } from "..";
 
 import * as utils from "../../utils";
 import { Log } from "../../logging/log";
 
-export abstract class ChannelProxyBase<TChannel extends ChannelType> implements IChannelProxy {
+export abstract class ChannelProxy<TChannel> implements IChannelProxy {
     protected dataHandler: ChannelProxyDataHandler;
 
     private _channel: TChannel;
@@ -34,17 +34,15 @@ export abstract class ChannelProxyBase<TChannel extends ChannelType> implements 
 
     public abstract sendData(data: any): boolean;
 
-    public setDataHandler(handler: ChannelProxyDataHandler): ChannelProxyDataHandler {
+    public setHandler(type: string, handler: ChannelProxyDataHandler): this {
         if (this.disposed
             && handler !== undefined
             && handler !== null) {
             throw new Error("Channel proxy already disposed.");
         }
 
-        const oldHandler = this.dataHandler;
-
         this.dataHandler = handler;
-        return oldHandler;
+        return this;
     }
 
     protected triggerDataHandler(data: any): void {

@@ -4,8 +4,16 @@
 //-----------------------------------------------------------------------------
 
 import { IDictionary } from "../common";
-import { AsyncRequestHandler, ICommunicator, IRoutePattern } from "../remoting";
-import { ICommunicatorConstructorOptions, IChannelProxy, IMessage } from ".";
+import {
+    AsyncRequestHandler,
+    ICommunicator,
+    IRoutePattern,
+    ICommunicatorConstructorOptions,
+    IChannelProxy,
+    IMessage,
+    IRoutePathInfo,
+    isChannelProxy
+} from ".";
 
 import * as uuidv4 from "uuid/v4";
 
@@ -21,8 +29,12 @@ interface IRoute {
     asyncHandler: AsyncRequestHandler;
 }
 
+export const UuidNamespace = "65ef6f94-e6c9-4c95-8360-6d29de87b1dd";
+
 export class Communicator implements ICommunicator {
     public readonly id: string;
+
+    public readonly timeout?: number;
 
     private ongoingPromiseDict: IDictionary<IPromiseResolver>;
 
@@ -33,6 +45,11 @@ export class Communicator implements ICommunicator {
     constructor(
         channelProxy: IChannelProxy,
         options?: ICommunicatorConstructorOptions) {
+
+        if (!isChannelProxy(channelProxy)) {
+            throw new Error("channelProxy must be a IChannelProxy object.");
+        }
+
         this.routes = [];
         this.ongoingPromiseDict = Object.create(null);
 
@@ -43,13 +60,17 @@ export class Communicator implements ICommunicator {
                 && !utils.string.isEmptyOrWhitespace(options.id)) {
                 this.id = options.id;
             }
+
+            if (utils.isNumber(options.timeout)) {
+                this.timeout = options.timeout;
+            }
         }
 
         this.channelProxy = channelProxy;
-        this.channelProxy.setDataHandler(this.onMessageAsync);
+        this.channelProxy.setHandler("data", this.onMessageAsync);
     }
 
-    public map(pattern: IRoutePattern, asyncHandler: AsyncRequestHandler): void {
+    public map(pattern: IRoutePattern, asyncHandler: AsyncRequestHandler): this {
         this.validateDisposal();
 
         if (!pattern) {
@@ -66,9 +87,10 @@ export class Communicator implements ICommunicator {
         };
 
         this.routes.push(route);
+        return this;
     }
 
-    public unmap(pattern: IRoutePattern): AsyncRequestHandler {
+    public unmap(pattern: IRoutePattern): this {
         this.validateDisposal();
 
         if (utils.isNullOrUndefined(pattern)) {
@@ -85,7 +107,7 @@ export class Communicator implements ICommunicator {
 
         this.routes.splice(routeIndex, 1);
 
-        return asyncHandler;
+        return this;
     }
 
     public sendAsync<TRequest, TResponse>(path: string, content: TRequest): Promise<TResponse> {
@@ -107,6 +129,21 @@ export class Communicator implements ICommunicator {
                 return;
             }
 
+            if (this.timeout) {
+                setTimeout(
+                    (msgId) => {
+                        const record = this.ongoingPromiseDict[msg.id];
+
+                        if (!record) {
+                            return;
+                        }
+
+                        record.reject(new Error(`Communicator-${this.id}: Message, ${msgId}, timed out (${this.timeout}).`));
+                    },
+                    this.timeout,
+                    msg.id);
+            }
+
             this.ongoingPromiseDict[msg.id] = {
                 resolve: (result) => resolve(result),
                 reject: (error) => reject(error)
@@ -126,7 +163,7 @@ export class Communicator implements ICommunicator {
         await this.channelProxy.disposeAsync();
         Object.values(this.ongoingPromiseDict).forEach((resolver) => resolver.reject(new Error(`Communicator (${this.id}) is disposed.`)));
 
-        this.channelProxy.setDataHandler(undefined);
+        this.channelProxy.setHandler("data", undefined);
         this.channelProxy = undefined;
         this.routes = undefined;
         this.ongoingPromiseDict = undefined;
@@ -146,28 +183,42 @@ export class Communicator implements ICommunicator {
             msg.succeeded ? promise.resolve(msg.body) : promise.reject(msg.body);
 
         } else if (utils.isNullOrUndefined(msg.succeeded)) {
-            const route = this.routes.find((route) => route.pattern.match(msg.path));
+            let pathInfo: IRoutePathInfo;
+            let asyncHandler: AsyncRequestHandler;
 
-            if (route !== undefined) {
-                let response: any;
-                let succeeded: boolean;
+            // Find the corresponding route and
+            // generate the pathInfo.
+            for (const route of this.routes) {
+                asyncHandler = route.asyncHandler;
+                pathInfo = route.pattern.match(msg.path);
 
-                try {
-                    response = await route.asyncHandler(this, msg.path, msg.body);
-                    succeeded = true;
-                } catch (exception) {
-                    response = exception;
-                    succeeded = false;
+                if (pathInfo) {
+                    break;
                 }
+            }
 
-                if (!this.channelProxy.sendData({
-                    id: msg.id,
-                    path: msg.path,
-                    succeeded: succeeded,
-                    body: response
-                })) {
-                    // Log if failed.
-                }
+            if (!pathInfo) {
+                return;
+            }
+
+            let response: any;
+            let succeeded: boolean;
+
+            try {
+                response = await asyncHandler(this, pathInfo, msg.body);
+                succeeded = true;
+            } catch (exception) {
+                response = exception;
+                succeeded = false;
+            }
+
+            if (!this.channelProxy.sendData({
+                id: msg.id,
+                path: msg.path,
+                succeeded: succeeded,
+                body: response
+            })) {
+                // Log if failed.
             }
         }
     }

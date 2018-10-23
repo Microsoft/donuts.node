@@ -32,9 +32,7 @@ interface IRoute {
 export class CommunicationHost extends EventEmitter implements ICommunicationHost {
     public readonly communicators: IDictionary<ICommunicator>;
 
-    public get connectionInfo(): IConnectionInfo {
-        return this.host.connectionInfo;
-    }
+    public readonly connectionInfo: IConnectionInfo;
 
     private communicatorOptions: ICommunicatorConstructorOptions;
 
@@ -57,6 +55,11 @@ export class CommunicationHost extends EventEmitter implements ICommunicationHos
         this.communicators = Object.create(null);
         this.communicatorOptions = options;
         this.host = host;
+
+        this.connectionInfo = Object.create(null);
+
+        Object.assign(this.connectionInfo, this.host.connectionInfo);
+        this.connectionInfo.communicatorOptions = this.communicatorOptions || this.connectionInfo.communicatorOptions;
 
         this.host.setHandler("close", this.onClose);
         this.host.setHandler("connection", this.onConnection);

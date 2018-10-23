@@ -78,6 +78,7 @@ export interface IRoutePattern {
 export interface IConnectionInfo {
     moduleName: string;
     initFunction: string;
+    initFunctionParams: Array<any>;
     communicatorOptions?: ICommunicatorConstructorOptions;
 }
 

@@ -8,14 +8,15 @@ import {
     IConnectionInfo,
     ChannelHostProxyConnectionHandler,
     ChannelHostProxyErrorHandler,
-    ChannelHostProxyEventHandler
+    ChannelHostProxyEventHandler,
+    IChannelProxy
 } from "..";
 
 import * as utils from "../../utils";
 import { IDictionary } from "../../common";
 
-export class ChannelHostProxy<THost> implements IChannelHostProxy {
-    public readonly connectionInfo: IConnectionInfo;
+export abstract class ChannelHostProxy<THost> implements IChannelHostProxy {
+    public abstract get connectionInfo(): IConnectionInfo;
 
     protected host: THost;
 
@@ -72,6 +73,10 @@ export class ChannelHostProxy<THost> implements IChannelHostProxy {
         this.handlers = Object.create(null);
     }
 
+    protected emit(type: "connection", channelProxy: IChannelProxy): void;
+    protected emit(type: "error", error: any): void;
+    protected emit(type: "close"): void;
+    protected emit(type: "listening"): void;
     protected emit(type: string, ...args: Array<any>): void {
         if (this.disposed) {
             return;

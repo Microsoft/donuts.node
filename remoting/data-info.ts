@@ -3,6 +3,8 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
+import * as utils from "../utils";
+
 export enum DataType {
     Undefined = "undefined",
     Null = "null",
@@ -62,6 +64,6 @@ export function dataTypeOf(data: any): DataType {
 }
 
 export function isDataInfo(dataInfo: IDataInfo): dataInfo is IDataInfo {
-    return !String.isEmptyOrWhitespace(dataInfo.type)
+    return !utils.string.isEmptyOrWhitespace(dataInfo.type)
         && DataTypeValues.includes(dataInfo.type);
 }

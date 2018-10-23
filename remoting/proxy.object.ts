@@ -3,15 +3,12 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDisposable, IDictionary } from "sfx.common";
-import { ICommunicator, AsyncRequestHandler, IRoutePattern } from "sfx.remoting";
-import { IObjectRemotingProxy, Resolver } from "sfx.proxy.object";
-
+import { IDisposable, IDictionary } from "../common";
+import { ICommunicator, AsyncRequestHandler, IRoutePattern, IRoutePathInfo } from ".";
 import * as uuidv4 from "uuid/v4";
-
-import * as utils from "../../utilities/utils";
-
+import * as utils from "../utils";
 import { IDataInfo } from "./data-info";
+import { DataInfoManager } from "./data-info-manager";
 
 import {
     IDelegateMessage,
@@ -24,7 +21,20 @@ import {
     IDisposeDelegateMessage
 } from "./delegate";
 
-import { DataInfoManager } from "./data-info-manager";
+export interface Resolver {
+    (proxy: IObjectRemotingProxy, name: string, ...extraArgs: Array<any>): Promise<IDisposable>;
+}
+
+export interface IObjectRemotingProxy extends IDisposable {
+    readonly id: string;
+    readonly routePattern: IRoutePattern;
+    readonly communicator: ICommunicator;
+
+    requestAsync<T>(identifier: string, ...extraArgs: Array<any>): Promise<T & IDisposable>;
+
+    setResolver(resolver: Resolver): void;
+    getResolver(): Resolver;
+}
 
 enum ProxyActionType {
     RequestResource = "RequestResource",
@@ -82,7 +92,7 @@ export class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         ownCommunicator?: boolean,
         proxyId?: string)
         : IObjectRemotingProxy {
-        if (!Object.isObject(pathPattern)) {
+        if (!utils.isObject(pathPattern)) {
             throw new Error("pathPattern must be provided.");
         }
 
@@ -128,7 +138,7 @@ export class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
     public setResolver(resolver: Resolver): void {
         this.validateDisposal();
 
-        if (resolver && !Function.isFunction(resolver)) {
+        if (resolver && !utils.isFunction(resolver)) {
             throw new Error("resolver must be a function.");
         }
 
@@ -174,7 +184,7 @@ export class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         communicator: ICommunicator,
         ownCommunicator?: boolean,
         proxyId?: string) {
-        if (!Object.isObject(pathPattern)) {
+        if (!utils.isObject(pathPattern)) {
             throw new Error("pathPattern must be provided.");
         }
 
@@ -228,26 +238,26 @@ export class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return asyncRequestHandler(communicator, path, proxyMsg);
     }
 
-    private onDelegateAsync = (communicator: ICommunicator, path: string, msg: IDelegationProxyMessage): Promise<any> => {
+    private onDelegateAsync = (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<any> => {
         switch (msg.delegateType) {
             case DelegationType.Apply:
-                return this.onApplyAsync(communicator, path, msg);
+                return this.onApplyAsync(communicator, pathInfo, msg);
 
             case DelegationType.Dispose:
-                return this.onDisposeAsync(communicator, path, msg);
+                return this.onDisposeAsync(communicator, pathInfo, msg);
 
             case DelegationType.GetProperty:
-                return this.onGetPropertyAsync(communicator, path, msg);
+                return this.onGetPropertyAsync(communicator, pathInfo, msg);
 
             case DelegationType.SetProperty:
-                return this.onSetPropertyAsync(communicator, path, msg);
+                return this.onSetPropertyAsync(communicator, pathInfo, msg);
 
             default:
                 throw new Error(`Unknown delegation type: ${msg.delegateType}`);
         }
     }
 
-    private onGetPropertyAsync = async (communicator: ICommunicator, path: string, msg: IDelegationProxyMessage): Promise<any> => {
+    private onGetPropertyAsync = async (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<any> => {
         const delegationMsg = <IPropertyDelegationMessage>msg.content;
         const target = this.dataInfoManager.get(delegationMsg.refId);
 
@@ -258,7 +268,7 @@ export class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return this.dataInfoManager.referAsDataInfo(await target[delegationMsg.property], delegationMsg.refId);
     }
 
-    private onSetPropertyAsync = async (communicator: ICommunicator, path: string, msg: IDelegationProxyMessage): Promise<any> => {
+    private onSetPropertyAsync = async (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<any> => {
         const delegationMsg = <ISetPropertyDelegationMessage>msg.content;
         const target = this.dataInfoManager.get(delegationMsg.refId);
 
@@ -271,7 +281,7 @@ export class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return true;
     }
 
-    private onApplyAsync = async (communicator: ICommunicator, path: string, msg: IDelegationProxyMessage): Promise<any> => {
+    private onApplyAsync = async (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<any> => {
         const delegationMsg = <IApplyDelegationMessage>msg.content;
         const target = this.dataInfoManager.get(delegationMsg.refId);
 
@@ -291,13 +301,13 @@ export class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return this.dataInfoManager.referAsDataInfo(result, delegationMsg.refId);
     }
 
-    private onDisposeAsync = (communicator: ICommunicator, path: string, msg: IDelegationProxyMessage): Promise<void> => {
+    private onDisposeAsync = (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<void> => {
         const delegationMsg = <IDisposeDelegateMessage>msg.content;
 
         return this.dataInfoManager.releaseByIdAsync(delegationMsg.refId, delegationMsg.parentId, true);
     }
 
-    private onRequestResourceAsync = async (communicator: ICommunicator, path: string, msg: IRequestResourceProxyMessage): Promise<IDataInfo> => {
+    private onRequestResourceAsync = async (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IRequestResourceProxyMessage): Promise<IDataInfo> => {
         const tempReferer = this.dataInfoManager.referAsDataInfo(() => undefined);
         const extraArgs = msg.extraArgs.map((argDataInfo) => this.dataInfoManager.realizeDataInfo(argDataInfo, tempReferer.id));
 

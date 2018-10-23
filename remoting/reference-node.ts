@@ -3,12 +3,10 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDictionary } from "sfx.common";
+import { IDictionary } from "../common";
 import { IDataInfo } from "./data-info";
-
 import * as uuidv4 from "uuid/v4";
-
-import * as utils from "../../utilities/utils";
+import * as utils from "../utils";
 
 export class ReferenceNode {
     private readonly symbol_refId: symbol;
@@ -50,12 +48,12 @@ export class ReferenceNode {
     }
 
     public addReferee(target: Object | Function, newRefId?: string): ReferenceNode {
-        if (!Object.isObject(target) && !Function.isFunction(target)) {
+        if (!utils.isObject(target) && !utils.isFunction(target)) {
             throw new Error("target cannot be null/undefined or types other than Object or Function.");
         }
 
         if (!utils.isNullOrUndefined(newRefId)
-            && (newRefId === "" || !String.isString(newRefId))) {
+            && (newRefId === "" || !utils.isString(newRefId))) {
             throw new Error("newRefId must be non-empty string.");
         }
 
@@ -88,12 +86,12 @@ export class ReferenceNode {
     }
 
     public addReferer(target: Object | Function, newRefId?: string): ReferenceNode {
-        if (!Object.isObject(target) && !Function.isFunction(target)) {
+        if (!utils.isObject(target) && !utils.isFunction(target)) {
             throw new Error("target cannot be null/undefined or types other than Object or Function.");
         }
 
         if (!utils.isNullOrUndefined(newRefId)
-            && (newRefId === "" || !String.isString(newRefId))) {
+            && (newRefId === "" || !utils.isString(newRefId))) {
             throw new Error("newRefId must be non-empty string.");
         }
 
@@ -140,7 +138,7 @@ export class ReferenceNode {
     }
 
     public refer(target: Object | Function, refererId?: string): ReferenceNode {
-        if (!Object.isObject(target) && !Function.isFunction(target)) {
+        if (!utils.isObject(target) && !utils.isFunction(target)) {
             throw new Error("target cannot be null/undefined or types other than Object or Function.");
         }
 
@@ -165,7 +163,7 @@ export class ReferenceNode {
     }
 
     public getRefId(target: Object | Function): string {
-        if (!Object.isObject(target) && !Function.isFunction(target)) {
+        if (!utils.isObject(target) && !utils.isFunction(target)) {
             return undefined;
         }
 
@@ -173,7 +171,7 @@ export class ReferenceNode {
     }
 
     public setRefDataInfo(target: Object | Function, dataInfo: IDataInfo): IDataInfo {
-        if (!Object.isObject(target) && !Function.isFunction(target)) {
+        if (!utils.isObject(target) && !utils.isFunction(target)) {
             throw new Error("target cannot be null/undefined or types other than Object or Function.");
         }
 
@@ -181,7 +179,7 @@ export class ReferenceNode {
     }
 
     public getRefDataInfo(target: Object | Function): IDataInfo {
-        if (!Object.isObject(target) && !Function.isFunction(target)) {
+        if (!utils.isObject(target) && !utils.isFunction(target)) {
             return undefined;
         }
         
@@ -227,7 +225,7 @@ export class ReferenceNode {
     }
 
     private isOrphan(): boolean {
-        return Object.isEmpty(this.referers);
+        return utils.object.isEmpty(this.referers);
     }
 
     private internallyAddReferee(referee: ReferenceNode): void {

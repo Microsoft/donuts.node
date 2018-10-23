@@ -3,11 +3,11 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDictionary, IDisposable } from "sfx.common";
-
+import { IDictionary, IDisposable } from "../common";
 import { IDataInfo, DataType, dataTypeOf } from "./data-info";
 import { ReferenceNode } from "./reference-node";
 import { IDelegation } from "./delegate";
+import * as utils from "../utils";
 
 interface IObjectDataInfo extends IDataInfo {
     memberInfos: IDictionary<IDataInfo>;
@@ -21,7 +21,7 @@ export class DataInfoManager implements IDisposable {
     private delegation: IDelegation;
 
     constructor(delegation: IDelegation) {
-        if (!Object.isObject(delegation) || delegation === null) {
+        if (!utils.isObject(delegation) || delegation === null) {
             throw new Error("delegate must be supplied.");
         }
 
@@ -172,7 +172,7 @@ export class DataInfoManager implements IDisposable {
         } else if (dataInfo.type === DataType.Buffer) {
             dataInfo.value = (<Buffer>target).toString("base64");
 
-        } else if (Object.isSerializable(target)) {
+        } else if (utils.object.isSerializable(target)) {
             dataInfo.value = JSON.stringify(target,
                 (key, value) => {
                     if (key === "") {
@@ -223,7 +223,7 @@ export class DataInfoManager implements IDisposable {
 
         while (currentObj && currentObj !== Object.prototype) {
             const propertyDescriptors = Object.getOwnPropertyDescriptors(currentObj);
-            const isClass = Function.isFunction(propertyDescriptors["constructor"].value);
+            const isClass = utils.isFunction(propertyDescriptors["constructor"].value);
 
             for (const propertyName in propertyDescriptors) {
                 const propertyDescriptor = propertyDescriptors[propertyName];
@@ -241,7 +241,7 @@ export class DataInfoManager implements IDisposable {
                     // if the member is a non-enumerable function in the class.
                     || (isClass
                         && !propertyDescriptor.enumerable
-                        && Function.isFunction(propertyDescriptor.value))) {
+                        && utils.isFunction(propertyDescriptor.value))) {
                     memberInfos[propertyName] = this.toDataInfo(propertyDescriptor.value, dataInfo.id, false);
                 }
             }

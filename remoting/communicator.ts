@@ -103,8 +103,6 @@ export class Communicator implements ICommunicator {
             return undefined;
         }
 
-        const asyncHandler = this.routes[routeIndex].asyncHandler;
-
         this.routes.splice(routeIndex, 1);
 
         return this;

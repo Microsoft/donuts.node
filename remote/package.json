@@ -1,0 +1,25 @@
+{
+  "name": "donuts.node-remote",
+  "version": "1.0.0-private",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Microsoft/donuts.node.git"
+  },
+  "author": "Microsoft Corporation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Microsoft/donuts.node/issues"
+  },
+  "homepage": "https://github.com/Microsoft/donuts.node#readme",
+  "dependencies": {
+    "donuts.node": "file:../core",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.0",
+    "nan": "^2.11.1",
+    "typescript": "^3.1.3"
+  }
+}

@@ -3,9 +3,8 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDisposable, IDictionary } from "../common";
-
-import * as utils from "../utils";
+import { IDisposable, IDictionary } from "donuts.node";
+import * as utils from "donuts.node/utils";
 import { Communicator } from "./communicator";
 import { EventEmitter } from "events";
 

@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import * as utils from "../utils";
+import * as utils from "donuts.node/utils";
 
 export enum DataType {
     Undefined = "undefined",

@@ -3,10 +3,10 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDictionary } from "../common";
+import { IDictionary } from "donuts.node";
 import { IDataInfo } from "./data-info";
 import * as uuidv4 from "uuid/v4";
-import * as utils from "../utils";
+import * as utils from "donuts.node/utils";
 
 export class ReferenceNode {
     private readonly symbol_refId: symbol;

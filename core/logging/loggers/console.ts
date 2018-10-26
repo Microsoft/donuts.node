@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDictionary } from "../../common";
+import { IDictionary } from "../..";
 import { Severity, ILoggerSettings, ILogger } from "..";
 
 import * as path from "path";

@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDictionary } from "../common";
+import { IDictionary } from "donuts.node";
 import {
     AsyncRequestHandler,
     ICommunicator,
@@ -14,10 +14,8 @@ import {
     IRoutePathInfo,
     isChannelProxy
 } from ".";
-
 import * as uuidv4 from "uuid/v4";
-
-import * as utils from "../utils";
+import * as utils from "donuts.node/utils";
 
 interface IPromiseResolver {
     resolve: (value?: any) => void;

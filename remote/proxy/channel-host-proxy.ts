@@ -13,7 +13,7 @@ import {
 } from "..";
 
 import * as utils from "../../utils";
-import { IDictionary } from "../../common";
+import { IDictionary } from "../../core/common";
 
 export abstract class ChannelHostProxy<THost> implements IChannelHostProxy {
     public abstract get connectionInfo(): IConnectionInfo;

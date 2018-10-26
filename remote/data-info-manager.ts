@@ -3,11 +3,11 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDictionary, IDisposable } from "../common";
+import { IDictionary, IDisposable } from "donuts.node";
 import { IDataInfo, DataType, dataTypeOf } from "./data-info";
 import { ReferenceNode } from "./reference-node";
 import { IDelegation } from "./delegate";
-import * as utils from "../utils";
+import * as utils from "donuts.node/utils";
 
 interface IObjectDataInfo extends IDataInfo {
     memberInfos: IDictionary<IDataInfo>;

@@ -19,7 +19,9 @@
   "homepage": "https://github.com/Microsoft/donuts.node#readme",
   "devDependencies": {
     "@types/node": "^10.11.7",
-    "cookie.gulp": "file:.build"
+    "cookie.gulp": "file:.build/core",
+    "cookie.gulp-tsc": "file:.build/tsc",
+    "cookie.gulp-tslint": "file:.build/tslint"
   },
   "dependencies": {
     "semver": "^5.6.0",

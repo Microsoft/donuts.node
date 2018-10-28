@@ -1,0 +1,21 @@
+{
+  "name": "donuts.node-weak-reference",
+  "version": "1.0.0-private",
+  "description": "",
+  "types": "index.d.ts",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Microsoft/donuts.node.git"
+  },
+  "author": "Microsoft Corporation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Microsoft/donuts.node/issues"
+  },
+  "homepage": "https://github.com/Microsoft/donuts.node#readme",
+  "devDependencies": {
+    "@types/node": "^10.12.0",
+    "nan": "^2.11.1"
+  }
+}

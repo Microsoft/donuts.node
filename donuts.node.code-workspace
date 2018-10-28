@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "remote"
+		},
+		{
+			"path": "weak-reference"
 		}
 	],
 	"settings": {}

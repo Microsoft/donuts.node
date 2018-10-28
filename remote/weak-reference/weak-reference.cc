@@ -99,11 +99,15 @@ namespace WeakReference
 
 		pContainer->Target.Reset();
 		pContainer->WeakReference.Reset();
+
+		delete pContainer;
 	}
 
 	void TargetWeakCallback(const WeakCallbackInfo<Container> &data)
 	{
 		Container *pContainer = data.GetParameter();
+
+		pContainer->Target.Reset();
 
 		if (!pContainer->WatcherCallback.IsEmpty()) {
 			Callback watcherCallback(Nan::New<Function>(pContainer->WatcherCallback));
@@ -152,7 +156,7 @@ namespace WeakReference
 
 		WeakReferenceClass.Reset(classHolder);
 
-		NAN_EXPORT(target, Create);
+		Nan::Export(target, "create", Create);
 	}
 
 	NODE_MODULE(WeakReference, Initialize);

@@ -7,7 +7,6 @@
 (() => {
     const { execSync } = require("child_process");
     const fs = require("fs");
-    const path = require("path");
     const archs = ["ia32", "x64"];
     const buildType = process.argv.find((arg) => arg === "--release") ? "Release" : "Debug";
 

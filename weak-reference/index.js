@@ -6,7 +6,7 @@
 
 /** @type {NativeWeakReferenceModule} */
 // @ts-ignore
-const weakReference = require("./weak-reference");
+const weakReference = require(`./weak-reference.${process.platform}.${process.arch}`);
 const { EventEmitter } = require("events");
 
 /**
@@ -46,9 +46,7 @@ class WeakReferenceImpl extends EventEmitter {
  * @param {object} target The target object to point to.
  * @returns {NativeWeakReference<T>} The native weak reference object pointing to the target object.
  */
-export function createNative(target) {
-    return weakReference.create(target);
-}
+exports.createNative = (target) => weakReference.create(target);
 
 /**
  * @template {object} T
@@ -56,6 +54,4 @@ export function createNative(target) {
  * @param {object} target The target object to point to.
  * @returns {WeakReference<T>} The weak reference object pointing to the target object.
  */
-export function create(target) {
-    return new WeakReferenceImpl(createNative(target));
-}
+exports.create = (target) => new WeakReferenceImpl(exports.createNative(target));

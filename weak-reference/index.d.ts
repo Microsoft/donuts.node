@@ -3,50 +3,25 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-interface NativeWeakReference<T = object> {
+/// <reference path="./@types/common.d.ts" />
+/// <reference path="./@types/weak-reference.native.d.ts" />
+/// <reference path="./@types/weak-reference.d.ts" />
+
+declare interface IModule {
     /**
-     * Check if the target object is dead or not.
-     * @returns True if the target is dead. Otherwise, false.
+     * Create a native weak reference pointing to the target object.
+     * @param {T} target The target object to point to.
+     * @returns {NativeWeakReference<T>} The native weak reference object pointing to the target object.
      */
-    isDead(): boolean;
+    createNative<T = object>(target: T): NativeWeakReference<T>;
 
     /**
-     * Create a strong reference to the target object.
-     * @returns The strong reference to the target object if the target is alive. Otherwise, undefined.
+     * Create a weak reference pointing to the target object.
+     * @param {T} target The target object to point to.
+     * @returns {WeakReference<T>} The weak reference object pointing to the target object.
      */
-    ref(): T;
-
-    /**
-     * Set a watcher to watch whether the target object is dead.
-     * @param watcher The handler to callback when the target object is dead.
-     * @returns The weak reference itself.
-     */
-    setWatcher(watcher: (weakRef: WeakReference<T>) => void): this;
+    create<T = object>(target: T): WeakReference<T>;
 }
 
-interface NativeWeakReferenceModule {
-    /**
-     * Create a native weak reference.
-     * @param target The target object to pointing to.
-     * @returns The native weak reference pointing to the target object;
-     */
-    create<T = object>(target: T): NativeWeakReference<T>
-}
-
-interface WeakReference<T = object> extends NodeJS.EventEmitter {
-    /**
-     * Check if the target object is dead or not.
-     * @returns True if the target is dead. Otherwise, false.
-     */
-    isDead(): boolean;
-
-    /**
-     * Create a strong reference to the target object.
-     * @returns The strong reference to the target object if the target is alive. Otherwise, undefined.
-     */
-    ref(): T;
-
-    on(event: "died", listener: (weakReference: WeakReference<T>) => void): this;
-    once(event: "died", listener: (weakReference: WeakReference<T>) => void): this;
-    off(event: "died", listener: (weakReference: WeakReference<T>) => void): this;
-}
+declare var exportModule: IModule;
+declare export = exportModule;

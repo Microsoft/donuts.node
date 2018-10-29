@@ -16,7 +16,7 @@
         targets: [
             {
                 target_name: "weak-reference",
-                sources: [path.resolve("./weak-reference.cc")],
+                sources: ["./weak-reference.cc"],
                 include_dirs: ["<!(node -e \"require('nan')\")"]
             }
         ]
@@ -27,7 +27,7 @@
 
         bindingGyp.targets[0].target_name = `weak-reference.${process.platform}.${arch}`;
 
-        fs.writeFileSync("./binding.gyp", JSON.stringify(bindingGyp), { encoding: "utf8" });
+        fs.writeFileSync("./binding.gyp", JSON.stringify(bindingGyp, null, 4), { encoding: "utf8" });
 
         const targetName = bindingGyp.targets[0].target_name;
 

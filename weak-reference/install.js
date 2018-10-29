@@ -59,7 +59,7 @@ function downloadAsync(url, filename) {
     /** @type {NodeEnv} */
     const node_env = process.env["NODE_ENV"];
 
-    if (node_env !== NodeEnv.prod) {
+    if (node_env !== NodeEnv.prod && fs.existsSync("./weak-reference.cc")) {
         require("./build");
         return;
     }

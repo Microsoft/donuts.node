@@ -3,13 +3,21 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { ChildProcess } from "child_process";
+const utils = require("donuts.node/utils");
+const { ChannelProxy } = require("./channel-proxy");
+const { Log } = require("donuts.node/logging/log");
 
-import * as utils from "../../utils";
-import { ChannelProxy } from "./channel-proxy";
-import { Log } from "../../logging/log";
+/** @typedef {import("child_process").ChildProcess} ChildProcess */
+/** 
+ * @template TChannel
+ * @typedef {import("./channel-proxy").ChannelProxy<TChannel>} ChannelProxy
+ */
 
-export class ProcessProxy extends ChannelProxy<ChildProcess> {
+/**
+ * @class
+ * @extends {ChannelProxy<ChildProcess>}
+ */
+class ProcessProxy extends ChannelProxy {
     // Process and ChildProcess share the same functions but ChildProcess has more detailed type information.
     //
     // Process:
@@ -19,7 +27,13 @@ export class ProcessProxy extends ChannelProxy<ChildProcess> {
     // ChildProcess:
     // https://nodejs.org/docs/latest-v8.x/api/child_process.html#child_process_event_message
     // https://nodejs.org/docs/latest-v8.x/api/child_process.html#child_process_subprocess_send_message_sendhandle_options_callback
-    public static isValidChannel(channel: any): channel is ChildProcess {
+    
+    /**
+     * @public
+     * @param {*} channel 
+     * @returns {channel is ChildProcess}
+     */
+    static isValidChannel(channel) {
         return !utils.isNullOrUndefined(channel)
             && utils.isFunction(channel.kill)
             && utils.isNumber(channel.pid)
@@ -28,15 +42,24 @@ export class ProcessProxy extends ChannelProxy<ChildProcess> {
             && utils.isFunction(channel.removeListener);
     }
 
-    public disposeAsync(): Promise<void> {
+    /**
+     * @public
+     * @returns {void}
+     */
+    dispose() {
         if (!this.disposed) {
             this.channel.removeListener("message", this.onMessage);
         }
 
-        return super.disposeAsync();
+        super.dispose();
     }
 
-    public sendData(data: any): boolean {
+    /**
+     * @public
+     * @param {*} data 
+     * @returns {boolean}
+     */
+    sendData(data) {
         if (this.disposed) {
             throw new Error("Channel proxy already disposed.");
         }
@@ -44,13 +67,21 @@ export class ProcessProxy extends ChannelProxy<ChildProcess> {
         return this.channel.send(JSON.stringify(data));
     }
 
-    constructor(channel: ChildProcess) {
+    /**
+     * 
+     * @param {ChildProcess} channel 
+     */
+    constructor(channel) {
         super(channel);
 
         this.channel.on("message", this.onMessage);
     }
 
-    private onMessage = (message) => {
+    /**
+     * @private
+     * @param {*} message
+     */
+    onMessage = (message) => {
         if (utils.isString(message)) {
             try {
                 this.triggerDataHandler(JSON.parse(message));
@@ -61,3 +92,4 @@ export class ProcessProxy extends ChannelProxy<ChildProcess> {
         }
     }
 }
+exports.ProcessProxy = ProcessProxy;

@@ -3,34 +3,38 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import {
-    IChannelHostProxy,
-    IConnectionInfo,
-    ChannelHostProxyConnectionHandler,
-    ChannelHostProxyErrorHandler,
-    ChannelHostProxyEventHandler,
-    IChannelProxy
-} from "..";
+const utils = require("donuts.node/utils");
 
-import * as utils from "../../utils";
-import { IDictionary } from "../../core/common";
+/**
+ * @template THost
+ * @class
+ * @implements {Donuts.Remote.IChannelHostProxy}
+ */
+class ChannelHostProxy {
+    /**
+     * @public
+     * @abstract
+     * @returns {Donuts.Remote.IConnectionInfo}
+     */
+    get connectionInfo() {
+        return undefined;
+    }
 
-export abstract class ChannelHostProxy<THost> implements IChannelHostProxy {
-    public abstract get connectionInfo(): IConnectionInfo;
-
-    protected host: THost;
-
-    protected get disposed(): boolean {
+    /**
+     * @protected
+     * @return {boolean}
+     */
+    get disposed() {
         return this.host === undefined;
     }
 
-    private readonly handlers: IDictionary<(...args: Array<any>) => void>;
-
-    public setHandler(type: "connection", handler: ChannelHostProxyConnectionHandler): this;
-    public setHandler(type: "error", handler: ChannelHostProxyErrorHandler): this;
-    public setHandler(type: "close", handler: ChannelHostProxyEventHandler): this;
-    public setHandler(type: "listening", handler: ChannelHostProxyEventHandler): this;
-    public setHandler(type: string, handler: (...args: Array<any>) => void): this {
+    /**
+     * @public
+     * @param {string} type 
+     * @param {(...args: Array.<*>)=>void} handler 
+     * @returns {this}
+     */
+    setHandler(type, handler) {
         if (this.disposed) {
             throw new Error("Already disposed.");
         }
@@ -52,7 +56,11 @@ export abstract class ChannelHostProxy<THost> implements IChannelHostProxy {
         return this;
     }
 
-    public async disposeAsync(): Promise<void> {
+    /**
+     * @public
+     * @returns {void}
+     */
+    dispose() {
         if (this.disposed) {
             return;
         }
@@ -64,20 +72,36 @@ export abstract class ChannelHostProxy<THost> implements IChannelHostProxy {
         }
     }
 
-    constructor(host: THost) {
+    /**
+     *
+     * @param {THost} host 
+     */
+    constructor(host) {
         if (utils.isNullOrUndefined(host)) {
             throw new Error("host must be provided.");
         }
 
+        /**
+         * @protected
+         * @type {THost}
+         */
         this.host = host;
+
+        /**
+         * @private
+         * @readonly
+         * @type {Donuts.IDictionary.<(...args: Array<*>)=>void>}
+         */
         this.handlers = Object.create(null);
     }
 
-    protected emit(type: "connection", channelProxy: IChannelProxy): void;
-    protected emit(type: "error", error: any): void;
-    protected emit(type: "close"): void;
-    protected emit(type: "listening"): void;
-    protected emit(type: string, ...args: Array<any>): void {
+    /**
+     * @protected
+     * @param {string} type 
+     * @param  {...*} args 
+     * @returns {void}
+     */
+    emit(type, ...args) {
         if (this.disposed) {
             return;
         }
@@ -91,3 +115,4 @@ export abstract class ChannelHostProxy<THost> implements IChannelHostProxy {
         handler(this, ...args);
     }
 }
+exports.ChannelHostProxy = ChannelHostProxy;

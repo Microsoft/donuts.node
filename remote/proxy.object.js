@@ -3,23 +3,8 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDisposable, IDictionary } from "donuts.node";
-import { ICommunicator, AsyncRequestHandler, IRoutePattern, IRoutePathInfo } from ".";
-import * as uuidv4 from "uuid/v4";
-import * as utils from "donuts.node/utils";
-import { IDataInfo } from "./data-info";
-import { DataInfoManager } from "./data-info-manager";
-
-import {
-    IDelegateMessage,
-    IDelegator,
-    DelegationType,
-    IPropertyDelegationMessage,
-    Delegation,
-    ISetPropertyDelegationMessage,
-    IApplyDelegationMessage,
-    IDisposeDelegateMessage
-} from "./delegate";
+const uuidv4 = require("uuid/v4");
+const utils = require("donuts.node/utils");
 
 export interface Resolver {
     (proxy: IObjectRemotingProxy, name: string, ...extraArgs: Array<any>): Promise<IDisposable>;
@@ -63,7 +48,7 @@ function isProxyMessage(msg: any): msg is IProxyMessage {
         && ProxyActionTypeValues.includes(msg.action);
 }
 
-export class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
+class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
     public readonly id: string;
 
     public get routePattern(): IRoutePattern {

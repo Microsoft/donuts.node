@@ -3,29 +3,52 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { Socket } from "net";
+const { Socket } = require("net");
+const utils = require("donuts.node/utils");
+const { ChannelProxy } = require("./channel-proxy");
+const { Log } = require("donuts.node/logging/log");
 
-import * as utils from "../../utils";
-import { ChannelProxy } from "./channel-proxy";
-import { Log } from "../../logging/log";
+/** @typedef {import("net").Socket} Socket */
+/** 
+ * @template TChannel
+ * @typedef {import("./channel-proxy").ChannelProxy<TChannel>} ChannelProxy
+ */
 
-export class SocketProxy extends ChannelProxy<Socket> {
-    public static isValidChannel(channel: any): channel is Socket {
+/**
+ * @class
+ * @extends {ChannelProxy<Socket>}
+ */
+class SocketProxy extends ChannelProxy {
+    /**
+     * @public
+     * @param {*} channel 
+     * @returns {channel is Socket}
+     */
+    static isValidChannel(channel) {
         return !utils.isNullOrUndefined(channel)
             && utils.isFunction(channel.write)
             && utils.isFunction(channel.on)
             && utils.isFunction(channel.removeListener);
     }
 
-    public disposeAsync(): Promise<void> {
+    /**
+     * @public
+     * @returns {void}
+     */
+    dispose() {
         if (!this.disposed) {
             this.channel.removeListener("data", this.onChannelData);
         }
 
-        return super.disposeAsync();
+        super.dispose();
     }
 
-    public sendData(data: any): boolean {
+    /**
+     * @public
+     * @param {*} data 
+     * @returns {boolean}
+     */
+    sendData(data) {
         if (this.disposed) {
             throw new Error("Channel proxy already disposed.");
         }
@@ -33,23 +56,32 @@ export class SocketProxy extends ChannelProxy<Socket> {
         return this.channel.write(JSON.stringify(data));
     }
 
-    constructor(channel: Socket) {
+    /**
+     * 
+     * @param {Socket} channel 
+     */
+    constructor(channel) {
         super(channel);
 
         this.channel.on("data", this.onChannelData);
     }
 
-    private onChannelData = (data: Buffer | string) => {
+    /**
+     * @private
+     * @param {Buffer | string} data
+     */
+    onChannelData = (data) => {
         try {
             if (Buffer.isBuffer(data)) {
                 data = data.toString("utf8");
             }
 
             this.triggerDataHandler(JSON.parse(data));
-            
+
         } catch (error) {
             Log.instance.writeExceptionAsync(error);
             throw error;
         }
     }
 }
+exports.SocketProxy = SocketProxy;

@@ -2,15 +2,21 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
-import * as net from "net";
-import * as path from "path";
-import * as uuidv4 from "uuid/v4";
-import * as tmp from "tmp";
-import * as utils from "./utils";
-import * as fileSytem from "./fileSystem";
+const net = require("net");
+const path = require("path");
+const uuidv4 = require("uuid/v4");
+const tmp = require("tmp");
+const utils = require("./utils");
+const fileSytem = require("./fileSystem");
 
-function generateWin32IpcPath(...segements: Array<string>): string {
+/**
+ * 
+ * @param  {...string} segements 
+ * @returns {string}
+ */
+function generateWin32IpcPath(...segements) {
     if (segements.length > 0) {
         return path.join("\\\\?\\pipe", ...segements);
     }
@@ -18,8 +24,14 @@ function generateWin32IpcPath(...segements: Array<string>): string {
     return path.join("\\\\?\\pipe", process.mainModule.filename, uuidv4());
 }
 
-function generateUnixIpcPath(...segements: Array<string>): string {
-    let filePath: string;
+/**
+ * 
+ * @param  {...string} segements 
+ * @returns {string}
+ */
+function generateUnixIpcPath(...segements) {
+    /** @type {string} */
+    let filePath;
 
     if (segements.length > 0) {
         filePath = path.join(...segements);
@@ -33,7 +45,11 @@ function generateUnixIpcPath(...segements: Array<string>): string {
     return filePath;
 }
 
-export function generateIpcPath(...segements: Array<string>): string {
+/**
+ * @param {...string} segements
+ * @returns {string}
+ */
+exports.generateIpcPath = (...segements) => {
     switch (process.platform) {
         case "win32":
             return generateWin32IpcPath(...segements);
@@ -47,7 +63,12 @@ export function generateIpcPath(...segements: Array<string>): string {
     }
 }
 
-export function connect(ipcPath: string): net.Socket {
+/**
+ * 
+ * @param {string} ipcPath 
+ * @returns {import("net").Socket}
+ */
+exports.connect = (ipcPath) => {
     if (!utils.isString(ipcPath)) {
         throw new Error("ipcPath must be a string.");
     }
@@ -55,7 +76,12 @@ export function connect(ipcPath: string): net.Socket {
     return net.connect({ path: ipcPath });
 }
 
-export function host(ipcPath: string): net.Server {
+/**
+ * 
+ * @param {string} ipcPath 
+ * @returns {import("net").Server}
+ */
+exports.host = (ipcPath) => {
     if (!utils.isString(ipcPath)) {
         throw new Error("ipcPath must be a string.");
     }

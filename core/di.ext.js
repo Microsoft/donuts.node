@@ -2,16 +2,21 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
-import { IDiDescriptor } from "./di";
+const utils = require("./utils");
 
-import * as utils from "./utils";
+/**
+ * @typedef {(...args: Array<any>)=> any} Descriptor
+ */
 
-export interface IDescriptor {
-    (...args: Array<any>): any;
-}
-
-export function dedication(typeDescriptor: IDescriptor, injects: Array<string>): IDiDescriptor {
+/**
+ * 
+ * @param {Descriptor} typeDescriptor 
+ * @param {Array.<string>} injects 
+ * @returns {DI.IDiDescriptor}
+ */
+exports.dedication = (typeDescriptor, injects) => {
     if (!utils.isFunction(typeDescriptor)) {
         throw new Error("typeDescriptor must be a function.");
     }
@@ -33,7 +38,8 @@ export function dedication(typeDescriptor: IDescriptor, injects: Array<string>):
     }
 
     return (container, ...extraArgs) => {
-        const args: Array<any> = [];
+        /** @type {Array.<*>} */
+        const args = [];
 
         if (injects !== undefined) {
             for (let injectIndex = 0; injectIndex < injects.length; injectIndex++) {
@@ -63,13 +69,24 @@ export function dedication(typeDescriptor: IDescriptor, injects: Array<string>):
     };
 }
 
-export function singleton(instance: any): IDiDescriptor {
-    return (container) => instance;
-}
+/**
+ * 
+ * @param {*} instance 
+ * @returns {DI.IDiDescriptor}
+ */
+exports.singleton = (instance) => (container) => instance;
 
-export function lazySingleton(typeDescriptor: IDescriptor, injects: Array<string>): IDiDescriptor {
-    let descriptor = dedication(typeDescriptor, injects);
-    let singleton: any = undefined;
+/**
+ * 
+ * @param {Descriptor} typeDescriptor 
+ * @param {Array.<string>} injects 
+ * @returns {DI.IDiDescriptor}
+ */
+exports.lazySingleton = (typeDescriptor, injects) => {
+    let descriptor = exports.dedication(typeDescriptor, injects);
+    
+    /** @type {*} */
+    let singleton = undefined;
 
     return (container, ...extraArgs) => {
         if (singleton === undefined) {

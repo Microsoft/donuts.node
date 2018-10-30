@@ -2,34 +2,26 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
-import { IDictionary } from ".";
+const utils = require("./utils");
 
-import * as utils from "./utils";
-
-export interface IDiDescriptor {
-    (diContainer: IDiContainer, ...extraArgs: Array<any>): any;
-}
-
-export interface IDiContainer {
-    getDep<T>(name: string, ...extraArgs: Array<any>): T;
-    get(name: string): IDiDescriptor;
-    set(name: string, descriptor: IDiDescriptor): IDiContainer;
-}
-
-export interface IDiDescriptorDictionary {
-    get(name: string): IDiDescriptor;
-    set(name: string, descriptor: IDiDescriptor): void;
-}
-
-export class DiDescriptorDictionary implements IDiDescriptorDictionary {
-    private readonly descriptorDictionary: IDictionary<IDiDescriptor>;
-
+/**
+ * @class
+ * @implements {di.IDiDescriptorDictionary}
+ */
+class DiDescriptorDictionary {
     constructor() {
+        /** @type {IDictionary.<DI.IDiDescriptor>} */
         this.descriptorDictionary = Object.create(null);
     }
 
-    public get(name: string): IDiDescriptor {
+    /**
+     * 
+     * @param {string} name 
+     * @return {DI.IDiDescriptor}
+     */
+    get(name) {
         if (utils.string.isEmptyOrWhitespace(name)) {
             throw new Error("name should not be null/undefined/empty.");
         }
@@ -37,7 +29,13 @@ export class DiDescriptorDictionary implements IDiDescriptorDictionary {
         return this.descriptorDictionary[name];
     }
 
-    public set(name: string, descriptor: IDiDescriptor): void {
+    /**
+     * 
+     * @param {string} name 
+     * @param {DI.IDiDescriptor} descriptor 
+     * @returns {void}
+     */
+    set(name, descriptor) {
         if (utils.string.isEmptyOrWhitespace(name)) {
             throw new Error("name should not be null/undefined/empty.");
         }
@@ -49,11 +47,22 @@ export class DiDescriptorDictionary implements IDiDescriptorDictionary {
         }
     }
 }
+exports.DiDescriptorDictionary = DiDescriptorDictionary;
 
-export class DiContainer implements IDiContainer {
-    private readonly descriptorDictionary: IDiDescriptorDictionary;
+/**
+ * @class
+ * @implements {di.IDiContainer}
+ */
+class DiContainer {
+    /**
+     * 
+     * @param {DI.IDiDescriptorDictionary} [dictionary]
+     */
+    constructor(dictionary) {
+        /** @type {DI.IDiDescriptorDictionary} */
+        /** @readonly */
+        this.descriptorDictionary = undefined;
 
-    constructor(dictionary?: IDiDescriptorDictionary) {
         if (utils.isNullOrUndefined(dictionary)) {
             this.descriptorDictionary = new DiDescriptorDictionary();
         } else {
@@ -61,7 +70,14 @@ export class DiContainer implements IDiContainer {
         }
     }
 
-    public getDep<T>(name: string, ...extraArgs: Array<any>): T {
+    /**
+     * @template T
+     * 
+     * @param {string} name 
+     * @param  {...*} extraArgs 
+     * @returns {T}
+     */
+    getDep(name, ...extraArgs) {
         const descriptor = this.get(name);
 
         if (utils.isNullOrUndefined(descriptor)) {
@@ -71,7 +87,12 @@ export class DiContainer implements IDiContainer {
         }
     }
 
-    public get(name: string): IDiDescriptor {
+    /**
+     * 
+     * @param {string} name 
+     * @returns {DI.IDiDescriptor}
+     */
+    get(name) {
         if (utils.string.isEmptyOrWhitespace(name)) {
             throw new Error("name should not be null/undefined/empty.");
         }
@@ -79,7 +100,13 @@ export class DiContainer implements IDiContainer {
         return this.descriptorDictionary.get(name);
     }
 
-    public set(name: string, descriptor: IDiDescriptor): IDiContainer {
+    /**
+     * 
+     * @param {string} name 
+     * @param {DI.IDiDescriptor} descriptor 
+     * @returns {DI.IDiContainer}
+     */
+    set(name, descriptor) {
         if (utils.string.isEmptyOrWhitespace(name)) {
             throw new Error("name should not be null/undefined/empty.");
         }
@@ -93,3 +120,4 @@ export class DiContainer implements IDiContainer {
         return this;
     }
 }
+exports.DiContainer = DiContainer;

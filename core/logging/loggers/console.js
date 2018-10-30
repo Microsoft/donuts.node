@@ -2,27 +2,34 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
-import { IDictionary } from "../..";
-import { Severity, ILoggerSettings, ILogger } from "..";
+const path = require("path");
+const utils = require("../../utils");
 
-import * as path from "path";
+/**
+ * @typedef {Logging.ILoggerSettings} IConsoleLoggerSettings
+ * @property {boolean} [logAllProperties]
+ * @property {boolean} [logCallerInfo]
+ */
 
-import * as utils from "../../utils";
+/**
+ * @class
+ * @implements {Logging.ILogger}
+ */
+class ConsoleLogger {
+    /**
+     * 
+     * @param {IConsoleLoggerSettings} [settings]
+     * @param {Console} [targetConsole]
+     */
+    constructor(settings, targetConsole) {
 
-export interface IConsoleLoggerSettings extends ILoggerSettings {
-    logAllProperties?: boolean;
-    logCallerInfo?: boolean;
-}
+        /**
+         * @type {Console}
+         */
+        this.console = console;
 
-export class ConsoleLogger implements ILogger {
-    public readonly name: string;
-
-    private readonly settings: IConsoleLoggerSettings;
-
-    private console: Console;
-
-    constructor(settings?: IConsoleLoggerSettings, targetConsole?: Console) {
         if (!utils.isObject(settings)) {
             settings = {
                 name: "console",
@@ -30,49 +37,71 @@ export class ConsoleLogger implements ILogger {
             };
         }
 
+        /**
+        * @readonly
+        * @type {IConsoleLoggerSettings}
+        */
         this.settings = settings;
         this.settings.logAllProperties = utils.pick(settings.logAllProperties, true);
         this.settings.logCallerInfo = utils.pick(settings.logCallerInfo, true);
+
+        /** 
+         * @readonly
+         * @type {string} 
+         */
         this.name = this.settings.name;
 
-        if (utils.isNullOrUndefined(targetConsole)) {
-            this.console = console;
-        } else {
+        if (!utils.isNullOrUndefined(targetConsole)) {
             this.console = targetConsole;
         }
     }
 
-    public async writeAsync(properties: IDictionary<string>, severity: Severity, message: string): Promise<void> {
-        const consoleMsg: string = this.formatConsoleMsg(properties, message);
+    /**
+     * 
+     * @param {IDictionary.<string>} properties 
+     * @param {Logging.Severity} severity 
+     * @param {string} message 
+     * @returns {Promise<void>}
+     */
+    async writeAsync(properties, severity, message) {
+        /** @type {string} */
+        const consoleMsg = this.formatConsoleMsg(properties, message);
 
         switch (severity) {
-            case Severity.Critical:
+            case "critical":
                 this.console.error(consoleMsg);
                 this.console.trace();
                 break;
 
-            case Severity.Error:
+            case "error":
                 this.console.error(consoleMsg);
                 break;
 
-            case Severity.Warning:
+            case "warning":
                 this.console.warn(consoleMsg);
                 break;
 
-            case Severity.Event:
-            case Severity.Information:
+            case "event":
+            case "info":
                 this.console.info(consoleMsg);
                 break;
 
-            case Severity.Verbose:
+            case "verbose":
             default:
                 this.console.log(consoleMsg);
                 break;
         }
     }
 
-    public async writeExceptionAsync(properties: IDictionary<string>, error: Error): Promise<void> {
-        let exceptionMsg: string = "";
+    /**
+     * 
+     * @param {IDictionary.<string>} properties 
+     * @param {Error} error 
+     * @returns {Promise<void>}
+     */
+    async writeExceptionAsync(properties, error) {
+        /** @type {string} */
+        let exceptionMsg = "";
 
         exceptionMsg += error.name + ": " + error.message;
         exceptionMsg += "\r\n";
@@ -81,12 +110,25 @@ export class ConsoleLogger implements ILogger {
         this.console.error(this.formatConsoleMsg(properties, exceptionMsg));
     }
 
-    public async writeMetricAsync(properties: IDictionary<string>, name: string, value: number): Promise<void> {
+    /**
+     * 
+     * @param {IDictionary.<string>} properties 
+     * @param {string} name 
+     * @param {number} value 
+     * @returns {Promise<void>}
+     */
+    async writeMetricAsync(properties, name, value) {
         this.console.info(this.formatConsoleMsg(properties, name + ": " + value.toString()));
     }
 
-    private formatProperties(properties: IDictionary<string>): string {
-        let consoleMsg: string = "";
+    /**
+     * 
+     * @param {IDictionary.<string>} properties 
+     * @returns {string}
+     */
+    formatProperties(properties) {
+        /** @type {string} */
+        let consoleMsg = "";
 
         if (!utils.isNullOrUndefined(properties)) {
 
@@ -108,8 +150,15 @@ export class ConsoleLogger implements ILogger {
         return consoleMsg;
     }
 
-    private formatConsoleMsg(properties: IDictionary<string>, message: string): string {
-        let consoleMsg: string = "[" + new Date().toLocaleTimeString() + "]";
+    /**
+     * 
+     * @param {IDictionary.<string>} properties 
+     * @param {string} message 
+     * @returns {string}
+     */
+    formatConsoleMsg(properties, message) {
+        /** @type {string} */
+        let consoleMsg = "[" + new Date().toLocaleTimeString() + "]";
 
         const formatedProperties = this.formatProperties(properties);
 
@@ -124,3 +173,4 @@ export class ConsoleLogger implements ILogger {
         return consoleMsg;
     }
 }
+exports.ConsoleLogger = ConsoleLogger;

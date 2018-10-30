@@ -2,24 +2,37 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
-import { IDictionary } from ".";
+const cp = require("child_process");
+const path = require("path");
+const util = require("util");
+const fs = require("fs");
+const utils = require("./utils");
 
-import * as cp from "child_process";
-import * as path from "path";
-import * as util from "util";
-import * as fs from "fs";
+/**
+ * @typedef {"IPv4" | "IPv6"} IPVersion
+ */
 
-import * as utils from "./utils";
-
-export type IPVersion = "IPv4" | "IPv6";
-export type TransportProtocol = "TCP" | "UDP";
+/**
+ * @typedef {"TCP" | "UDP"} TransportProtocol
+ */
 
 const execAsync = util.promisify(cp.exec);
 const Symbol_CmdArgs = Symbol("CmdArgs");
 
-function generateFileStartCmd(filePath: string): string {
-    const escape = (str: string) => str.replace(/"/g, '\\\"');
+/**
+ * 
+ * @param {string} filePath 
+ * @returns {string}
+ */
+function generateFileStartCmd(filePath) {
+    /**
+     * 
+     * @param {string} str 
+     * @returns {string}
+     */
+    const escape = (str) => str.replace(/"/g, '\\\"');
 
     if (!path) {
         throw new Error("path must be specified!");
@@ -38,10 +51,16 @@ function generateFileStartCmd(filePath: string): string {
     }
 }
 
-export function startAsync(filepath: string): Promise<string> {
+/**
+ * 
+ * @param {string} filepath 
+ * @returns {Promise<string>}
+ */
+exports.startAsync = (filepath) => {
     return execAsync(generateFileStartCmd(filepath))
         .then((result) => {
-            const results: Array<string> = [];
+            /** @type {Array.<string>} */
+            const results = [];
 
             if (result.stdout) {
                 results.push(result.stdout);
@@ -55,12 +74,22 @@ export function startAsync(filepath: string): Promise<string> {
         });
 }
 
-export function start(filepath: string): string {
-    return cp.execSync(generateFileStartCmd(filepath), { encoding: "utf8" });
-}
+/**
+ * Open a file in shell.
+ * @param {string} filepath 
+ * @returns {string} The output of the execution of the file in shell.
+ */
+exports.start = (filepath) => cp.execSync(generateFileStartCmd(filepath), { encoding: "utf8" });
 
-function getUsedPortsOnLinux(ipversion: IPVersion, protocol: TransportProtocol): Array<number> {
-    let ipversionNum: number;
+/**
+ * 
+ * @param {IPVersion} ipversion 
+ * @param {TransportProtocol} protocol 
+ * @returns {Array.<number>}
+ */
+function getUsedPortsOnLinux(ipversion, protocol) {
+    /** @type {number} */
+    let ipversionNum;
 
     if (ipversion === "IPv4") {
         ipversionNum = 4;
@@ -75,8 +104,11 @@ function getUsedPortsOnLinux(ipversion: IPVersion, protocol: TransportProtocol):
     const PortRegex = new RegExp(`${protocol}\s+((\d+\.\d+\.\d+\.\d+)|\*\:(\d+))`, "ig");
     const lsof = cp.execSync(`lsof -i${ipversionNum}${protocol} -s${protocol}:LISTEN`, { encoding: "utf8" });
 
-    let portMatch: RegExpExecArray;
-    const ports: Array<number> = [];
+    /** @type {RegExpExecArray} */
+    let portMatch;
+
+    /** @type {Array.<number>} */
+    const ports = [];
 
     while (portMatch = PortRegex.exec(lsof)) {
         ports.push(parseInt(portMatch[3], 10));
@@ -85,8 +117,15 @@ function getUsedPortsOnLinux(ipversion: IPVersion, protocol: TransportProtocol):
     return ports;
 }
 
-function getUsedPortsOnWin32(ipversion: IPVersion, protocol: TransportProtocol): Array<number> {
-    let protocolName: string;
+/**
+ * 
+ * @param {IPVersion} ipversion 
+ * @param {TransportProtocol} protocol 
+ * @returns {Array.<number>}
+ */
+function getUsedPortsOnWin32(ipversion, protocol) {
+    /** @type {string} */
+    let protocolName;
 
     if (ipversion === "IPv4") {
         protocolName = `${protocol}v4`;
@@ -101,8 +140,11 @@ function getUsedPortsOnWin32(ipversion: IPVersion, protocol: TransportProtocol):
     const PortRegex = new RegExp(`${protocol}\s+(\d+\.\d+\.\d+\.\d+\:(\d+))`, "ig");
     const netstat = cp.execSync(`netstat -a -n -p ${protocolName}`, { encoding: "utf8" });
 
-    let portMatch: RegExpExecArray;
-    const ports: Array<number> = [];
+    /** @type {RegExpExecArray} */
+    let portMatch;
+
+    /** @type {Array.<number>} */
+    const ports = [];
 
     while (portMatch = PortRegex.exec(netstat)) {
         ports.push(parseInt(portMatch[2], 10));
@@ -111,7 +153,16 @@ function getUsedPortsOnWin32(ipversion: IPVersion, protocol: TransportProtocol):
     return ports;
 }
 
-export function getUsedPorts(ipversion: IPVersion = "IPv4", protocol: TransportProtocol = "TCP"): Array<number> {
+/**
+ * 
+ * @param {IPVersion} [ipversion="IPv4"]
+ * @param {TransportProtocol} [protocol="TCP"]
+ * @returns {Array.<number>}
+ */
+exports.getUsedPorts = (ipversion, protocol) => {
+    ipversion = ipversion || "IPv4";
+    protocol = protocol || "TCP";
+
     if (ipversion !== "IPv4" && ipversion !== "IPv6") {
         throw new Error(`Not supported IP version: ${ipversion}`);
     }
@@ -133,8 +184,13 @@ export function getUsedPorts(ipversion: IPVersion = "IPv4", protocol: TransportP
     }
 }
 
-export function getRandomPort(ipversion: IPVersion = "IPv4", protocol: TransportProtocol = "TCP"): number {
-    const usedPorts = getUsedPorts(ipversion, protocol);
+/**
+ * @param {IPVersion} [ipversion="IPv4"]
+ * @param {TransportProtocol} [protocol="TCP"]
+ * @returns {number}
+ */
+exports.getRandomPort = (ipversion, protocol) => {
+    const usedPorts = exports.getUsedPorts(ipversion, protocol);
     let port = 0;
 
     do {
@@ -144,35 +200,51 @@ export function getRandomPort(ipversion: IPVersion = "IPv4", protocol: Transport
     return port;
 }
 
-export function toCmdArg(argName: string, argValue: string): string {
-    return `--${argName}=${argValue}`;
-}
+/**
+ * 
+ * @param {string} argName 
+ * @param {string} argValue 
+ * @returns {string}
+ */
+exports.toCmdArg = (argName, argValue) => `--${argName}=${argValue}`;
 
-export function toCmdArgs(argDict: IDictionary<string>): Array<string> {
+/**
+ * @param {IDictionary<string>} argDict
+ * @returns {Array.<string>}
+ */
+exports.toCmdArgs = (argDict) => {
     if (!utils.isNullOrUndefined(argDict)
         && (!utils.isObject(argDict) || Array.isArray(argDict))) {
         throw new Error("argDict must be an IDictionary<string>.");
     }
 
-    const args: Array<string> = [];
+    /** @type {Array.<string>} */
+    const args = [];
 
     for (const key in argDict) {
-        args.push(toCmdArg(key, argDict[key]));
+        args.push(exports.toCmdArg(key, argDict[key]));
     }
 
     return args;
 }
 
-export function toArgDict(args: Array<string>): IDictionary<string> {
+/**
+ * 
+ * @param {Array.<string>} args 
+ * @returns {IDictionary.<string>}
+ */
+exports.toArgDict = (args) => {
     if (!Array.isArray(args)) {
         throw new Error("args must be an array of string.");
     }
 
-    const argDict: IDictionary<string> = Object.create(null);
+    /** @type {IDictionary.<string>} */
+    const argDict = Object.create(null);
     const CmdArgParseFormat = /^\s*\-\-([a-zA-Z0-9_\-+@]+)\=?(.*)$/g;
 
     for (const arg of args) {
-        let matchResult: RegExpExecArray;
+        /** @type {RegExpExecArray} */
+        let matchResult;
 
         while (matchResult = CmdArgParseFormat.exec(arg)) {
             argDict[matchResult[1]] = matchResult[2];
@@ -182,33 +254,54 @@ export function toArgDict(args: Array<string>): IDictionary<string> {
     return argDict;
 }
 
-export function getCmdArg(argName: string): string {
+/**
+ * 
+ * @param {string} argName 
+ * @returns {string}
+ */
+exports.getCmdArg = (argName) => {
+    //@ts-ignore
     if (!process[Symbol_CmdArgs]) {
+        //@ts-ignore
         process[Symbol_CmdArgs] = toArgDict(process.argv);
     }
 
+    //@ts-ignore
     return process[Symbol_CmdArgs][argName];
 }
 
-function getInspectArg(): string {
-    const inspectArg = getCmdArg("inspect-brk");
+/**
+ * @returns {string}
+ */
+function getInspectArg() {
+    const inspectArg = exports.getCmdArg("inspect-brk");
 
     if (!inspectArg) {
         return undefined;
     }
 
-    return `--inspect-brk=${getRandomPort()}`;
+    return `--inspect-brk=${exports.getRandomPort()}`;
 }
 
-export function getAppDir(): string {
-    return getCmdArg("appDir") || getCmdArg("app-path") || path.dirname(require.main.filename);
+/**
+ * @returns {string}
+ */
+exports.getAppDir = () => exports.getCmdArg("appDir") || exports.getCmdArg("app-path") || path.dirname(require.main.filename);
+
+/**
+ * @returns {Array.<string>}
+ */
+function formEssentialForkArgs() {
+    return [`--appDir=${exports.getAppDir()}`];
 }
 
-function formEssentialForkArgs(): Array<string> {
-    return [`--appDir=${getAppDir()}`];
-}
-
-export function fork(modulePath: string, forkArgs?: Array<string>): cp.ChildProcess {
+/**
+ * 
+ * @param {string} modulePath 
+ * @param {Array.<string>} [forkArgs]
+ * @returns {import("child_process").ChildProcess}
+ */
+exports.fork = (modulePath, forkArgs) => {
     if (!utils.isString(modulePath) || utils.string.isEmptyOrWhitespace(modulePath)) {
         throw new Error("modulePath must be provided.");
     }
@@ -221,10 +314,12 @@ export function fork(modulePath: string, forkArgs?: Array<string>): cp.ChildProc
         throw new Error("forkArgs must be an array of string.");
     }
 
-    const args: Array<string> = formEssentialForkArgs();
+    /** @type {Array.<string>} */
+    const args = formEssentialForkArgs();
 
     if (Array.isArray(process.argv)) {
-        let arg: string = getInspectArg();
+        /** @type {string} */
+        let arg = getInspectArg();
 
         if (arg) {
             args.push(arg);

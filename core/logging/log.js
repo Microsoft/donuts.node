@@ -2,39 +2,42 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
-import { IDictionary } from "..";
-import {
-    ILog,
-    ILogger,
-    Severity
-} from ".";
+const path = require("path");
+const utils = require("../utils");
+const { ConsoleLogger } = require("./loggers/console");
 
-import * as path from "path";
+/**
+ * @class
+ * @implements {Logging.ILog}
+ */
+class Log {
+    /** @type {Logging.ILog} */
+    static _instance;
 
-import * as utils from "../utils";
-import { ConsoleLogger } from "./loggers/console";
-
-export class Log implements ILog {
-    private static _instance: ILog;
-
-    private loggers: Array<ILogger>;
-
-    private defaultProperties: IDictionary<any>;
-
-    private readonly logCallerInfo: boolean;
-
-    private static prepareStackTraceOverride(error: Error, structuredStackTrace: Array<NodeJS.CallSite>): any {
+    /**
+     * 
+     * @param {Error} error 
+     * @param {Array.<NodeJS.CallSite>} structuredStackTrace 
+     * @returns {*}
+     */
+    static prepareStackTraceOverride(error, structuredStackTrace) {
         return structuredStackTrace;
     }
 
-    private static getCallerModuleInfo(): utils.ICallerInfo {
+    /**
+     * @returns {import("../utils").CallerInfo}
+     */
+    static getCallerModuleInfo() {
         const previousPrepareStackTraceFn = Error.prepareStackTrace;
 
         try {
             Error.prepareStackTrace = Log.prepareStackTraceOverride;
 
-            const callStack: Array<NodeJS.CallSite> = <any>(new Error()).stack;
+            /** @type {Array.<NodeJS.CallSite>} */
+            // @ts-ignore
+            const callStack = (new Error()).stack;
 
             for (let callStackIndex = 0; callStackIndex < callStack.length; callStackIndex++) {
                 const stack = callStack[callStackIndex];
@@ -57,7 +60,10 @@ export class Log implements ILog {
         }
     }
 
-    public static get instance(): ILog {
+    /**
+     * @returns {Logging.ILog}
+     */
+    static get instance() {
         if (!Log._instance) {
             Log._instance = new Log();
         }
@@ -65,7 +71,12 @@ export class Log implements ILog {
         return Log._instance;
     }
 
-    private static stringifier(obj: any): string {
+    /**
+     * 
+     * @param {*} obj 
+     * @returns {string}
+     */
+    static stringifier(obj) {
         if (obj instanceof Error) {
             const errorObj = Object.create(null);
 
@@ -86,11 +97,28 @@ export class Log implements ILog {
         return utils.string.stringifier(obj);
     }
 
-    public get disposed(): boolean {
+    /**
+     * @returns {boolean}
+     */
+    get disposed() {
         return this.loggers === undefined;
     }
 
-    constructor(includeCallerInfo?: boolean, defaultProperties?: IDictionary<any>) {
+    /**
+     * 
+     * @param {boolean} [includeCallerInfo]
+     * @param {IDictionary.<*>} [defaultProperties]
+     */
+    constructor(includeCallerInfo, defaultProperties) {
+        /** @type {Array.<Logging.ILogger>} */
+        this.loggers = undefined;
+
+        /** @type {IDictionary.<*>} */
+        this.defaultProperties = undefined;
+
+        /** @type {boolean} */
+        this.loggCallerInfo = false;
+
         if (!utils.isNullOrUndefined(defaultProperties)
             && !utils.isObject(defaultProperties)) {
             throw new Error("defaultProperties must be an object.");
@@ -103,7 +131,15 @@ export class Log implements ILog {
         this.addLoggerAsync(new ConsoleLogger());
     }
 
-    public async writeMoreAsync(properties: IDictionary<string>, severity: Severity, messageOrFormat: string, ...params: Array<any>): Promise<void> {
+    /**
+     * 
+     * @param {IDictionary.<string>} properties 
+     * @param {Logging.Severity} severity 
+     * @param {string} messageOrFormat 
+     * @param {...*} params 
+     * @returns {Promise<void>}
+     */
+    async writeMoreAsync(properties, severity, messageOrFormat, ...params) {
         if (!utils.isString(messageOrFormat)) {
             return;
         }
@@ -117,47 +153,103 @@ export class Log implements ILog {
         await Promise.all(this.loggers.map((logger) => logger.writeAsync(properties, severity, messageOrFormat)));
     }
 
-    public writeAsync(severity: Severity, messageOrFormat: string, ...params: Array<any>): Promise<void> {
+    /**
+     * 
+     * @param {Logging.Severity} severity 
+     * @param {string} messageOrFormat 
+     * @param {...*} params 
+     * @returns {Promise<void>}
+     */
+    writeAsync(severity, messageOrFormat, ...params) {
         return this.writeMoreAsync(null, severity, messageOrFormat, ...params);
     }
 
-    public writeInfoAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severity.Information, messageOrFormat, ...params);
+    /**
+     * 
+     * @param {string} messageOrFormat 
+     * @param {...*} params 
+     * @returns {Promise.<void>}
+     */
+    writeInfoAsync(messageOrFormat, ...params) {
+        return this.writeAsync("info", messageOrFormat, ...params);
     }
 
-    public writeVerboseAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severity.Verbose, messageOrFormat, ...params);
+    /**
+     * 
+     * @param {string} messageOrFormat 
+     * @param {...*} params 
+     * @returns {Promise.<void>}
+     */
+    writeVerboseAsync(messageOrFormat, ...params) {
+        return this.writeAsync("verbose", messageOrFormat, ...params);
     }
 
-    public writeWarningAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severity.Warning, messageOrFormat, ...params);
+    /**
+     * 
+     * @param {string} messageOrFormat 
+     * @param {...*} params 
+     * @returns {Promise.<void>}
+     */
+    writeWarningAsync(messageOrFormat, ...params) {
+        return this.writeAsync("warning", messageOrFormat, ...params);
     }
 
-    public writeErrorAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severity.Error, messageOrFormat, ...params);
+    /**
+     * 
+     * @param {string} messageOrFormat 
+     * @param {...*} params 
+     * @returns {Promise<void>}
+     */
+    writeErrorAsync(messageOrFormat, ...params) {
+        return this.writeAsync("error", messageOrFormat, ...params);
     }
 
-    public writeCriticalAsync(messageOrFormat: string, ...params: Array<any>): Promise<void> {
-        return this.writeAsync(Severity.Critical, messageOrFormat, ...params);
+    /**
+     * 
+     * @param {string} messageOrFormat 
+     * @param {...*} params 
+     * @returns {Promise<void>}
+     */
+    writeCriticalAsync(messageOrFormat, ...params) {
+        return this.writeAsync("critical", messageOrFormat, ...params);
     }
 
-    public async writeExceptionAsync(exception: Error, properties?: IDictionary<string>): Promise<void> {
+    /**
+     * 
+     * @param {Error} exception 
+     * @param {IDictionary.<string>} [properties]
+     * @returns {Promise.<void>}
+     */
+    async writeExceptionAsync(exception, properties) {
         properties = this.generateProperties(properties);
 
         await Promise.all(this.loggers.map((logger) => logger.writeExceptionAsync(properties, exception)));
     }
 
-    public async writeEventAsync(name: string, properties?: IDictionary<string>): Promise<void> {
+    /**
+     * 
+     * @param {string} name 
+     * @param {IDictionary.<string>} [properties]
+     * @returns {Promise.<void>}
+     */
+    async writeEventAsync(name, properties) {
         if (!utils.isString(name)) {
             return;
         }
 
         properties = this.generateProperties(properties);
 
-        await Promise.all(this.loggers.map((logger) => logger.writeAsync(properties, Severity.Event, name)));
+        await Promise.all(this.loggers.map((logger) => logger.writeAsync(properties, "event", name)));
     }
 
-    public async writeMetricAsync(name: string, value?: number, properties?: IDictionary<string>): Promise<void> {
+    /**
+     * 
+     * @param {string} name 
+     * @param {number} [value]
+     * @param {IDictionary.<string>} [properties]
+     * @returns {Promise.<void>}
+     */
+    async writeMetricAsync(name, value, properties) {
         if (!utils.isString(name)) {
             return;
         }
@@ -171,7 +263,12 @@ export class Log implements ILog {
         await Promise.all(this.loggers.map((logger) => logger.writeMetricAsync(properties, name, value)));
     }
 
-    public async removeLoggerAsync(name: string): Promise<ILogger> {
+    /**
+     * 
+     * @param {string} name 
+     * @returns {Promise.<Logging.ILogger>}
+     */
+    async removeLoggerAsync(name) {
         if (!utils.isString(name)) {
             throw new Error("name must be supplied.");
         }
@@ -187,7 +284,12 @@ export class Log implements ILog {
         return undefined;
     }
 
-    public async addLoggerAsync(logger: ILogger): Promise<void> {
+    /**
+     * 
+     * @param {Logging.ILogger} logger 
+     * @returns {Promise.<void>}
+     */
+    async addLoggerAsync(logger) {
         if (!logger) {
             throw new Error("logger must be provided.");
         }
@@ -199,8 +301,14 @@ export class Log implements ILog {
         this.loggers.push(logger);
     }
 
-    private generateProperties(properties: IDictionary<string>): IDictionary<string> {
-        let finalProperties: IDictionary<string> = null;
+    /**
+     * 
+     * @param {IDictionary.<string>} properties 
+     * @returns {IDictionary.<string>}
+     */
+    generateProperties(properties) {
+        /** @type {IDictionary.<string>} */
+        let finalProperties = null;
 
         if (this.defaultProperties) {
             finalProperties = Object.create(this.defaultProperties);
@@ -238,3 +346,4 @@ export class Log implements ILog {
         return finalProperties;
     }
 }
+exports.Log = Log;

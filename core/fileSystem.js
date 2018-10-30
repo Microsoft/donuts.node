@@ -2,20 +2,26 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
-import * as util from "util";
-import * as path from "path";
-import * as fs from "fs";
+const util = require("util");
+const path = require("path");
+const fs = require("fs");
+const utils = require("./utils");
 
-import * as utils from "./utils";
-
-export function createDirectorySync(dirname: string): void {
+/**
+ * 
+ * @param {string} dirname 
+ */
+exports.createDirectorySync = (dirname) => {
     if (!utils.isString(dirname)) {
         throw new Error("dir must be provided.");
     }
 
     const parts = dirname.includes("/") ? dirname.split("/") : dirname.split("\\");
-    let currentDir: string = "";
+
+    /** @type {string} */
+    let currentDir = "";
 
     for (const part of parts) {
         currentDir = path.join(currentDir, part);
@@ -32,7 +38,11 @@ export function createDirectorySync(dirname: string): void {
     }
 }
 
-export function removeFileSync(target: string): void {
+/**
+ * 
+ * @param {string} target 
+ */
+exports.removeFileSync = (target) => {
     if (!fs.existsSync(target)) {
         return;
     }
@@ -46,21 +56,28 @@ export function removeFileSync(target: string): void {
     fs.unlinkSync(target);
 }
 
-export function removeDirectorySync(target: string): void {
+/**
+ * 
+ * @param {string} target 
+ */
+exports.removeDirectorySync = (target) => {
     if (!fs.existsSync(target)
         || !fs.lstatSync(target).isDirectory()) {
         return;
     }
 
-    const dirs: Array<string> = [];
-    const entries: string[] = [target];
+    /** @type {Array.<string>} */
+    const dirs = [];
+
+    /** @type {Array.<string>} */
+    const entries = [target];
 
     while (entries.length > 0) {
         const entry = entries.pop();
         const entrylstat = fs.lstatSync(entry);
 
         if (entrylstat.isFile() || entrylstat.isSymbolicLink()) {
-            removeFileSync(entry);
+            exports.removeFileSync(entry);
 
         } else if (entrylstat.isDirectory()) {
             dirs.push(entry);
@@ -76,7 +93,12 @@ export function removeDirectorySync(target: string): void {
     }
 }
 
-export function copyDirectorySync(srcDir: string, destDir: string): void {
+/**
+ * 
+ * @param {string} srcDir 
+ * @param {string} destDir 
+ */
+exports.copyDirectorySync = (srcDir, destDir) => {
     if (!utils.isString(srcDir)) {
         throw new Error("srcDir should be a string.");
     }
@@ -89,9 +111,10 @@ export function copyDirectorySync(srcDir: string, destDir: string): void {
         throw new Error("srcDir must point to a directory.");
     }
 
-    createDirectorySync(destDir);
+    exports.createDirectorySync(destDir);
 
-    const entries: string[] = fs.readdirSync(srcDir);
+    /** @type {Array.<string>} */
+    const entries = fs.readdirSync(srcDir);
 
     while (entries.length > 0) {
         const entry = entries.pop();
@@ -110,16 +133,22 @@ export function copyDirectorySync(srcDir: string, destDir: string): void {
     }
 }
 
-export const mkdirAsync = util.promisify(fs.mkdir);
-export const rmdirAsync = util.promisify(fs.rmdir);
-export const readdirAsync = util.promisify(fs.readdir);
-export const statAsync = util.promisify(fs.stat);
-export const lstatAsync = util.promisify(fs.lstat);
-export const unlinkAsync = util.promisify(fs.unlink);
-export const existsAsync = util.promisify(fs.exists);
-export const copyFileAsync = util.promisify(fs.copyFile);
+exports.mkdirAsync = util.promisify(fs.mkdir);
+exports.rmdirAsync = util.promisify(fs.rmdir);
+exports.readdirAsync = util.promisify(fs.readdir);
+exports.statAsync = util.promisify(fs.stat);
+exports.lstatAsync = util.promisify(fs.lstat);
+exports.unlinkAsync = util.promisify(fs.unlink);
+exports.existsAsync = util.promisify(fs.exists);
+exports.copyFileAsync = util.promisify(fs.copyFile);
 
-export async function copyDirectoryAsync(srcDir: string, destDir: string): Promise<void> {
+/**
+ * 
+ * @param {string} srcDir 
+ * @param {string} destDir 
+ * @returns {Promise<void>}
+ */
+exports.copyDirectoryAsync = async (srcDir, destDir) => {
     if (!utils.isString(srcDir)) {
         throw new Error("srcDir should be a string.");
     }
@@ -128,25 +157,28 @@ export async function copyDirectoryAsync(srcDir: string, destDir: string): Promi
         throw new Error("destDir should be a string.");
     }
 
-    if (!(await statAsync(srcDir)).isDirectory()) {
+    if (!(await exports.statAsync(srcDir)).isDirectory()) {
         throw new Error("srcDir must point to a directory.");
     }
 
-    await createDirectoryAsync(destDir);
+    await exports.createDirectoryAsync(destDir);
 
-    const entries: Array<string> = await readdirAsync(srcDir);
-    const promises: Array<Promise<void>> = [];
+    /** @type {Array.<string>} */
+    const entries = await exports.readdirAsync(srcDir);
+
+    /** @type {Array.<Promise<void>>} */
+    const promises = [];
 
     while (entries.length > 0) {
         const entry = entries.pop();
-        const entryStat = await statAsync(entry);
+        const entryStat = await exports.statAsync(entry);
 
         if (entryStat.isFile()) {
-            promises.push(copyFileAsync(path.join(srcDir, entry), path.join(destDir, entry)));
+            promises.push(exports.copyFileAsync(path.join(srcDir, entry), path.join(destDir, entry)));
 
         } else if (entryStat.isDirectory()) {
-            await mkdirAsync(path.join(destDir, entry));
-            entries.push(...(await readdirAsync(path.join(srcDir, entry))).map((value) => path.join(entry, value)));
+            await exports.mkdirAsync(path.join(destDir, entry));
+            entries.push(...(await exports.readdirAsync(path.join(srcDir, entry))).map((value) => path.join(entry, value)));
 
         } else {
             throw new Error(`Unsupported target: ${entry}`);
@@ -156,22 +188,29 @@ export async function copyDirectoryAsync(srcDir: string, destDir: string): Promi
     await Promise.all(promises);
 }
 
-export async function createDirectoryAsync(dirname: string): Promise<void> {
+/**
+ * 
+ * @param {string} dirname 
+ * @returns {Promise<void>}
+ */
+exports.createDirectoryAsync = async (dirname) => {
     if (!utils.isString(dirname)) {
         throw new Error("dir must be provided.");
     }
 
     const parts = dirname.includes("/") ? dirname.split("/") : dirname.split("\\");
-    let currentDir: string = "";
+
+    /** @type {string} */
+    let currentDir = "";
 
     for (const part of parts) {
         currentDir = path.join(currentDir, part);
 
-        if (!(await existsAsync(currentDir))) {
-            await mkdirAsync(currentDir);
+        if (!(await exports.existsAsync(currentDir))) {
+            await exports.mkdirAsync(currentDir);
         }
 
-        const stat = await statAsync(currentDir);
+        const stat = await exports.statAsync(currentDir);
 
         if (!stat.isDirectory()) {
             throw new Error(`Path ${currentDir} is not a directory.`);
@@ -179,25 +218,33 @@ export async function createDirectoryAsync(dirname: string): Promise<void> {
     }
 }
 
-export async function removeDirectoryAsync(target: string): Promise<void> {
-    if (!(await existsAsync(target))
-        || !(await lstatAsync(target)).isDirectory()) {
+/**
+ * 
+ * @param {*} target 
+ * @returns {Promise<void>}
+ */
+exports.removeDirectoryAsync = async (target) => {
+    if (!(await exports.existsAsync(target))
+        || !(await exports.lstatAsync(target)).isDirectory()) {
         return;
     }
 
-    const dirs: Array<string> = [];
-    const entries: Array<string> = [target];
+    /** @type {Array.<string>} */
+    const dirs = [];
+
+    /** @type {Array.<string>} */
+    const entries = [target];
 
     while (entries.length > 0) {
         const entry = entries.pop();
-        const entrylstat = await lstatAsync(entry);
+        const entrylstat = await exports.lstatAsync(entry);
 
         if (entrylstat.isFile() || entrylstat.isSymbolicLink()) {
-            await removeFileAsync(entry);
+            await exports.removeFileAsync(entry);
 
         } else if (entrylstat.isDirectory()) {
             dirs.push(entry);
-            entries.push(...(await readdirAsync(entry)).map((value) => path.join(entry, value)));
+            entries.push(...(await exports.readdirAsync(entry)).map((value) => path.join(entry, value)));
 
         } else {
             throw new Error(`Unsupported target: ${entry}`);
@@ -205,20 +252,25 @@ export async function removeDirectoryAsync(target: string): Promise<void> {
     }
 
     while (dirs.length > 0) {
-        await rmdirAsync(dirs.pop());
+        await exports.rmdirAsync(dirs.pop());
     }
 }
 
-export async function removeFileAsync(target: string): Promise<void> {
-    if (!(await existsAsync(target))) {
+/**
+ * 
+ * @param {string} target 
+ * @returns {Promise<void>}
+ */
+exports.removeFileAsync = async (target) => {
+    if (!(await exports.existsAsync(target))) {
         return;
     }
 
-    const lstat = await lstatAsync(target);
+    const lstat = await exports.lstatAsync(target);
 
     if (!lstat.isFile() && !lstat.isSymbolicLink()) {
         return;
     }
 
-    await unlinkAsync(target);
+    await exports.unlinkAsync(target);
 }

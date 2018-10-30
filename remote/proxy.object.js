@@ -5,6 +5,7 @@
 
 const uuidv4 = require("uuid/v4");
 const utils = require("donuts.node/utils");
+const weak = require("donuts.node-weak");
 
 export interface Resolver {
     (proxy: IObjectRemotingProxy, name: string, ...extraArgs: Array<any>): Promise<IDisposable>;

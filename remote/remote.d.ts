@@ -140,4 +140,6 @@ namespace Donuts.Remote {
          */
         sendAsync<TRequest, TResponse>(path: string, content: TRequest): Promise<TResponse>;
     }
+
+    interface 
 }

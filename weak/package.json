@@ -1,5 +1,5 @@
 {
-  "name": "donuts.node-weak-reference",
+  "name": "donuts.node-weak",
   "version": "1.0.0-private",
   "description": "",
   "main": "index.js",
@@ -25,7 +25,5 @@
     "nan": "^2.11.1",
     "node-gyp": "^3.8.0"
   },
-  "dependencies": {
-    "donuts.node-remote": "file:../remote"
-  }
+  "dependencies": {}
 }

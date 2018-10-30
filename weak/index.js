@@ -11,12 +11,12 @@ const { EventEmitter } = require("events");
 
 /**
  * @template {object} T
- * @implements {WeakReference<T>}
+ * @implements {Donuts.Weak.WeakReference.<T>}
  */
 class WeakReferenceImpl extends EventEmitter {
     /**
      * 
-     * @param {NativeWeakReference<T>} nativeWeakRef 
+     * @param {Donuts.Weak.NativeWeakReference.<T>} nativeWeakRef 
      */
     constructor(nativeWeakRef) {
         super();
@@ -44,7 +44,7 @@ class WeakReferenceImpl extends EventEmitter {
  * @template {object} T
  * Create a native weak reference pointing to the target object.
  * @param {object} target The target object to point to.
- * @returns {NativeWeakReference<T>} The native weak reference object pointing to the target object.
+ * @returns {Donuts.Weak.NativeWeakReference<T>} The native weak reference object pointing to the target object.
  */
 exports.createNative = (target) => weakReference.create(target);
 
@@ -52,6 +52,6 @@ exports.createNative = (target) => weakReference.create(target);
  * @template {object} T
  * Create a weak reference pointing to the target object.
  * @param {object} target The target object to point to.
- * @returns {WeakReference<T>} The weak reference object pointing to the target object.
+ * @returns {Donuts.Weak.WeakReference<T>} The weak reference object pointing to the target object.
  */
 exports.create = (target) => new WeakReferenceImpl(exports.createNative(target));

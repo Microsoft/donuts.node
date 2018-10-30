@@ -3,8 +3,14 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-declare type FunctionType = (...args: Array<any>) => any;
+namespace Donuts {
+    type FunctionType = (...args: Array<any>) => any;
 
-declare interface IDictionary<TValue> {
-    [key: string]: TValue;
+    interface IDictionary<TValue> {
+        [key: string]: TValue;
+    }
+
+    interface IDisposable {
+        dispose(): void;
+    }
 }

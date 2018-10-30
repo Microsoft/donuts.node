@@ -2,60 +2,62 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
-import { IDictionary } from "../core/common";
-import {
-    ICommunicationHost,
-    ICommunicator,
-    IConnectionInfo,
-    IRoutePattern,
-    AsyncRequestHandler,
-    IChannelHostProxy,
-    ICommunicatorConstructorOptions,
-    isChannelHostProxy,
-    isRoutePattern,
-    ChannelHostProxyConnectionHandler,
-    ChannelHostProxyErrorHandler,
-    ChannelHostProxyEventHandler
-} from ".";
+const { EventEmitter } = require("events");
+const utils = require("donuts.node/utils");
+const { isChannelHostProxy, isRoutePattern } = require(".");
+const { Communicator } = require("./communicator");
 
-import { EventEmitter } from "events";
+/**
+ * @typedef IRoute
+ * @property {Donuts.Remote.IRoutePattern} pattern
+ * @property {Donuts.Remote.AsyncRequestHandler} asyncHandler
+ */
 
-import * as utils from "../utils";
-import { Communicator } from "./communicator";
-
-interface IRoute {
-    pattern: IRoutePattern;
-    handler: AsyncRequestHandler;
-}
-
-export class CommunicationHost extends EventEmitter implements ICommunicationHost {
-    public readonly communicators: IDictionary<ICommunicator>;
-
-    public readonly connectionInfo: IConnectionInfo;
-
-    private communicatorOptions: ICommunicatorConstructorOptions;
-
-    private host: IChannelHostProxy;
-
-    private routes: Array<IRoute>;
-
-    private get disposed(): boolean {
+/**
+ * @class
+ * @implements {Donuts.Remote.ICommunicationHost}
+ */
+class CommunicationHost extends EventEmitter {
+    /**
+     * @returns {boolean}
+     */
+    get disposed() {
         return this.host === undefined;
     }
 
-    constructor(host: IChannelHostProxy, options?: ICommunicatorConstructorOptions) {
+    /**
+     * 
+     * @param {Donuts.Remote.IChannelHostProxy} host 
+     * @param {Donuts.Remote.ICommunicatorConstructorOptions} [options]
+     */
+    constructor(host, options) {
         super();
 
         if (!isChannelHostProxy(host)) {
             throw new Error("host must be a IChannelHostProxy object.");
         }
 
+        /** @type {Array.<IRoute>} */
         this.routes = [];
+
+        /**
+         * @readonly
+         * @type {Donuts.IDictionary.<Donuts.Remote.ICommunicator>}
+         */
         this.communicators = Object.create(null);
+
+        /** @type {Donuts.Remote.ICommunicatorConstructorOptions} */
         this.communicatorOptions = options;
+
+        /** @type {Donuts.Remote.IChannelHostProxy} */
         this.host = host;
 
+        /**
+         * @readonly
+         * @type {Donuts.Remote.IConnectionInfo}
+         */
         this.connectionInfo = Object.create(null);
 
         Object.assign(this.connectionInfo, this.host.connectionInfo);
@@ -67,7 +69,13 @@ export class CommunicationHost extends EventEmitter implements ICommunicationHos
         this.host.setHandler("listening", this.onListening);
     }
 
-    public map(pattern: IRoutePattern, asyncHandler: AsyncRequestHandler): this {
+    /**
+     * 
+     * @param {Donuts.Remote.IRoutePattern} pattern 
+     * @param {Donuts.Remote.AsyncRequestHandler} asyncHandler 
+     * @returns {this}
+     */
+    map(pattern, asyncHandler) {
         if (this.disposed) {
             throw new Error("Already disposed.");
         }
@@ -80,10 +88,11 @@ export class CommunicationHost extends EventEmitter implements ICommunicationHos
             throw new Error("asyncHandler must be a function");
         }
 
-        const route: IRoute = Object.create(null);
+        /** @type {IRoute} */
+        const route = Object.create(null);
 
         route.pattern = pattern;
-        route.handler = asyncHandler;
+        route.asyncHandler = asyncHandler;
 
         this.routes.push(route);
 
@@ -94,7 +103,12 @@ export class CommunicationHost extends EventEmitter implements ICommunicationHos
         return this;
     }
 
-    public unmap(pattern: IRoutePattern): this {
+    /**
+     * 
+     * @param {Donuts.Remote.IRoutePattern} pattern 
+     * @return {this}
+     */
+    unmap(pattern) {
         if (this.disposed) {
             throw new Error("Already disposed.");
         }
@@ -119,12 +133,15 @@ export class CommunicationHost extends EventEmitter implements ICommunicationHos
         return this;
     }
 
-    public async disposeAsync(): Promise<void> {
+    /**
+     * @return {void}
+     */
+    dispose() {
         if (this.disposed) {
             return;
         }
 
-        await this.host.disposeAsync();
+        this.host.dispose();
 
         this.host.setHandler("close", undefined);
         this.host.setHandler("connection", undefined);
@@ -136,33 +153,45 @@ export class CommunicationHost extends EventEmitter implements ICommunicationHos
         this.routes = undefined;
 
         for (const propName in this.communicators) {
-            await this.communicators[propName].disposeAsync();
+            this.communicators[propName].dispose();
 
             delete this.communicators[propName];
         }
     }
 
-    private onConnection: ChannelHostProxyConnectionHandler =
-        (hostProxy, channelProxy) => {
-            const communicator = new Communicator(channelProxy, this.communicatorOptions);
+    /**
+     * @type {Donuts.Remote.ChannelHostProxyConnectionHandler}
+     */
+    onConnection = (hostProxy, channelProxy) => {
+        const communicator = new Communicator(channelProxy, this.communicatorOptions);
 
-            for (const route of this.routes) {
-                communicator.map(route.pattern, route.handler);
-            }
-
-            this.communicators[communicator.id] = communicator;
-            this.emit("connection", this, communicator);
+        for (const route of this.routes) {
+            communicator.map(route.pattern, route.asyncHandler);
         }
 
-    private onError: ChannelHostProxyErrorHandler =
-        (hostProxy, error) => this.emit("error", this, error)
+        this.communicators[communicator.id] = communicator;
+        this.emit("connection", this, communicator);
+    }
 
-    private onClose: ChannelHostProxyEventHandler =
-        (hostProxy) => {
-            this.disposeAsync();
-            this.emit("close", this);
-        }
+    /**
+     * @type {Donuts.Remote.ChannelHostProxyErrorHandler}
+     */
+    onError = (hostProxy, error) => {
+        this.emit("error", this, error);
+    }
+    /**
+     * @type {Donuts.Remote.ChannelHostProxyEventHandler}
+     */
+    onClose = (hostProxy) => {
+        this.dispose();
+        this.emit("close", this);
+    };
 
-    private onListening: ChannelHostProxyEventHandler =
-        (hostProxy) => this.emit("listening", this)
+    /** 
+     * @type {Donuts.Remote.ChannelHostProxyEventHandler}
+     */
+    onListening = (hostProxy) => {
+        this.emit("listening", this);
+    }
 }
+exports.CommunicationHost = CommunicationHost;

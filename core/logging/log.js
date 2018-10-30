@@ -10,10 +10,10 @@ const { ConsoleLogger } = require("./loggers/console");
 
 /**
  * @class
- * @implements {Logging.ILog}
+ * @implements {Donuts.Logging.ILog}
  */
 class Log {
-    /** @type {Logging.ILog} */
+    /** @type {Donuts.Logging.ILog} */
     static _instance;
 
     /**
@@ -61,7 +61,7 @@ class Log {
     }
 
     /**
-     * @returns {Logging.ILog}
+     * @returns {Donuts.Logging.ILog}
      */
     static get instance() {
         if (!Log._instance) {
@@ -107,13 +107,13 @@ class Log {
     /**
      * 
      * @param {boolean} [includeCallerInfo]
-     * @param {IDictionary.<*>} [defaultProperties]
+     * @param {Donuts.IDictionary.<*>} [defaultProperties]
      */
     constructor(includeCallerInfo, defaultProperties) {
-        /** @type {Array.<Logging.ILogger>} */
+        /** @type {Array.<Donuts.Logging.ILogger>} */
         this.loggers = undefined;
 
-        /** @type {IDictionary.<*>} */
+        /** @type {Donuts.IDictionary.<*>} */
         this.defaultProperties = undefined;
 
         /** @type {boolean} */
@@ -133,8 +133,8 @@ class Log {
 
     /**
      * 
-     * @param {IDictionary.<string>} properties 
-     * @param {Logging.Severity} severity 
+     * @param {Donuts.IDictionary.<string>} properties 
+     * @param {Donuts.Logging.Severity} severity 
      * @param {string} messageOrFormat 
      * @param {...*} params 
      * @returns {Promise<void>}
@@ -155,7 +155,7 @@ class Log {
 
     /**
      * 
-     * @param {Logging.Severity} severity 
+     * @param {Donuts.Logging.Severity} severity 
      * @param {string} messageOrFormat 
      * @param {...*} params 
      * @returns {Promise<void>}
@@ -217,7 +217,7 @@ class Log {
     /**
      * 
      * @param {Error} exception 
-     * @param {IDictionary.<string>} [properties]
+     * @param {Donuts.IDictionary.<string>} [properties]
      * @returns {Promise.<void>}
      */
     async writeExceptionAsync(exception, properties) {
@@ -229,7 +229,7 @@ class Log {
     /**
      * 
      * @param {string} name 
-     * @param {IDictionary.<string>} [properties]
+     * @param {Donuts.IDictionary.<string>} [properties]
      * @returns {Promise.<void>}
      */
     async writeEventAsync(name, properties) {
@@ -246,7 +246,7 @@ class Log {
      * 
      * @param {string} name 
      * @param {number} [value]
-     * @param {IDictionary.<string>} [properties]
+     * @param {Donuts.IDictionary.<string>} [properties]
      * @returns {Promise.<void>}
      */
     async writeMetricAsync(name, value, properties) {
@@ -266,7 +266,7 @@ class Log {
     /**
      * 
      * @param {string} name 
-     * @returns {Promise.<Logging.ILogger>}
+     * @returns {Promise.<Donuts.Logging.ILogger>}
      */
     async removeLoggerAsync(name) {
         if (!utils.isString(name)) {
@@ -286,7 +286,7 @@ class Log {
 
     /**
      * 
-     * @param {Logging.ILogger} logger 
+     * @param {Donuts.Logging.ILogger} logger 
      * @returns {Promise.<void>}
      */
     async addLoggerAsync(logger) {
@@ -303,11 +303,11 @@ class Log {
 
     /**
      * 
-     * @param {IDictionary.<string>} properties 
-     * @returns {IDictionary.<string>}
+     * @param {Donuts.IDictionary.<string>} properties 
+     * @returns {Donuts.IDictionary.<string>}
      */
     generateProperties(properties) {
-        /** @type {IDictionary.<string>} */
+        /** @type {Donuts.IDictionary.<string>} */
         let finalProperties = null;
 
         if (this.defaultProperties) {

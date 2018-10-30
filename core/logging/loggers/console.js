@@ -8,7 +8,7 @@ const path = require("path");
 const utils = require("../../utils");
 
 /**
- * @typedef {Logging.ILoggerSettings} IConsoleLoggerSettings
+ * @typedef {Donuts.Logging.ILoggerSettings} IConsoleLoggerSettings
  * @property {boolean} [logAllProperties]
  * @property {boolean} [logCallerInfo]
  */
@@ -58,8 +58,8 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {IDictionary.<string>} properties 
-     * @param {Logging.Severity} severity 
+     * @param {Donuts.IDictionary.<string>} properties 
+     * @param {Donuts.Logging.Severity} severity 
      * @param {string} message 
      * @returns {Promise<void>}
      */
@@ -95,7 +95,7 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {IDictionary.<string>} properties 
+     * @param {Donuts.IDictionary.<string>} properties 
      * @param {Error} error 
      * @returns {Promise<void>}
      */
@@ -112,7 +112,7 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {IDictionary.<string>} properties 
+     * @param {Donuts.IDictionary.<string>} properties 
      * @param {string} name 
      * @param {number} value 
      * @returns {Promise<void>}
@@ -123,7 +123,7 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {IDictionary.<string>} properties 
+     * @param {Donuts.IDictionary.<string>} properties 
      * @returns {string}
      */
     formatProperties(properties) {
@@ -152,7 +152,7 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {IDictionary.<string>} properties 
+     * @param {Donuts.IDictionary.<string>} properties 
      * @param {string} message 
      * @returns {string}
      */

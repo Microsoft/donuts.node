@@ -17,3 +17,12 @@ declare interface BindingGyp {
         include_dirs: Array<string>;
     }>;
 }
+
+declare interface NativeWeakReferenceModule {
+    /**
+     * Create a native weak reference.
+     * @param target The target object to pointing to.
+     * @returns The native weak reference pointing to the target object;
+     */
+    create<T = object>(target: T): Donuts.Weak.NativeWeakReference<T>
+}

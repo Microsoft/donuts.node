@@ -2,7 +2,6 @@
   "name": "donuts.node",
   "version": "1.0.0-private",
   "description": "A sweet framework for node.js.",
-  "types": "index.d.ts",
   "main": "index.js",
   "scripts": {
     "clean-build": "gulp clean-build",
@@ -24,6 +23,7 @@
   "dependencies": {
     "semver": "^5.6.0",
     "tmp": "0.0.33",
+    "typescript": "^3.1.4",
     "uuid": "^3.3.2"
   }
 }

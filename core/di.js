@@ -12,14 +12,14 @@ const utils = require("./utils");
  */
 class DiDescriptorDictionary {
     constructor() {
-        /** @type {IDictionary.<DI.IDiDescriptor>} */
+        /** @type {Donuts.IDictionary.<Donuts.DI.IDiDescriptor>} */
         this.descriptorDictionary = Object.create(null);
     }
 
     /**
      * 
      * @param {string} name 
-     * @return {DI.IDiDescriptor}
+     * @return {Donuts.DI.IDiDescriptor}
      */
     get(name) {
         if (utils.string.isEmptyOrWhitespace(name)) {
@@ -32,7 +32,7 @@ class DiDescriptorDictionary {
     /**
      * 
      * @param {string} name 
-     * @param {DI.IDiDescriptor} descriptor 
+     * @param {Donuts.DI.IDiDescriptor} descriptor 
      * @returns {void}
      */
     set(name, descriptor) {
@@ -56,10 +56,10 @@ exports.DiDescriptorDictionary = DiDescriptorDictionary;
 class DiContainer {
     /**
      * 
-     * @param {DI.IDiDescriptorDictionary} [dictionary]
+     * @param {Donuts.DI.IDiDescriptorDictionary} [dictionary]
      */
     constructor(dictionary) {
-        /** @type {DI.IDiDescriptorDictionary} */
+        /** @type {Donuts.DI.IDiDescriptorDictionary} */
         /** @readonly */
         this.descriptorDictionary = undefined;
 
@@ -90,7 +90,7 @@ class DiContainer {
     /**
      * 
      * @param {string} name 
-     * @returns {DI.IDiDescriptor}
+     * @returns {Donuts.DI.IDiDescriptor}
      */
     get(name) {
         if (utils.string.isEmptyOrWhitespace(name)) {
@@ -103,8 +103,8 @@ class DiContainer {
     /**
      * 
      * @param {string} name 
-     * @param {DI.IDiDescriptor} descriptor 
-     * @returns {DI.IDiContainer}
+     * @param {Donuts.DI.IDiDescriptor} descriptor 
+     * @returns {Donuts.DI.IDiContainer}
      */
     set(name, descriptor) {
         if (utils.string.isEmptyOrWhitespace(name)) {

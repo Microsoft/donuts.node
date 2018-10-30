@@ -6,12 +6,12 @@
 
 const { Log } = require("./log");
 
-/** @type {Logging.ILog} */
+/** @type {Donuts.Logging.ILog} */
 let defaultLog;
 
 /**
  * Get the default log object.
- * @returns {Logging.ILog} The default ILog object.
+ * @returns {Donuts.Logging.ILog} The default ILog object.
  */
 exports.getLog = () => {
     if (!defaultLog) {
@@ -23,14 +23,14 @@ exports.getLog = () => {
 
 /**
  * Set the default log object.
- * @param {Logging.ILog} log The new default ILog object.
+ * @param {Donuts.Logging.ILog} log The new default ILog object.
  */
 exports.setLog = (log) => defaultLog = log;
 
 /**
  * 
- * @param {IDictionary<string>} properties 
- * @param {Logging.Severity} severity 
+ * @param {Donuts.IDictionary<string>} properties 
+ * @param {Donuts.Logging.Severity} severity 
  * @param {string} messageOrFormat 
  * @param {...*} params 
  * @returns {Promise<void>}
@@ -40,7 +40,7 @@ exports.writeMoreAsync = (properties, severity, messageOrFormat, ...params) =>
 
 /**
  * 
- * @param {Logging.Severity} severity 
+ * @param {Donuts.Logging.Severity} severity 
  * @param {string} messageOrFormat 
  * @param {...*} params 
  * @returns {Promise<void>}
@@ -90,7 +90,7 @@ exports.writeCriticalAsync = (messageOrFormat, ...params) => defaultLog.writeCri
 /**
  * 
  * @param {Error} exception 
- * @param {IDictionary.<string>} [properties]
+ * @param {Donuts.IDictionary.<string>} [properties]
  * @returns {Promise.<void>}
  */
 exports.writeExceptionAsync = (exception, properties) => defaultLog.writeExceptionAsync(exception, properties);
@@ -98,7 +98,7 @@ exports.writeExceptionAsync = (exception, properties) => defaultLog.writeExcepti
 /**
  * 
  * @param {string} name 
- * @param {IDictionary.<string>} [properties]
+ * @param {Donuts.IDictionary.<string>} [properties]
  * @returns {Promise.<void>}
  */
 exports.writeEventAsync = (name, properties) => defaultLog.writeEventAsync(name, properties);
@@ -107,7 +107,7 @@ exports.writeEventAsync = (name, properties) => defaultLog.writeEventAsync(name,
  * 
  * @param {string} name 
  * @param {number} [value]
- * @param {IDictionary.<string>} [properties]
+ * @param {Donuts.IDictionary.<string>} [properties]
  * @returns {Promise.<void>}
  */
 exports.writeMetricAsync = (name, value, properties) => defaultLog.writeMetricAsync(name, value, properties);
@@ -115,13 +115,13 @@ exports.writeMetricAsync = (name, value, properties) => defaultLog.writeMetricAs
 /**
  * 
  * @param {string} name 
- * @returns {Promise.<Logging.ILogger>}
+ * @returns {Promise.<Donuts.Logging.ILogger>}
  */
 exports.removeLoggerAsync = (name) => defaultLog.removeLoggerAsync(name);
 
 /**
  * 
- * @param {Logging.ILogger} logger 
+ * @param {Donuts.Logging.ILogger} logger 
  * @returns {Promise.<void>}
  */
 exports.addLoggerAsync = (logger) => defaultLog.addLoggerAsync(logger);

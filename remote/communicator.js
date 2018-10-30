@@ -2,55 +2,52 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
-import { IDictionary } from "donuts.node";
-import {
-    AsyncRequestHandler,
-    ICommunicator,
-    IRoutePattern,
-    ICommunicatorConstructorOptions,
-    IChannelProxy,
-    IMessage,
-    IRoutePathInfo,
-    isChannelProxy
-} from ".";
-import * as uuidv4 from "uuid/v4";
-import * as utils from "donuts.node/utils";
+const uuidv4 = require("uuid/v4");
+const utils = require("donuts.node/utils");
+const { isChannelProxy } = require(".");
 
-interface IPromiseResolver {
-    resolve: (value?: any) => void;
-    reject: (reason?: any) => void;
-}
+/**
+ * @typedef IPromiseResolver 
+ * @property {(value?: *)=>void} resolve
+ * @property {(reason?: *)=>void} reject
+ */
 
-interface IRoute {
-    pattern: IRoutePattern;
-    asyncHandler: AsyncRequestHandler;
-}
+/**
+ * @typedef IRoute
+ * @property {Donuts.Remote.IRoutePattern} pattern
+ * @property {Donuts.Remote.AsyncRequestHandler} asyncHandler
+ */
 
-export const UuidNamespace = "65ef6f94-e6c9-4c95-8360-6d29de87b1dd";
+exports.UuidNamespace = "65ef6f94-e6c9-4c95-8360-6d29de87b1dd";
 
-export class Communicator implements ICommunicator {
-    public readonly id: string;
-
-    public readonly timeout?: number;
-
-    private ongoingPromiseDict: IDictionary<IPromiseResolver>;
-
-    private routes: Array<IRoute>;
-
-    private channelProxy: IChannelProxy;
-
-    constructor(
-        channelProxy: IChannelProxy,
-        options?: ICommunicatorConstructorOptions) {
+/**
+ * @class
+ * @implements {Donuts.Remote.ICommunicator}
+ */
+class Communicator {
+    /**
+     * 
+     * @param {Donuts.Remote.IChannelProxy} channelProxy 
+     * @param {Donuts.Remote.ICommunicatorConstructorOptions} [options]
+     */
+    constructor(channelProxy, options) {
 
         if (!isChannelProxy(channelProxy)) {
             throw new Error("channelProxy must be a IChannelProxy object.");
         }
 
+        /** @type {Array.<IRoute>} */
         this.routes = [];
+
+        /** @type {Donuts.IDictionary.<IPromiseResolver>} */
         this.ongoingPromiseDict = Object.create(null);
 
+        /**
+         * @readonly 
+         * @type {string}
+         */
         this.id = uuidv4();
 
         if (options) {
@@ -60,15 +57,26 @@ export class Communicator implements ICommunicator {
             }
 
             if (utils.isNumber(options.timeout)) {
+                /**
+                 * @readonly
+                 * @type {number}
+                 */
                 this.timeout = options.timeout;
             }
         }
 
+        /** @type {Donuts.Remote.IChannelProxy} */
         this.channelProxy = channelProxy;
         this.channelProxy.setHandler("data", this.onMessageAsync);
     }
 
-    public map(pattern: IRoutePattern, asyncHandler: AsyncRequestHandler): this {
+    /**
+     * 
+     * @param {Donuts.Remote.IRoutePattern} pattern 
+     * @param {Donuts.Remote.AsyncRequestHandler} asyncHandler 
+     * @returns {this}
+     */
+    map(pattern, asyncHandler) {
         this.validateDisposal();
 
         if (!pattern) {
@@ -79,7 +87,8 @@ export class Communicator implements ICommunicator {
             throw new Error("asyncHandler must be a function.");
         }
 
-        const route: IRoute = {
+        /** @type {IRoute} */
+        const route = {
             pattern: pattern,
             asyncHandler: asyncHandler
         };
@@ -88,7 +97,12 @@ export class Communicator implements ICommunicator {
         return this;
     }
 
-    public unmap(pattern: IRoutePattern): this {
+    /**
+     * 
+     * @param {Donuts.Remote.IRoutePattern} pattern
+     * @returns {this} 
+     */
+    unmap(pattern) {
         this.validateDisposal();
 
         if (utils.isNullOrUndefined(pattern)) {
@@ -106,7 +120,14 @@ export class Communicator implements ICommunicator {
         return this;
     }
 
-    public sendAsync<TRequest, TResponse>(path: string, content: TRequest): Promise<TResponse> {
+    /**
+     * @template TRequest, TResponse
+     * 
+     * @param {string} path 
+     * @param {TRequest} content 
+     * @returns {Promise<TResponse>}
+     */
+    sendAsync(path, content) {
         this.validateDisposal();
 
         if (utils.string.isEmptyOrWhitespace(path)) {
@@ -114,7 +135,8 @@ export class Communicator implements ICommunicator {
         }
 
         return new Promise((resolve, reject) => {
-            const msg: IMessage = {
+            /** @type {Donuts.Remote.IMessage} */
+            const msg = {
                 id: uuidv4(),
                 path: path,
                 body: content
@@ -147,16 +169,22 @@ export class Communicator implements ICommunicator {
         });
     }
 
-    public get disposed(): boolean {
+    /**
+     * @returns {boolean}
+     */
+    get disposed() {
         return this.channelProxy === undefined;
     }
 
-    public async disposeAsync(): Promise<void> {
+    /**
+     * @return {void}
+     */
+    dispose() {
         if (this.disposed) {
             return;
         }
 
-        await this.channelProxy.disposeAsync();
+        this.channelProxy.dispose();
         Object.values(this.ongoingPromiseDict).forEach((resolver) => resolver.reject(new Error(`Communicator (${this.id}) is disposed.`)));
 
         this.channelProxy.setHandler("data", undefined);
@@ -165,13 +193,18 @@ export class Communicator implements ICommunicator {
         this.ongoingPromiseDict = undefined;
     }
 
-    private validateDisposal(): void {
+    validateDisposal() {
         if (this.disposed) {
             throw new Error(`Communicator (${this.id}) already disposed.`);
         }
     }
 
-    private onMessageAsync = async (channel: IChannelProxy, msg: IMessage): Promise<void> => {
+    /**
+     * @param {Donuts.Remote.IChannelProxy} channel
+     * @param {Donuts.Remote.IMessage} msg
+     * @returns {Promise<void>}
+     */
+    onMessageAsync = async (channel, msg) => {
         const promise = this.ongoingPromiseDict[msg.id];
 
         if (promise) {
@@ -179,8 +212,11 @@ export class Communicator implements ICommunicator {
             msg.succeeded ? promise.resolve(msg.body) : promise.reject(msg.body);
 
         } else if (utils.isNullOrUndefined(msg.succeeded)) {
-            let pathInfo: IRoutePathInfo;
-            let asyncHandler: AsyncRequestHandler;
+            /** @type {Donuts.Remote.IRoutePathInfo} */
+            let pathInfo;
+
+            /** @type {Donuts.Remote.AsyncRequestHandler} */
+            let asyncHandler;
 
             // Find the corresponding route and
             // generate the pathInfo.
@@ -197,8 +233,11 @@ export class Communicator implements ICommunicator {
                 return;
             }
 
-            let response: any;
-            let succeeded: boolean;
+            /** @type {*} */
+            let response;
+
+            /** @type {boolean} */
+            let succeeded;
 
             try {
                 response = await asyncHandler(this, pathInfo, msg.body);
@@ -219,3 +258,4 @@ export class Communicator implements ICommunicator {
         }
     }
 }
+exports.Communicator = Communicator;

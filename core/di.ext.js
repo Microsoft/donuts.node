@@ -14,7 +14,7 @@ const utils = require("./utils");
  * 
  * @param {Descriptor} typeDescriptor 
  * @param {Array.<string>} injects 
- * @returns {DI.IDiDescriptor}
+ * @returns {Donuts.DI.IDiDescriptor}
  */
 exports.dedication = (typeDescriptor, injects) => {
     if (!utils.isFunction(typeDescriptor)) {
@@ -72,7 +72,7 @@ exports.dedication = (typeDescriptor, injects) => {
 /**
  * 
  * @param {*} instance 
- * @returns {DI.IDiDescriptor}
+ * @returns {Donuts.DI.IDiDescriptor}
  */
 exports.singleton = (instance) => (container) => instance;
 
@@ -80,7 +80,7 @@ exports.singleton = (instance) => (container) => instance;
  * 
  * @param {Descriptor} typeDescriptor 
  * @param {Array.<string>} injects 
- * @returns {DI.IDiDescriptor}
+ * @returns {Donuts.DI.IDiDescriptor}
  */
 exports.lazySingleton = (typeDescriptor, injects) => {
     let descriptor = exports.dedication(typeDescriptor, injects);

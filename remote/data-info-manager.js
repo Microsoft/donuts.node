@@ -2,6 +2,7 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
 const { dataTypeOf } = require("./data-info");
 const utils = require("donuts.node/utils");
@@ -12,12 +13,32 @@ const weak = require("donuts.node-weak");
  * @class
  */
 class DataInfoManager {
-    constructor() {
+    /**
+     * 
+     * @param {Donuts.Remote.IObjectRemotingProxy} objectRemotingProxy 
+     */
+    constructor(objectRemotingProxy) {
+        if (!objectRemotingProxy) {
+            throw new Error("objectRemotingProxy must be supplied.");
+        }
+
+        /**
+         * @readonly
+         * @type {Donuts.Remote.IObjectRemotingProxy}
+         */
+        this.proxy = objectRemotingProxy;
+
         /** 
          * @readonly
-         * @type {Donuts.IDictionary.<*>} 
+         * @type {Object.<string, *>} 
          * */
         this.localRefs = Object.create(null);
+
+        /**
+         * @readonly
+         * @type {Object.<string, Donuts.Weak.NativeWeakReference<*>>}
+         */
+        this.remoteRefs = Object.create(null);
 
         /**
          * @readonly
@@ -57,6 +78,7 @@ class DataInfoManager {
             }
 
             if (dataInfo.type === "object") {
+                // @ts-ignore
                 return this.realizeObjectDataInfo(dataInfo);
 
             } else if (dataInfo.type === "function") {
@@ -105,6 +127,7 @@ class DataInfoManager {
     }
 
     /**
+     * @public
      * Get the refId from the given object.
      * @param {*} target 
      * @returns {string} The refId attached to the object. Otherwise, undefined.
@@ -125,7 +148,7 @@ class DataInfoManager {
     }
 
     /**
-     * @private
+     * @public
      * @param {*} target 
      * @param {boolean} [recursive]
      * @returns {Donuts.Remote.IDataInfo}
@@ -172,6 +195,20 @@ class DataInfoManager {
 
         this.localRefs[dataInfo.id] = target;
         return dataInfo;
+    }
+
+    /**
+     * @public
+     * Remove the reference hold for the data info referenced by refId.
+     * @param {string} refId 
+     * @return {void}
+     */
+    delDataInfo(refId) {
+        if (!utils.isString(refId)) {
+            throw new Error("refId must be an string");
+        }
+
+        delete this.localRefs[refId];
     }
 
     /**
@@ -249,62 +286,115 @@ class DataInfoManager {
 
     /**
      * @private
+     * @template T
+     * @param {T} obj
+     * @returns {T}
+     */
+    registerRealizedObject(obj) {
+        /** @type {Donuts.Weak.NativeWeakReference<*>} */
+        const weakRef = weak.createNative(obj);
+
+        /** @type {Donuts.Remote.IDataInfo} */
+        // @ts-ignore
+        const dataInfo = obj[this.symbol_dataInfo];
+
+        /** @type {string} */
+        const refId = dataInfo.id;
+
+        weakRef.setWatcher(() => {
+            this.proxy.releaseAsync(refId);
+            delete this.remoteRefs[refId];
+        });
+
+        this.remoteRefs[refId] = weakRef;
+
+        return obj;
+    }
+
+    /**
+     * @private
      * @param {Donuts.Remote.IDataInfo} dataInfo 
-     * @param {string} [parentId]
      * @returns {*}
      */
-    realizeFunctionDataInfo(dataInfo, parentId) {
+    realizeFunctionDataInfo(dataInfo) {
+        const weakRef = this.remoteRefs[dataInfo.id];
+
+        if (weakRef && !weakRef.isDead()) {
+            return weakRef.ref();
+        }
+
+        /** @type {()=>void} */
         const base = () => undefined;
 
-        base[FuncName_DisposeAsync] = this.generateDisposeFunc(dataInfo.id, parentId);
+        // @ts-ignore
+        base[this.symbol_dataInfo] = dataInfo;
 
-        const handlers: ProxyHandler<Function> = {
-            apply: async (target, thisArg, args): Promise<any> => {
-                const refId = this.refRoot.getRefId(target);
-                const thisArgDataInfo = this.toDataInfo(thisArg, refId);
-                const argsDataInfos: Array<IDataInfo> = [];
+        /** @type {string} */
+        const refId = dataInfo.id;
 
-                for (const arg of args) {
-                    argsDataInfos.push(this.toDataInfo(arg, refId));
-                }
-
-                const resultDataInfo = await this.delegation.applyAsync(refId, thisArgDataInfo, argsDataInfos);
-
-                return this.realizeDataInfo(resultDataInfo, refId);
-            }
+        /** @type {ProxyHandler<Function>} */
+        const handlers = {
+            /**
+             * @param {Function} target
+             * @param {*} thisArg
+             * @param {Array.<*>} args
+             * @returns {Promise<*>} 
+             */
+            apply: async (target, thisArg, args) => await this.proxy.applyAsync(refId, thisArg, args)
         };
 
         const funcProxy = new Proxy(base, handlers);
-        const parentRef = this.refRoot.referById(parentId);
 
-        parentRef.addReferee(funcProxy, dataInfo.id);
+        this.registerRealizedObject(funcProxy);
 
         return funcProxy;
     }
 
     /**
      * @private
-     * @param {IObjectDataInfo} dataInfo 
-     * @param {string} [parentId]
+     * @param {Donuts.Remote.IObjectDataInfo} dataInfo 
      * @returns {*}
      */
-    realizeObjectDataInfo(dataInfo, parentId) {
+    realizeObjectDataInfo(dataInfo) {
+        const weakRef = this.remoteRefs[dataInfo.id];
+
+        if (weakRef && !weakRef.isDead()) {
+            return weakRef.ref();
+        }
+
+        /** @type {object} */
         const base = Object.create(null);
-        const handlers: ProxyHandler<Function> = {
-            get: (target, property, receiver): any | Promise<any> => {
+
+        base[this.symbol_dataInfo] = dataInfo;
+
+        /** @type {string} */
+        const refId = dataInfo.id;
+
+        /** @type {ProxyHandler.<object>} */
+        const handlers = {
+            /**
+             * @param {*} target
+             * @param {string | number | symbol} property
+             * @param {object} receiver 
+             * @returns {Promise<*> | *}
+             */
+            get: (target, property, receiver) => {
                 const baseValue = target[property];
 
                 if (baseValue || typeof property === "symbol") {
                     return baseValue;
                 }
 
-                const refId = this.refRoot.getRefId(target);
-
-                const resultDataInfoPromise = this.delegation.getPropertyAsync(refId, property);
-
-                return resultDataInfoPromise.then((resultDataInfo) => this.realizeDataInfo(resultDataInfo, refId));
+                return this.proxy.getPropertyAsync(refId, property);
             },
 
+            /**
+             * @param {*} target
+             * @param {string | number | symbol} property
+             * @param {*} value
+             * @param {object} receiver 
+             * @returns {boolean}
+             */
             set: (target, property, value, receiver) => {
                 if (typeof property === "symbol") {
                     target[property] = value;
@@ -315,38 +405,32 @@ class DataInfoManager {
                     return false;
                 }
 
-                const refId = this.refRoot.getRefId(target);
-                const valueDataInfo = this.toDataInfo(value, refId);
-
-                this.delegation.setPropertyAsync(refId, property, valueDataInfo);
+                this.proxy.setPropertyAsync(refId, property, value);
                 return true;
             },
 
-            has: (target, prop): boolean => {
-                return true;
-            }
+            /**
+             * @param {*} target
+             * @param {string | number | symbol} prop
+             * @return {Boolean}
+             */
+            has: (target, prop) => true
         };
 
         const objProxy = new Proxy(base, handlers);
-        const parentRef = this.refRoot.referById(parentId);
-
-        // Register the dataInfo before initialize the members.
-        parentRef.addReferee(objProxy, dataInfo.id);
 
         if (dataInfo.memberInfos) {
             for (const propertyName of Object.getOwnPropertyNames(dataInfo.memberInfos)) {
                 Object.defineProperty(base, propertyName, {
                     enumerable: false,
                     configurable: false,
-                    writable: propertyName === FuncName_DisposeAsync,
-                    value: this.realizeDataInfo(dataInfo.memberInfos[propertyName], dataInfo.id)
+                    writable: false,
+                    value: this.realizeDataInfo(dataInfo.memberInfos[propertyName])
                 });
             }
         }
 
-        base[FuncName_DisposeAsync] = this.generateDisposeFunc(dataInfo.id, parentId, base[FuncName_DisposeAsync]);
-
-        return objProxy;
+        return this.registerRealizedObject(objProxy);
     }
 }
 exports.DataInfoManager = DataInfoManager;

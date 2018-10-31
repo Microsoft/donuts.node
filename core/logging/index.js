@@ -29,7 +29,7 @@ exports.setLog = (log) => defaultLog = log;
 
 /**
  * 
- * @param {Donuts.IDictionary<string>} properties 
+ * @param {Object.<string, string>} properties 
  * @param {Donuts.Logging.Severity} severity 
  * @param {string} messageOrFormat 
  * @param {...*} params 
@@ -90,7 +90,7 @@ exports.writeCriticalAsync = (messageOrFormat, ...params) => defaultLog.writeCri
 /**
  * 
  * @param {Error} exception 
- * @param {Donuts.IDictionary.<string>} [properties]
+ * @param {Object.<string, string>} [properties]
  * @returns {Promise.<void>}
  */
 exports.writeExceptionAsync = (exception, properties) => defaultLog.writeExceptionAsync(exception, properties);
@@ -98,7 +98,7 @@ exports.writeExceptionAsync = (exception, properties) => defaultLog.writeExcepti
 /**
  * 
  * @param {string} name 
- * @param {Donuts.IDictionary.<string>} [properties]
+ * @param {Object.<string, string>} [properties]
  * @returns {Promise.<void>}
  */
 exports.writeEventAsync = (name, properties) => defaultLog.writeEventAsync(name, properties);
@@ -107,7 +107,7 @@ exports.writeEventAsync = (name, properties) => defaultLog.writeEventAsync(name,
  * 
  * @param {string} name 
  * @param {number} [value]
- * @param {Donuts.IDictionary.<string>} [properties]
+ * @param {Object.<string, string>} [properties]
  * @returns {Promise.<void>}
  */
 exports.writeMetricAsync = (name, value, properties) => defaultLog.writeMetricAsync(name, value, properties);

@@ -41,7 +41,7 @@ class Communicator {
         /** @type {Array.<IRoute>} */
         this.routes = [];
 
-        /** @type {Donuts.IDictionary.<IPromiseResolver>} */
+        /** @type {Object.<string, IPromiseResolver>} */
         this.ongoingPromiseDict = Object.create(null);
 
         /**

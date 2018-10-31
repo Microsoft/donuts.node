@@ -25,7 +25,7 @@ class StringPattern {
     /**
      * @returns {*}
      */
-    getRaw(){
+    getRaw() {
         return this.pattern;
     }
 
@@ -41,10 +41,12 @@ class StringPattern {
     /**
      * 
      * @param {string} path
-     * @returns {boolean} 
+     * @returns {Donuts.Remote.IRoutePathInfo} 
      */
     match(path) {
-        return this.pattern === path;
+        return {
+            "~": path
+        };
     }
 }
 exports.StringPattern = StringPattern;

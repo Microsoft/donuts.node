@@ -2,6 +2,7 @@
   "name": "donuts.node",
   "version": "1.0.0-private",
   "description": "A sweet framework for node.js.",
+  "types": "index.d.ts",
   "main": "index.js",
   "scripts": {
     "clean-build": "gulp clean-build",

@@ -107,13 +107,13 @@ class Log {
     /**
      * 
      * @param {boolean} [includeCallerInfo]
-     * @param {Donuts.IDictionary.<*>} [defaultProperties]
+     * @param {Object.<string, *>} [defaultProperties]
      */
     constructor(includeCallerInfo, defaultProperties) {
         /** @type {Array.<Donuts.Logging.ILogger>} */
         this.loggers = undefined;
 
-        /** @type {Donuts.IDictionary.<*>} */
+        /** @type {Object.<string, *>} */
         this.defaultProperties = undefined;
 
         /** @type {boolean} */
@@ -133,7 +133,7 @@ class Log {
 
     /**
      * 
-     * @param {Donuts.IDictionary.<string>} properties 
+     * @param {Object.<string, string>} properties 
      * @param {Donuts.Logging.Severity} severity 
      * @param {string} messageOrFormat 
      * @param {...*} params 
@@ -217,7 +217,7 @@ class Log {
     /**
      * 
      * @param {Error} exception 
-     * @param {Donuts.IDictionary.<string>} [properties]
+     * @param {Object.<string, string>} [properties]
      * @returns {Promise.<void>}
      */
     async writeExceptionAsync(exception, properties) {
@@ -229,7 +229,7 @@ class Log {
     /**
      * 
      * @param {string} name 
-     * @param {Donuts.IDictionary.<string>} [properties]
+     * @param {Object.<string, string>} [properties]
      * @returns {Promise.<void>}
      */
     async writeEventAsync(name, properties) {
@@ -246,7 +246,7 @@ class Log {
      * 
      * @param {string} name 
      * @param {number} [value]
-     * @param {Donuts.IDictionary.<string>} [properties]
+     * @param {Object.<string, string>} [properties]
      * @returns {Promise.<void>}
      */
     async writeMetricAsync(name, value, properties) {
@@ -303,11 +303,11 @@ class Log {
 
     /**
      * 
-     * @param {Donuts.IDictionary.<string>} properties 
-     * @returns {Donuts.IDictionary.<string>}
+     * @param {Object.<string, string>} properties 
+     * @returns {Object.<string, string>}
      */
     generateProperties(properties) {
-        /** @type {Donuts.IDictionary.<string>} */
+        /** @type {Object.<string, string>} */
         let finalProperties = null;
 
         if (this.defaultProperties) {

@@ -14,11 +14,26 @@ class RegexPattern {
      * @param {RegExp} pattern 
      */
     constructor(pattern) {
+        /** @type {string} */
+        let flags = "";
+
+        if (pattern.ignoreCase) {
+            flags += "i";
+        }
+
+        if (pattern.multiline) {
+            flags += "m";
+        }
+
+        if (pattern.unicode) {
+            flags += "u";
+        }
+
         /**
          * @readonly
          * @type {RegExp}
          */
-        this.pattern = pattern;
+        this.pattern = new RegExp(pattern, flags);
     }
 
     /**
@@ -40,10 +55,25 @@ class RegexPattern {
     /**
      * 
      * @param {string} path 
-     * @returns {boolean}
+     * @returns {Donuts.Remote.IRoutePathInfo}
      */
     match(path) {
-        return this.pattern.test(path);
+        const match = this.pattern.exec(path);
+
+        if (!match) {
+            return undefined;
+        }
+
+        /** @type {Donuts.Remote.IRoutePathInfo} */
+        const info = Object.create(null);
+
+        info["~"] = path;
+
+        for (let matchIndex = 0; matchIndex < match.length; matchIndex++) {
+            info[matchIndex.toString()] = match[matchIndex];
+        }
+
+        return info;
     }
 }
 exports.RegexPattern = RegexPattern;

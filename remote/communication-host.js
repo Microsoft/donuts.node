@@ -44,7 +44,7 @@ class CommunicationHost extends EventEmitter {
 
         /**
          * @readonly
-         * @type {Donuts.IDictionary.<Donuts.Remote.ICommunicator>}
+         * @type {Object.<string, Donuts.Remote.ICommunicator>}
          */
         this.communicators = Object.create(null);
 

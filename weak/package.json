@@ -2,6 +2,7 @@
   "name": "donuts.node-weak",
   "version": "1.0.0-private",
   "description": "",
+  "types": "index.d.ts",
   "main": "index.js",
   "scripts": {
     "install": "node install.js",

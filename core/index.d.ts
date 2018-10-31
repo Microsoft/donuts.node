@@ -6,3 +6,5 @@
 /// <reference path="./common.d.ts" />
 /// <reference path="./di.d.ts" />
 /// <reference path="./logging/types.d.ts" />
+
+declare export function test();

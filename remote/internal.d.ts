@@ -17,8 +17,33 @@ namespace Donuts.Remote {
 
     interface IResourceRequestMessage extends IProxyMessage {
         action: "Resource.Request";
-        resourceId: string;
+        identifier: string;
         extraArgs: Array<IDataInfo>
+    }
+
+    interface IResourceReleaseMessage extends IProxyMessage {
+        action: "Resource.Release";
+        refId: string;
+    }
+
+    interface IResourceApplyMessage extends IProxyMessage {
+        action: "Resource.Apply";
+        refId: string;
+        thisArg: IDataInfo;
+        args: Array<IDataInfo>
+    }
+
+    interface IResourceGetPropertyMessage extends IProxyMessage {
+        action: "Resource.GetProperty";
+        refId: string;
+        property: string | number;
+    }
+
+    interface IResourceSetPropertyMessage extends IProxyMessage {
+        action: "Resource.SetProperty";
+        refId: string;
+        property: string | number;
+        value: IDataInfo;
     }
 
     type DataType = "undefined" | "null" | "object" | "boolean" | "number" | "string" | "symbol" | "function" | "node.buffer";
@@ -30,6 +55,6 @@ namespace Donuts.Remote {
     }
 
     interface IObjectDataInfo extends IDataInfo {
-        memberInfos: IDictionary<IDataInfo>
+        memberInfos: Object.<string, IDataInfo>
     }
 }

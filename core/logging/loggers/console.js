@@ -58,7 +58,7 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {Donuts.IDictionary.<string>} properties 
+     * @param {Object.<string, string>} properties 
      * @param {Donuts.Logging.Severity} severity 
      * @param {string} message 
      * @returns {Promise<void>}
@@ -95,7 +95,7 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {Donuts.IDictionary.<string>} properties 
+     * @param {Object.<string, string>} properties 
      * @param {Error} error 
      * @returns {Promise<void>}
      */
@@ -112,7 +112,7 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {Donuts.IDictionary.<string>} properties 
+     * @param {Object.<string, string>} properties 
      * @param {string} name 
      * @param {number} value 
      * @returns {Promise<void>}
@@ -123,7 +123,7 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {Donuts.IDictionary.<string>} properties 
+     * @param {Object.<string, string>} properties 
      * @returns {string}
      */
     formatProperties(properties) {
@@ -152,7 +152,7 @@ class ConsoleLogger {
 
     /**
      * 
-     * @param {Donuts.IDictionary.<string>} properties 
+     * @param {Object.<string, string>} properties 
      * @param {string} message 
      * @returns {string}
      */

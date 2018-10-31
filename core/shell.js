@@ -209,13 +209,13 @@ exports.getRandomPort = (ipversion, protocol) => {
 exports.toCmdArg = (argName, argValue) => `--${argName}=${argValue}`;
 
 /**
- * @param {Donuts.IDictionary<string>} argDict
+ * @param {Object.<string, string>} argDict
  * @returns {Array.<string>}
  */
 exports.toCmdArgs = (argDict) => {
     if (!utils.isNullOrUndefined(argDict)
         && (!utils.isObject(argDict) || Array.isArray(argDict))) {
-        throw new Error("argDict must be an IDictionary<string>.");
+        throw new Error("argDict must be an Object.<string, string>.");
     }
 
     /** @type {Array.<string>} */
@@ -231,14 +231,14 @@ exports.toCmdArgs = (argDict) => {
 /**
  * 
  * @param {Array.<string>} args 
- * @returns {Donuts.IDictionary.<string>}
+ * @returns {Object.<string, string>}
  */
 exports.toArgDict = (args) => {
     if (!Array.isArray(args)) {
         throw new Error("args must be an array of string.");
     }
 
-    /** @type {Donuts.IDictionary.<string>} */
+    /** @type {Object.<string, string>} */
     const argDict = Object.create(null);
     const CmdArgParseFormat = /^\s*\-\-([a-zA-Z0-9_\-+@]+)\=?(.*)$/g;
 

@@ -6,10 +6,6 @@
 namespace Donuts {
     type FunctionType = (...args: Array<any>) => any;
 
-    interface IDictionary<TValue> {
-        [key: string]: TValue;
-    }
-
     interface IDisposable {
         dispose(): void;
     }

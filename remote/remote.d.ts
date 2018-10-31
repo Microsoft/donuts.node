@@ -25,12 +25,12 @@ namespace Donuts.Remote {
         body?: any;
     }
 
-    interface IChannelProxy extends Donuts.IDisposable {
+    interface IChannelProxy extends IDisposable {
         sendData(data: any): boolean;
         setHandler(type: "data", handler: ChannelProxyDataHandler): this;
     }
 
-    interface IChannelHostProxy extends Donuts.IDisposable {
+    interface IChannelHostProxy extends IDisposable {
         readonly connectionInfo: IConnectionInfo;
 
         setHandler(type: "connection", handler: ChannelHostProxyConnectionHandler): this;
@@ -39,11 +39,13 @@ namespace Donuts.Remote {
         setHandler(type: "listening", handler: ChannelHostProxyEventHandler): this;
     }
 
-    interface IRoutePathInfo extends Donuts.IDictionary<string> {
+    interface IRoutePathInfo {
+        [index: string]: string;
+        
         /**
          * The raw path.
          */
-        ["~"]: string;
+        "~"?: string;
     }
 
     interface IRoutePattern {
@@ -75,8 +77,8 @@ namespace Donuts.Remote {
         communicatorOptions?: ICommunicatorConstructorOptions;
     }
 
-    interface ICommunicationHost extends Donuts.IDisposable {
-        readonly communicators: Donuts.IDictionary<ICommunicator>;
+    interface ICommunicationHost extends IDisposable {
+        readonly communicators: Object.<string, ICommunicator>;
         readonly connectionInfo: IConnectionInfo;
 
         on(event: "connection", handler: (host: ICommunicationHost, communicator: ICommunicator) => void): this;
@@ -115,7 +117,7 @@ namespace Donuts.Remote {
         unmap(pattern: IRoutePattern): this;
     }
 
-    interface ICommunicator extends Donuts.IDisposable {
+    interface ICommunicator extends IDisposable {
         readonly id: string;
 
         /**
@@ -141,7 +143,7 @@ namespace Donuts.Remote {
         sendAsync<TRequest, TResponse>(path: string, content: TRequest): Promise<TResponse>;
     }
 
-    interface Resolver {
+    interface ObjectResolver {
         (proxy: IObjectRemotingProxy, name: string, ...extraArgs: Array<any>): Promise<any>;
     }
 
@@ -149,10 +151,14 @@ namespace Donuts.Remote {
         readonly id: string;
         readonly routePattern: IRoutePattern;
         readonly communicator: ICommunicator;
-    
+
+        resolver: ObjectResolver;
+
         requestAsync<T>(identifier: string, ...extraArgs: Array<any>): Promise<T>;
-    
-        setResolver(resolver: Resolver): void;
-        getResolver(): Resolver;
+        releaseAsync(refId: string): Promise<void>;
+
+        applyAsync<T>(refId: string, thisArg: any, args: Array<any>): Promise<T>;
+        getPropertyAsync<T>(refId: string, property: string | number): Promise<T>;
+        setPropertyAsync(refId: string, property: string | number, value: any): Promise<boolean>;
     }
 }

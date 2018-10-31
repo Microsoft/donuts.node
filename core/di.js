@@ -12,7 +12,7 @@ const utils = require("./utils");
  */
 class DiDescriptorDictionary {
     constructor() {
-        /** @type {Donuts.IDictionary.<Donuts.DI.IDiDescriptor>} */
+        /** @type {Object.<string, Donuts.DI.IDiDescriptor>} */
         this.descriptorDictionary = Object.create(null);
     }
 

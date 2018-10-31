@@ -90,7 +90,7 @@ class ChannelHostProxy {
         /**
          * @private
          * @readonly
-         * @type {Donuts.IDictionary.<(...args: Array<*>)=>void>}
+         * @type {Object.<string, (...args: Array<*>)=>void>}
          */
         this.handlers = Object.create(null);
     }

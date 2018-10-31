@@ -76,12 +76,17 @@ class ObjectRemotingProxy {
     /**
      * @public
      * @param {Donuts.Remote.ICommunicator} communicator 
+     * @param {string} [path]
      * @param {boolean} [ownCommunicator=false]
      * @param {string} [proxyId]
      */
-    constructor(communicator, ownCommunicator, proxyId) {
+    constructor(communicator, path, ownCommunicator, proxyId) {
         if (utils.isNullOrUndefined(communicator)) {
             throw new Error("communicator must be provided.");
+        }
+
+        if (!utils.isNullOrUndefined(path) && !utils.isString(path)) {
+            throw new Error("path must be a string.");
         }
 
         /** @type {Donuts.Remote.ObjectResolver} */
@@ -112,7 +117,7 @@ class ObjectRemotingProxy {
          * @readonly
          * @type {Donuts.Remote.IRoutePattern}
          */
-        this._routePattern = new StringPattern(`/object-remoting-proxy/${this.id}`);
+        this._routePattern = new StringPattern(path || "/object-remoting-proxy");
 
         /**
          * @private

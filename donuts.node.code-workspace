@@ -8,9 +8,6 @@
 		},
 		{
 			"path": "weak"
-		},
-		{
-			"path": "test"
 		}
 	],
 	"settings": {}

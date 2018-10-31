@@ -28,7 +28,7 @@ class ProcessProxy extends ChannelProxy {
     // ChildProcess:
     // https://nodejs.org/docs/latest-v8.x/api/child_process.html#child_process_event_message
     // https://nodejs.org/docs/latest-v8.x/api/child_process.html#child_process_subprocess_send_message_sendhandle_options_callback
-    
+
     /**
      * @public
      * @param {*} channel 
@@ -75,22 +75,22 @@ class ProcessProxy extends ChannelProxy {
     constructor(channel) {
         super(channel);
 
-        this.channel.on("message", this.onMessage);
-    }
-
-    /**
-     * @private
-     * @param {*} message
-     */
-    onMessage = (message) => {
-        if (utils.isString(message)) {
-            try {
-                this.triggerDataHandler(JSON.parse(message));
-            } catch (error) {
-                Log.instance.writeExceptionAsync(error);
-                throw error;
+        /**
+         * @private
+         * @param {*} message
+         */
+        this.onMessage = (message) => {
+            if (utils.isString(message)) {
+                try {
+                    this.triggerDataHandler(JSON.parse(message));
+                } catch (error) {
+                    Log.instance.writeExceptionAsync(error);
+                    throw error;
+                }
             }
         }
+
+        this.channel.on("message", this.onMessage);
     }
 }
 exports.ProcessProxy = ProcessProxy;

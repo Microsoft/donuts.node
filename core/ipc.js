@@ -49,7 +49,7 @@ function generateUnixIpcPath(...segements) {
  * @param {...string} segements
  * @returns {string}
  */
-exports.generateIpcPath = (...segements) => {
+function generateIpcPath(...segements) {
     switch (process.platform) {
         case "win32":
             return generateWin32IpcPath(...segements);
@@ -65,26 +65,14 @@ exports.generateIpcPath = (...segements) => {
 
 /**
  * 
- * @param {string} ipcPath 
+ * @param {...string} pathSegements 
  * @returns {import("net").Socket}
  */
-exports.connect = (ipcPath) => {
-    if (!utils.isString(ipcPath)) {
-        throw new Error("ipcPath must be a string.");
-    }
-
-    return net.connect({ path: ipcPath });
-}
+exports.connect = (pathSegements) => net.connect({ path: generateIpcPath(pathSegements) });
 
 /**
  * 
- * @param {string} ipcPath 
+ * @param {...string} pathSegements 
  * @returns {import("net").Server}
  */
-exports.host = (ipcPath) => {
-    if (!utils.isString(ipcPath)) {
-        throw new Error("ipcPath must be a string.");
-    }
-
-    return net.createServer().listen(ipcPath);
-}
+exports.host = (pathSegements) => net.createServer().listen(generateIpcPath(pathSegements));

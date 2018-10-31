@@ -39,6 +39,7 @@ class SocketProxy extends ChannelProxy {
     dispose() {
         if (!this.disposed) {
             this.channel.removeListener("data", this.onChannelData);
+            this.channel.destroy();
         }
 
         super.dispose();
@@ -64,25 +65,25 @@ class SocketProxy extends ChannelProxy {
     constructor(channel) {
         super(channel);
 
-        this.channel.on("data", this.onChannelData);
-    }
+        /**
+         * @private
+         * @param {Buffer | string} data
+         */
+        this.onChannelData = (data) => {
+            try {
+                if (Buffer.isBuffer(data)) {
+                    data = data.toString("utf8");
+                }
 
-    /**
-     * @private
-     * @param {Buffer | string} data
-     */
-    onChannelData = (data) => {
-        try {
-            if (Buffer.isBuffer(data)) {
-                data = data.toString("utf8");
+                this.triggerDataHandler(JSON.parse(data));
+
+            } catch (error) {
+                Log.instance.writeExceptionAsync(error);
+                throw error;
             }
+        };
 
-            this.triggerDataHandler(JSON.parse(data));
-
-        } catch (error) {
-            Log.instance.writeExceptionAsync(error);
-            throw error;
-        }
+        this.channel.on("data", this.onChannelData);
     }
 }
 exports.SocketProxy = SocketProxy;

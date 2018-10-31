@@ -63,6 +63,42 @@ class CommunicationHost extends EventEmitter {
         Object.assign(this.connectionInfo, this.host.connectionInfo);
         this.connectionInfo.communicatorOptions = this.communicatorOptions || this.connectionInfo.communicatorOptions;
 
+        /**
+         * @type {Donuts.Remote.ChannelHostProxyConnectionHandler}
+         */
+        this.onConnection = (hostProxy, channelProxy) => {
+            const communicator = new Communicator(channelProxy, this.communicatorOptions);
+
+            for (const route of this.routes) {
+                communicator.map(route.pattern, route.asyncHandler);
+            }
+
+            this.communicators[communicator.id] = communicator;
+            this.emit("connection", this, communicator);
+        }
+
+        /**
+        * @type {Donuts.Remote.ChannelHostProxyErrorHandler}
+        */
+        this.onError = (hostProxy, error) => {
+            this.emit("error", this, error);
+        }
+        
+        /**
+         * @type {Donuts.Remote.ChannelHostProxyEventHandler}
+         */
+        this.onClose = (hostProxy) => {
+            this.dispose();
+            this.emit("close", this);
+        };
+
+        /** 
+         * @type {Donuts.Remote.ChannelHostProxyEventHandler}
+         */
+        this.onListening = (hostProxy) => {
+            this.emit("listening", this);
+        }
+
         this.host.setHandler("close", this.onClose);
         this.host.setHandler("connection", this.onConnection);
         this.host.setHandler("error", this.onError);
@@ -157,41 +193,6 @@ class CommunicationHost extends EventEmitter {
 
             delete this.communicators[propName];
         }
-    }
-
-    /**
-     * @type {Donuts.Remote.ChannelHostProxyConnectionHandler}
-     */
-    onConnection = (hostProxy, channelProxy) => {
-        const communicator = new Communicator(channelProxy, this.communicatorOptions);
-
-        for (const route of this.routes) {
-            communicator.map(route.pattern, route.asyncHandler);
-        }
-
-        this.communicators[communicator.id] = communicator;
-        this.emit("connection", this, communicator);
-    }
-
-    /**
-     * @type {Donuts.Remote.ChannelHostProxyErrorHandler}
-     */
-    onError = (hostProxy, error) => {
-        this.emit("error", this, error);
-    }
-    /**
-     * @type {Donuts.Remote.ChannelHostProxyEventHandler}
-     */
-    onClose = (hostProxy) => {
-        this.dispose();
-        this.emit("close", this);
-    };
-
-    /** 
-     * @type {Donuts.Remote.ChannelHostProxyEventHandler}
-     */
-    onListening = (hostProxy) => {
-        this.emit("listening", this);
     }
 }
 exports.CommunicationHost = CommunicationHost;

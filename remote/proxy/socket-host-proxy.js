@@ -65,6 +65,28 @@ class SocketHostProxy extends ChannelHostProxy {
          */
         this.connectionInfo = SocketHostProxy.generateConnectionInfo(this.host);
 
+        /**
+         * @private
+         * @param {Socket} socket
+         */
+        this.onConnection = (socket) => this.emit("connection", new SocketProxy(socket));
+
+        /**
+         * @private
+         */
+        this.onClose = () => this.emit("close");
+
+        /**
+         * @private
+         * @param {Error} error
+         */
+        this.onError = (error) => this.emit("error", error);
+
+        /**
+         * @private
+         */
+        this.onListening = () => this.emit("listening");
+
         this.host.on("close", this.onClose);
         this.host.on("connection", this.onConnection);
         this.host.on("error", this.onError);
@@ -87,27 +109,5 @@ class SocketHostProxy extends ChannelHostProxy {
 
         super.dispose();
     }
-
-    /**
-     * @private
-     * @param {Socket} socket
-     */
-    onConnection = (socket) => this.emit("connection", new SocketProxy(socket));
-
-    /**
-     * @private
-     */
-    onClose = () => this.emit("close");
-
-    /**
-     * @private
-     * @param {Error} error
-     */
-    onError = (error) => this.emit("error", error);
-
-    /**
-     * @private
-     */
-    onListening = () => this.emit("listening");
 }
 exports.SocketHostProxy = SocketHostProxy;

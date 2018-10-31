@@ -67,6 +67,66 @@ class Communicator {
 
         /** @type {Donuts.Remote.IChannelProxy} */
         this.channelProxy = channelProxy;
+
+        /**
+         * @param {Donuts.Remote.IChannelProxy} channel
+         * @param {Donuts.Remote.IMessage} msg
+         * @returns {Promise<void>}
+         */
+        this.onMessageAsync = async (channel, msg) => {
+            const promise = this.ongoingPromiseDict[msg.id];
+
+            if (promise) {
+                delete this.ongoingPromiseDict[msg.id];
+                msg.succeeded ? promise.resolve(msg.body) : promise.reject(msg.body);
+
+            } else if (utils.isNullOrUndefined(msg.succeeded)) {
+                /** @type {Donuts.Remote.IRoutePathInfo} */
+                let pathInfo;
+
+                /** @type {Donuts.Remote.AsyncRequestHandler} */
+                let asyncHandler;
+
+                // Find the corresponding route and
+                // generate the pathInfo.
+                for (const route of this.routes) {
+                    asyncHandler = route.asyncHandler;
+                    pathInfo = route.pattern.match(msg.path);
+
+                    if (pathInfo) {
+                        break;
+                    }
+                }
+
+                if (!pathInfo) {
+                    return;
+                }
+
+                /** @type {*} */
+                let response;
+
+                /** @type {boolean} */
+                let succeeded;
+
+                try {
+                    response = await asyncHandler(this, pathInfo, msg.body);
+                    succeeded = true;
+                } catch (exception) {
+                    response = exception;
+                    succeeded = false;
+                }
+
+                if (!this.channelProxy.sendData({
+                    id: msg.id,
+                    path: msg.path,
+                    succeeded: succeeded,
+                    body: response
+                })) {
+                    // Log if failed.
+                }
+            }
+        };
+
         this.channelProxy.setHandler("data", this.onMessageAsync);
     }
 
@@ -196,65 +256,6 @@ class Communicator {
     validateDisposal() {
         if (this.disposed) {
             throw new Error(`Communicator (${this.id}) already disposed.`);
-        }
-    }
-
-    /**
-     * @param {Donuts.Remote.IChannelProxy} channel
-     * @param {Donuts.Remote.IMessage} msg
-     * @returns {Promise<void>}
-     */
-    onMessageAsync = async (channel, msg) => {
-        const promise = this.ongoingPromiseDict[msg.id];
-
-        if (promise) {
-            delete this.ongoingPromiseDict[msg.id];
-            msg.succeeded ? promise.resolve(msg.body) : promise.reject(msg.body);
-
-        } else if (utils.isNullOrUndefined(msg.succeeded)) {
-            /** @type {Donuts.Remote.IRoutePathInfo} */
-            let pathInfo;
-
-            /** @type {Donuts.Remote.AsyncRequestHandler} */
-            let asyncHandler;
-
-            // Find the corresponding route and
-            // generate the pathInfo.
-            for (const route of this.routes) {
-                asyncHandler = route.asyncHandler;
-                pathInfo = route.pattern.match(msg.path);
-
-                if (pathInfo) {
-                    break;
-                }
-            }
-
-            if (!pathInfo) {
-                return;
-            }
-
-            /** @type {*} */
-            let response;
-
-            /** @type {boolean} */
-            let succeeded;
-
-            try {
-                response = await asyncHandler(this, pathInfo, msg.body);
-                succeeded = true;
-            } catch (exception) {
-                response = exception;
-                succeeded = false;
-            }
-
-            if (!this.channelProxy.sendData({
-                id: msg.id,
-                path: msg.path,
-                succeeded: succeeded,
-                body: response
-            })) {
-                // Log if failed.
-            }
         }
     }
 }

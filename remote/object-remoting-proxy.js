@@ -132,8 +132,131 @@ class ObjectRemotingProxy {
          * @type {import("./data-info-manager").DataInfoManager}
          */
         this.dataInfoManager = new DataInfoManager(this);
-        this.initializeMessageHandlers();
 
+        /**
+         * @private
+         * @param {Donuts.Remote.ICommunicator} communicator
+         * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+         * @param {Donuts.Remote.IProxyMessage} proxyMsg
+         * @returns {Promise<*>}
+         */
+        this.onMessage = (communicator, pathInfo, proxyMsg) => {
+            if (!isProxyMessage(proxyMsg)) {
+                // Log Error.
+                return Promise.resolve();
+            }
+
+            /** @type {Donuts.Remote.AsyncRequestHandler} */
+            const asyncRequestHandler = this.messageHandlers[proxyMsg.action];
+
+            if (!asyncRequestHandler) {
+                // Log Error.
+                return Promise.resolve();
+            }
+
+            return asyncRequestHandler(communicator, pathInfo, proxyMsg);
+        }
+
+        /**
+         * @private
+         * @param {Donuts.Remote.ICommunicator} communicator
+         * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+         * @param {Donuts.Remote.IResourceGetPropertyMessage} msg
+         * @returns {Promise<*>}
+         */
+        this.onGetPropertyAsync = async (communicator, pathInfo, msg) => {
+            const target = this.dataInfoManager.get(msg.refId);
+
+            if (target === undefined) {
+                throw new Error(`Target (${msg.refId}) doesn't exist.`);
+            }
+
+            return this.dataInfoManager.toDataInfo(target[msg.property]);
+        }
+
+        /**
+         * @private
+         * @param {Donuts.Remote.ICommunicator} communicator
+         * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+         * @param {Donuts.Remote.IResourceSetPropertyMessage} msg
+         * @returns {Promise<*>}
+         */
+        this.onSetPropertyAsync = async (communicator, pathInfo, msg) => {
+            const target = this.dataInfoManager.get(msg.refId);
+
+            if (target === undefined) {
+                throw new Error(`Target (${msg.refId}) doesn't exist.`);
+            }
+
+            target[msg.property] = this.dataInfoManager.realizeDataInfo(msg.value);
+
+            return true;
+        }
+
+        /**
+         * @private
+         * @param {Donuts.Remote.ICommunicator} communicator
+         * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+         * @param {Donuts.Remote.IResourceApplyMessage} msg
+         * @returns {Promise<*>}
+         */
+        this.onApplyAsync = async (communicator, pathInfo, msg) => {
+            /** @type {Function} */
+            const target = this.dataInfoManager.get(msg.refId);
+
+            if (target === undefined) {
+                throw new Error(`Target (${msg.refId}) doesn't exist.`);
+            }
+
+            if (typeof target !== "function") {
+                throw new Error(`Target (${msg.refId}) is not a function which cannot be applied.`);
+            }
+
+            /** @type {Array.<*>} */
+            const args = [];
+
+            for (const argDataInfo of msg.args) {
+                args.push(this.dataInfoManager.realizeDataInfo(argDataInfo));
+            }
+
+            /** @type {*} */
+            const result = target.apply(this.dataInfoManager.realizeDataInfo(msg.thisArg), args);
+
+            return this.dataInfoManager.toDataInfo(result);
+        }
+
+        /**
+         * @private
+         * @param {Donuts.Remote.ICommunicator} communicator
+         * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+         * @param {Donuts.Remote.IResourceRequestMessage} msg
+         * @returns {Promise<*>}
+         */
+        this.onRequestResourceAsync = async (communicator, pathInfo, msg) => {
+            /** @type {Array.<*>} */
+            const extraArgs = [];
+
+            for (const extraArgDataInfo of msg.extraArgs) {
+                extraArgs.push(this.dataInfoManager.realizeDataInfo(extraArgDataInfo));
+            }
+
+            const target = await this.resolveAsync(msg.identifier, ...extraArgs);
+
+            return this.dataInfoManager.toDataInfo(target);
+        }
+
+        /**
+         * @private
+         * @param {Donuts.Remote.ICommunicator} communicator
+         * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+         * @param {Donuts.Remote.IResourceReleaseMessage} msg
+         * @returns {Promise<*>}
+         */
+        this.onReleaseResourceAsync = async (communicator, pathInfo, msg) => {
+            await this.dataInfoManager.delDataInfo(msg.refId);
+        }
+
+        this.initializeMessageHandlers();
         this.communicator.map(this.routePattern, this.onMessage);
     }
 
@@ -344,129 +467,6 @@ class ObjectRemotingProxy {
         this.messageHandlers["Resource.GetProperty"] = this.onGetPropertyAsync;
         this.messageHandlers["Resource.SetProperty"] = this.onSetPropertyAsync;
         this.messageHandlers["Resource.Apply"] = this.onApplyAsync;
-    }
-
-    /**
-     * @private
-     * @param {Donuts.Remote.ICommunicator} communicator
-     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
-     * @param {Donuts.Remote.IProxyMessage} proxyMsg
-     * @returns {Promise<*>}
-     */
-    onMessage = (communicator, pathInfo, proxyMsg) => {
-        if (!isProxyMessage(proxyMsg)) {
-            // Log Error.
-            return Promise.resolve();
-        }
-
-        /** @type {Donuts.Remote.AsyncRequestHandler} */
-        const asyncRequestHandler = this.messageHandlers[proxyMsg.action];
-
-        if (!asyncRequestHandler) {
-            // Log Error.
-            return Promise.resolve();
-        }
-
-        return asyncRequestHandler(communicator, pathInfo, proxyMsg);
-    }
-
-    /**
-     * @private
-     * @param {Donuts.Remote.ICommunicator} communicator
-     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
-     * @param {Donuts.Remote.IResourceGetPropertyMessage} msg
-     * @returns {Promise<*>}
-     */
-    onGetPropertyAsync = async (communicator, pathInfo, msg) => {
-        const target = this.dataInfoManager.get(msg.refId);
-
-        if (target === undefined) {
-            throw new Error(`Target (${msg.refId}) doesn't exist.`);
-        }
-
-        return this.dataInfoManager.toDataInfo(target[msg.property]);
-    }
-
-    /**
-     * @private
-     * @param {Donuts.Remote.ICommunicator} communicator
-     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
-     * @param {Donuts.Remote.IResourceSetPropertyMessage} msg
-     * @returns {Promise<*>}
-     */
-    onSetPropertyAsync = async (communicator, pathInfo, msg) => {
-        const target = this.dataInfoManager.get(msg.refId);
-
-        if (target === undefined) {
-            throw new Error(`Target (${msg.refId}) doesn't exist.`);
-        }
-
-        target[msg.property] = this.dataInfoManager.realizeDataInfo(msg.value);
-
-        return true;
-    }
-
-    /**
-     * @private
-     * @param {Donuts.Remote.ICommunicator} communicator
-     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
-     * @param {Donuts.Remote.IResourceApplyMessage} msg
-     * @returns {Promise<*>}
-     */
-    onApplyAsync = async (communicator, pathInfo, msg) => {
-        /** @type {Function} */
-        const target = this.dataInfoManager.get(msg.refId);
-
-        if (target === undefined) {
-            throw new Error(`Target (${msg.refId}) doesn't exist.`);
-        }
-
-        if (typeof target !== "function") {
-            throw new Error(`Target (${msg.refId}) is not a function which cannot be applied.`);
-        }
-
-        /** @type {Array.<*>} */
-        const args = [];
-
-        for (const argDataInfo of msg.args) {
-            args.push(this.dataInfoManager.realizeDataInfo(argDataInfo));
-        }
-
-        /** @type {*} */
-        const result = target.apply(this.dataInfoManager.realizeDataInfo(msg.thisArg), args);
-
-        return this.dataInfoManager.toDataInfo(result);
-    }
-
-    /**
-     * @private
-     * @param {Donuts.Remote.ICommunicator} communicator
-     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
-     * @param {Donuts.Remote.IResourceRequestMessage} msg
-     * @returns {Promise<*>}
-     */
-    onRequestResourceAsync = async (communicator, pathInfo, msg) => {
-        /** @type {Array.<*>} */
-        const extraArgs = [];
-
-        for (const extraArgDataInfo of msg.extraArgs) {
-            extraArgs.push(this.dataInfoManager.realizeDataInfo(extraArgDataInfo));
-        }
-
-        const target = await this.resolveAsync(msg.identifier, ...extraArgs);
-
-        return this.dataInfoManager.toDataInfo(target);
-    }
-
-    /**
-     * @private
-     * @param {Donuts.Remote.ICommunicator} communicator
-     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
-     * @param {Donuts.Remote.IResourceReleaseMessage} msg
-     * @returns {Promise<*>}
-     */
-    onReleaseResourceAsync = async (communicator, pathInfo, msg) => {
-        await this.dataInfoManager.delDataInfo(msg.refId);
     }
 }
 exports.ObjectRemotingProxy = ObjectRemotingProxy;

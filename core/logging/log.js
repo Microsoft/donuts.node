@@ -13,9 +13,6 @@ const { ConsoleLogger } = require("./loggers/console");
  * @implements {Donuts.Logging.ILog}
  */
 class Log {
-    /** @type {Donuts.Logging.ILog} */
-    static _instance;
-
     /**
      * 
      * @param {Error} error 
@@ -347,3 +344,6 @@ class Log {
     }
 }
 exports.Log = Log;
+
+/** @type {Donuts.Logging.ILog} */
+Log._instance = undefined;

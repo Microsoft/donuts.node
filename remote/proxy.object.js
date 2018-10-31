@@ -7,93 +7,33 @@ const uuidv4 = require("uuid/v4");
 const utils = require("donuts.node/utils");
 const weak = require("donuts.node-weak");
 
-export interface Resolver {
-    (proxy: IObjectRemotingProxy, name: string, ...extraArgs: Array<any>): Promise<IDisposable>;
+/**
+ * 
+ * @param {*} value 
+ * @returns {value is Donuts.Remote.IProxyMessage}
+ */
+function isProxyMessage(value) {
+    return !utils.isNullOrUndefined(value)
+        && utils.isString(value.action);
 }
 
-export interface IObjectRemotingProxy extends IDisposable {
-    readonly id: string;
-    readonly routePattern: IRoutePattern;
-    readonly communicator: ICommunicator;
-
-    requestAsync<T>(identifier: string, ...extraArgs: Array<any>): Promise<T & IDisposable>;
-
-    setResolver(resolver: Resolver): void;
-    getResolver(): Resolver;
-}
-
-enum ProxyActionType {
-    RequestResource = "RequestResource",
-    Delegate = "Delegate"
-}
-
-const ProxyActionTypeValues: Array<string> = Object.values(ProxyActionType);
-
-interface IProxyMessage {
-    action: string;
-}
-
-interface IRequestResourceProxyMessage extends IProxyMessage {
-    action: ProxyActionType.RequestResource;
-    resourceId: string;
-    extraArgs: Array<IDataInfo>;
-}
-
-interface IDelegationProxyMessage extends IProxyMessage {
-    delegateType: DelegationType;
-    content: IDelegateMessage;
-}
-
-function isProxyMessage(msg: any): msg is IProxyMessage {
-    return !utils.isNullOrUndefined(msg)
-        && ProxyActionTypeValues.includes(msg.action);
-}
-
-class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
-    public readonly id: string;
-
-    public get routePattern(): IRoutePattern {
-        return this.pathPattern;
-    }
-
-    public get communicator(): ICommunicator {
-        return this._communicator;
-    }
-
-    private readonly ownCommunicator: boolean;
-
-    private pathPattern: IRoutePattern;
-
-    private resolver: Resolver;
-
-    private messageHandlers: IDictionary<AsyncRequestHandler>;
-
-    private dataInfoManager: DataInfoManager;
-
-    private _communicator: ICommunicator;
-
-    public static create(
-        pathPattern: IRoutePattern,
-        communicator: ICommunicator,
-        ownCommunicator?: boolean,
-        proxyId?: string)
-        : IObjectRemotingProxy {
-        if (!utils.isObject(pathPattern)) {
-            throw new Error("pathPattern must be provided.");
-        }
-
-        if (utils.isNullOrUndefined(communicator)) {
-            throw new Error("communicator must be provided.");
-        }
-
-        return new ObjectRemotingProxy(pathPattern, communicator, ownCommunicator, proxyId);
-    }
-
-    public async requestAsync<T>(identifier: string, ...extraArgs: Array<any>): Promise<T & IDisposable> {
+/**
+ * @class
+ * @implements {Donuts.Remote.IObjectRemotingProxy}
+ */
+class ObjectRemotingProxy {
+    /**
+     * @public
+     * @template T
+     * @param {string} identifier 
+     * @param  {...*} extraArgs 
+     * @returns {Promise<T>}
+     */
+    async requestAsync(identifier, ...extraArgs) {
         this.validateDisposal();
 
         const tempReferer = this.dataInfoManager.referAsDataInfo(() => undefined);
-        
+
         try {
             const extraArgsDataInfos = extraArgs.map((arg) => this.dataInfoManager.referAsDataInfo(arg, tempReferer.id));
 
@@ -121,7 +61,12 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         }
     }
 
-    public setResolver(resolver: Resolver): void {
+    /**
+     * @public
+     * @param {Donuts.Remote.Resolver} resolver 
+     * @returns {void}
+     */
+    setResolver(resolver) {
         this.validateDisposal();
 
         if (resolver && !utils.isFunction(resolver)) {
@@ -131,22 +76,42 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         this.resolver = resolver;
     }
 
-    public getResolver(): Resolver {
+    /**
+     * @public
+     * @returns {Donuts.Remote.Resolver}
+     */
+    getResolver() {
         this.validateDisposal();
         return this.resolver;
     }
 
-    public get disposed(): boolean {
+    /**
+     * @public
+     * @returns {boolean}
+     */
+    get disposed() {
         return !this.messageHandlers || !this.dataInfoManager;
     }
 
-    public async disposeAsync(): Promise<void> {
+    /**
+     * @public
+     * @returns {Donuts.Remote.ICommunicator}
+     */
+    get communicator() {
+        return this._communicator;
+    }
+
+    /**
+     * @public
+     * @returns {void}
+     */
+    dispose() {
         if (!this.disposed) {
             this.communicator.unmap(this.pathPattern);
-            await this.dataInfoManager.disposeAsync();
+            this.dataInfoManager.disposeAsync();
 
             if (this.ownCommunicator) {
-                await this._communicator.disposeAsync();
+                this._communicator.dispose();
             }
 
             this._communicator = undefined;
@@ -155,7 +120,13 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         }
     }
 
-    public delegateAsync(type: DelegationType, msg: IDelegateMessage): Promise<IDataInfo> {
+    /**
+     * @public
+     * @param {DelegationType} type 
+     * @param {IDelegateMessage} msg 
+     * @returns {Promise.<IDataInfo>}
+     */
+    delegateAsync(type, msg) {
         return this.communicator.sendAsync<IDelegationProxyMessage, IDataInfo>(
             this.pathPattern.getRaw(),
             {
@@ -165,11 +136,14 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
             });
     }
 
-    private constructor(
-        pathPattern: IRoutePattern,
-        communicator: ICommunicator,
-        ownCommunicator?: boolean,
-        proxyId?: string) {
+    /**
+     * @public
+     * @param {Donuts.Remote.IRoutePattern} pathPattern 
+     * @param {Donuts.Remote.ICommunicator} communicator 
+     * @param {boolean} [ownCommunicator=false]
+     * @param {string} [proxyId]
+     */
+    constructor(pathPattern, communicator, ownCommunicator, proxyId) {
         if (!utils.isObject(pathPattern)) {
             throw new Error("pathPattern must be provided.");
         }
@@ -178,18 +152,59 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
             throw new Error("communicator must be provided.");
         }
 
+        /**
+         * @public
+         * @readonly
+         * @type {string}
+         */
         this.id = proxyId || uuidv4();
+
+        /**
+         * @private
+         * @readonly
+         * @type {Donuts.Remote.ICommunicator}
+         */
         this._communicator = communicator;
+
+        /**
+         * @private
+         * @readonly
+         * @type {boolean}
+         */
         this.ownCommunicator = ownCommunicator === true;
+
+        /**
+         * @private
+         * @readonly
+         * @type {Donuts.Remote.IRoutePattern}
+         */
         this.pathPattern = pathPattern;
+
+        /**
+         * @private
+         * @readonly
+         * @type {Donuts.IDictionary.<Donuts.Remote.AsyncRequestHandler>}
+         */
         this.messageHandlers = Object.create(null);
+
+        /**
+         * @private
+         * @readonly
+         * @type {Donuts.Remote.DataInfoManager}
+         */
         this.dataInfoManager = new DataInfoManager(new Delegation(this));
         this.initializeMessageHandlers();
 
         this.communicator.map(this.pathPattern, this.onMessage);
     }
 
-    private resolveAsync(name: string, ...extraArgs: Array<any>): Promise<any> {
+    /**
+     * @private
+     * @param {string} name 
+     * @param {...*} extraArgs 
+     * @returns {Promise.<*>}
+     */
+    resolveAsync(name, ...extraArgs) {
         if (this.resolver) {
             return this.resolver(this, name, ...extraArgs);
         }
@@ -197,18 +212,33 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return undefined;
     }
 
-    private validateDisposal(): void {
+    /**
+     * @private
+     * @returns {void}
+     */
+    validateDisposal() {
         if (this.disposed) {
             throw new Error(`Proxy (${this.id}) already disposed.`);
         }
     }
 
-    private initializeMessageHandlers() {
+    /**
+     * @private
+     * @returns {void}
+     */
+    initializeMessageHandlers() {
         this.messageHandlers[ProxyActionType.RequestResource] = this.onRequestResourceAsync;
         this.messageHandlers[ProxyActionType.Delegate] = this.onDelegateAsync;
     }
 
-    private onMessage = (communicator, path, proxyMsg: IProxyMessage): Promise<any> => {
+    /**
+     * @private
+     * @param {Donuts.Remote.ICommunicator} communicator
+     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+     * @param {Donuts.Remote.IProxyMessage} proxyMsg
+     * @returns {Promise<*>}
+     */
+    onMessage = (communicator, pathInfo, proxyMsg) => {
         if (!isProxyMessage(proxyMsg)) {
             // Log Error.
             return Promise.resolve();
@@ -224,7 +254,14 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return asyncRequestHandler(communicator, path, proxyMsg);
     }
 
-    private onDelegateAsync = (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<any> => {
+    /**
+     * @private
+     * @param {Donuts.Remote.ICommunicator} communicator
+     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+     * @param {IDelegationProxyMessage} msg
+     * @returns {Promise<*>}
+     */
+    onDelegateAsync = (communicator, pathInfo, msg) => {
         switch (msg.delegateType) {
             case DelegationType.Apply:
                 return this.onApplyAsync(communicator, pathInfo, msg);
@@ -243,8 +280,16 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         }
     }
 
-    private onGetPropertyAsync = async (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<any> => {
-        const delegationMsg = <IPropertyDelegationMessage>msg.content;
+    /**
+     * @private
+     * @param {Donuts.Remote.ICommunicator} communicator
+     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+     * @param {Donuts.Remote.IDelegationProxyMessage} msg
+     * @returns {Promise<*>}
+     */
+    onGetPropertyAsync = async (communicator, pathInfo, msg) => {
+        /** @type {IPropertyDelegationMessage} */
+        const delegationMsg = msg.content;
         const target = this.dataInfoManager.get(delegationMsg.refId);
 
         if (target === undefined) {
@@ -254,8 +299,16 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return this.dataInfoManager.referAsDataInfo(await target[delegationMsg.property], delegationMsg.refId);
     }
 
-    private onSetPropertyAsync = async (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<any> => {
-        const delegationMsg = <ISetPropertyDelegationMessage>msg.content;
+    /**
+     * @private
+     * @param {Donuts.Remote.ICommunicator} communicator
+     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+     * @param {Donuts.Remote.IDelegationProxyMessage} msg
+     * @returns {Promise<*>}
+     */
+    onSetPropertyAsync = async (communicator, pathInfo, msg) => {
+        /** @type {ISetPropertyDelegationMessage} */
+        const delegationMsg = msg.content;
         const target = this.dataInfoManager.get(delegationMsg.refId);
 
         if (target === undefined) {
@@ -267,8 +320,16 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return true;
     }
 
-    private onApplyAsync = async (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<any> => {
-        const delegationMsg = <IApplyDelegationMessage>msg.content;
+    /**
+     * @private
+     * @param {Donuts.Remote.ICommunicator} communicator
+     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+     * @param {Donuts.Remote.IDelegationProxyMessage} msg
+     * @returns {Promise<*>}
+     */
+    onApplyAsync = async (communicator, pathInfo, msg) => {
+        /** @type {IApplyDelegationMessage} */
+        const delegationMsg = msg.content;
         const target = this.dataInfoManager.get(delegationMsg.refId);
 
         if (target === undefined) {
@@ -287,13 +348,28 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return this.dataInfoManager.referAsDataInfo(result, delegationMsg.refId);
     }
 
-    private onDisposeAsync = (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IDelegationProxyMessage): Promise<void> => {
-        const delegationMsg = <IDisposeDelegateMessage>msg.content;
+    /**
+     * @private
+     * @param {Donuts.Remote.ICommunicator} communicator
+     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+     * @param {Donuts.Remote.IDelegationProxyMessage} msg
+     * @returns {Promise<*>}
+     */
+    onDisposeAsync = (communicator, pathInfo, msg) => {
+        /** @type {IDisposeDelegateMessage} */
+        const delegationMsg = msg.content;
 
         return this.dataInfoManager.releaseByIdAsync(delegationMsg.refId, delegationMsg.parentId, true);
     }
 
-    private onRequestResourceAsync = async (communicator: ICommunicator, pathInfo: IRoutePathInfo, msg: IRequestResourceProxyMessage): Promise<IDataInfo> => {
+    /**
+     * @private
+     * @param {Donuts.Remote.ICommunicator} communicator
+     * @param {Donuts.Remote.IRoutePathInfo} pathInfo
+     * @param {Donuts.Remote.IRequestResourceProxyMessage} msg
+     * @returns {Promise<*>}
+     */
+    onRequestResourceAsync = async (communicator, pathInfo, msg) => {
         const tempReferer = this.dataInfoManager.referAsDataInfo(() => undefined);
         const extraArgs = msg.extraArgs.map((argDataInfo) => this.dataInfoManager.realizeDataInfo(argDataInfo, tempReferer.id));
 
@@ -313,3 +389,4 @@ class ObjectRemotingProxy implements IObjectRemotingProxy, IDelegator {
         return targetDataInfo;
     }
 }
+exports.ObjectRemotingProxy = ObjectRemotingProxy;

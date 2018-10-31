@@ -141,5 +141,18 @@ namespace Donuts.Remote {
         sendAsync<TRequest, TResponse>(path: string, content: TRequest): Promise<TResponse>;
     }
 
-    interface 
+    interface Resolver {
+        (proxy: IObjectRemotingProxy, name: string, ...extraArgs: Array<any>): Promise<any>;
+    }
+
+    interface IObjectRemotingProxy extends IDisposable {
+        readonly id: string;
+        readonly routePattern: IRoutePattern;
+        readonly communicator: ICommunicator;
+    
+        requestAsync<T>(identifier: string, ...extraArgs: Array<any>): Promise<T>;
+    
+        setResolver(resolver: Resolver): void;
+        getResolver(): Resolver;
+    }
 }

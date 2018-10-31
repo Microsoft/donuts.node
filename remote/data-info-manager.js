@@ -3,103 +3,71 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IDictionary, IDisposable } from "donuts.node";
-import { IDataInfo, DataType, dataTypeOf } from "./data-info";
-import { ReferenceNode } from "./reference-node";
-import { IDelegation } from "./delegate";
-import * as utils from "donuts.node/utils";
+const { dataTypeOf } = require("./data-info");
+const utils = require("donuts.node/utils");
+const uuidv4 = require("uuid/v4");
+const weak = require("donuts.node-weak");
 
-interface IObjectDataInfo extends IDataInfo {
-    memberInfos: IDictionary<IDataInfo>;
-}
+/**
+ * @class
+ */
+class DataInfoManager {
+    constructor() {
+        /** 
+         * @readonly
+         * @type {Donuts.IDictionary.<*>} 
+         * */
+        this.localRefs = Object.create(null);
 
-const FuncName_DisposeAsync = "disposeAsync";
-
-export class DataInfoManager implements IDisposable {
-    private refRoot: ReferenceNode;
-
-    private delegation: IDelegation;
-
-    constructor(delegation: IDelegation) {
-        if (!utils.isObject(delegation) || delegation === null) {
-            throw new Error("delegate must be supplied.");
-        }
-
-        this.delegation = delegation;
-        this.refRoot = ReferenceNode.createRoot();
+        /**
+         * @readonly
+         * @type {symbol}
+         */
+        this.symbol_dataInfo = Symbol("dataInfo");
     }
 
-    public get disposed(): boolean {
-        return this.refRoot === undefined || this.delegation === undefined;
-    }
+    /**
+     * @public
+     * Get the object by refId.
+     * @param {string} refId 
+     * @returns {object | function}
+     */
+    get(refId) {
+        const value = this.localRefs[refId];
 
-    public get(refId: string): Object | Function {
-        this.validateDisposal();
-
-        const referee = this.refRoot.referById(refId);
-
-        if (!referee) {
+        if (utils.isNullOrUndefined(value)) {
             return undefined;
         }
 
-        return referee.target;
+        return value;
     }
 
-    public async disposeAsync(): Promise<void> {
-        if (!this.disposed) {
-            const promises =
-                this.refRoot.getRefereeIds().map(
-                    (refId) => refId === this.refRoot.id ? Promise.resolve() : this.releaseByIdAsync(refId));
-            await Promise.all(promises);
-
-            this.refRoot = undefined;
-            this.delegation = undefined;
-        }
-    }
-
-    public addReferenceById(refereeId: string, parentId?: string): void {
-        this.validateDisposal();
-
-        const referee = this.refRoot.referById(refereeId);
-
-        if (!referee) {
-            throw new Error(`refereeId (${refereeId}) doesn't exist.`);
-        }
-
-        parentId = parentId || this.refRoot.id;
-        referee.addRefererById(parentId);
-    }
-
-    public referAsDataInfo(target: any, parentId?: string): IDataInfo {
-        this.validateDisposal();
-
-        return this.toDataInfo(target, parentId);
-    }
-
-    public realizeDataInfo(dataInfo: IDataInfo, parentId?: string): any & IDisposable {
-        this.validateDisposal();
-
+    /**
+     * @public
+     * Realize the given IDataInfo to a local object proxy.
+     * @param {Donuts.Remote.IDataInfo} dataInfo 
+     * @returns {*}
+     */
+    realizeDataInfo(dataInfo) {
         if (dataInfo.id) {
-            parentId = parentId || this.refRoot.id;
+            const existingValue = this.get(dataInfo.id);
 
-            const existingRef = this.refRoot.referById(dataInfo.id, parentId);
-
-            if (existingRef) {
-                return existingRef.target;
+            if (!utils.isNullOrUndefined(existingValue)) {
+                return existingValue;
             }
 
-            if (dataInfo.type === DataType.Object) {
-                return this.realizeObjectDataInfo(<IObjectDataInfo>dataInfo, parentId);
+            if (dataInfo.type === "object") {
+                return this.realizeObjectDataInfo(dataInfo);
 
-            } else if (dataInfo.type === DataType.Function) {
-                return this.realizeFunctionDataInfo(dataInfo, parentId);
+            } else if (dataInfo.type === "function") {
+                return this.realizeFunctionDataInfo(dataInfo);
 
             } else {
-                // Log Error [BUG].
+                throw new Error(`Unsupported DataType for IDataInfo with an id: ${dataInfo.type}.`);
             }
         }
 
-        if (dataInfo.type === DataType.Buffer) {
+        if (dataInfo.type === "node.buffer") {
             return Buffer.from(dataInfo.value.data, "base64");
         }
 
@@ -119,13 +87,15 @@ export class DataInfoManager implements IDisposable {
                     return value;
                 }
 
+                /** @type {Donuts.Remote.DataType} */
+                // @ts-ignore
                 const dataType = value.substring(0, separatorIndex);
 
                 switch (dataType) {
-                    case DataType.String:
+                    case "string":
                         return value.substring(separatorIndex + 1);
 
-                    case DataType.Buffer:
+                    case "node.buffer":
                         return Buffer.from(value.substring(separatorIndex + 1), "base64");
 
                     default:
@@ -134,43 +104,43 @@ export class DataInfoManager implements IDisposable {
             });
     }
 
-    public async releaseByIdAsync(refId: string, parentId?: string, locally?: boolean): Promise<void> {
-        this.validateDisposal();
-
-        const referee = this.refRoot.referById(refId);
-
-        if (referee) {
-            if (locally !== true) {
-                await this.delegation.disposeAsync(refId, parentId);
-            }
-
-            parentId = parentId || this.refRoot.id;
-            referee.removeRefererById(parentId);
+    /**
+     * Get the refId from the given object.
+     * @param {*} target 
+     * @returns {string} The refId attached to the object. Otherwise, undefined.
+     */
+    getRefId(target) {
+        if (utils.isNullOrUndefined(target)) {
+            return undefined;
         }
+
+        /** @type {Donuts.Remote.IDataInfo} */
+        const dataInfo = target[this.symbol_dataInfo];
+
+        if (!dataInfo) {
+            return undefined;
+        }
+
+        return dataInfo.id;
     }
 
-    private validateDisposal(): void {
-        if (this.disposed) {
-            throw new Error("DataInfoManager already disposed.");
-        }
-    }
+    /**
+     * @private
+     * @param {*} target 
+     * @param {boolean} [recursive]
+     * @returns {Donuts.Remote.IDataInfo}
+     */
+    toDataInfo(target, recursive) {
+        /** @type {Donuts.Remote.IDataInfo} */
+        let dataInfo = target ? target[this.symbol_dataInfo] : { type: dataTypeOf(target) };
 
-    private toDataInfo(target: any, parentId?: string, recursive?: boolean): IDataInfo {
-        let dataInfo: IDataInfo = {
-            type: dataTypeOf(target)
-        };
-        const existingRefId = this.refRoot.getRefId(target);
-
-        parentId = parentId || this.refRoot.id;
         recursive = !(recursive === false);
 
-        if (existingRefId) {
-            dataInfo.id = existingRefId;
-            dataInfo = this.refRoot.getRefDataInfo(target) || dataInfo;
-            this.refRoot.referById(existingRefId, parentId);
+        if (dataInfo.id) {
+            // Existing dataInfo.
 
-        } else if (dataInfo.type === DataType.Buffer) {
-            dataInfo.value = (<Buffer>target).toString("base64");
+        } else if (dataInfo.type === "node.buffer") {
+            dataInfo.value = (target).toString("base64");
 
         } else if (utils.object.isSerializable(target)) {
             dataInfo.value = JSON.stringify(target,
@@ -180,49 +150,74 @@ export class DataInfoManager implements IDisposable {
                     }
 
                     if (typeof value === "string") {
-                        return `${DataType.String}:${value}`;
+                        return `${"string"}:${value}`;
                     }
 
                     if (value && value.type === "Buffer" && Array.isArray(value.data)) {
-                        return `${DataType.Buffer}:${Buffer.from(value.data).toString("base64")}`;
+                        return `${"node.buffer"}:${Buffer.from(value.data).toString("base64")}`;
                     }
 
                     return value;
                 });
 
-        } else if (recursive && dataInfo.type === DataType.Object) {
-            return this.toObjectDataInfo(target, parentId);
+        } else if (recursive && dataInfo.type === "object") {
+            return this.toObjectDataInfo(target);
+
+        } else if (dataInfo.type === "function") {
+            dataInfo = this.toFunctionDataInfo(target);
 
         } else {
-            const ref = this.refRoot.refer(target, parentId);
-
-            dataInfo.id = ref.id;
+            throw new Error(`Unsupported DataType of the given target: ${dataInfo.type}`);
         }
 
+        this.localRefs[dataInfo.id] = target;
         return dataInfo;
     }
 
-    private toObjectDataInfo(target: Object, parentId?: string): IDataInfo {
-        const ref = this.refRoot.refer(target, parentId);
+    /**
+     * @private
+     * @param {*} target
+     */
+    toFunctionDataInfo(target) {
+        /** @type {Donuts.Remote.IDataInfo} */
+        let dataInfo = target[this.symbol_dataInfo];
 
-        let dataInfo: IObjectDataInfo = <IObjectDataInfo>ref.getRefDataInfo(target);
+        if (!dataInfo) {
+            dataInfo = {
+                type: "function",
+                id: uuidv4()
+            };
+        }
+
+        return target[this.symbol_dataInfo] = dataInfo;
+    }
+
+    /**
+     * @private
+     * @param {object} target 
+     * @returns {Donuts.Remote.IDataInfo}
+     */
+    toObjectDataInfo(target) {
+        /** @type {Donuts.Remote.IObjectDataInfo} */
+        let dataInfo = target[this.symbol_dataInfo];
 
         if (dataInfo) {
             return dataInfo;
         }
 
         dataInfo = {
-            type: DataType.Object,
-            id: ref.id,
+            type: "object",
+            id: uuidv4(),
             memberInfos: Object.create(null)
         };
 
-        const memberInfos: IDictionary<IDataInfo> = dataInfo.memberInfos;
+        const memberInfos = dataInfo.memberInfos;
 
         let currentObj = target;
 
         while (currentObj && currentObj !== Object.prototype) {
             const propertyDescriptors = Object.getOwnPropertyDescriptors(currentObj);
+            // @ts-ignore "constructor" value is the same as other properties.
             const isClass = utils.isFunction(propertyDescriptors["constructor"].value);
 
             for (const propertyName in propertyDescriptors) {
@@ -242,27 +237,23 @@ export class DataInfoManager implements IDisposable {
                     || (isClass
                         && !propertyDescriptor.enumerable
                         && utils.isFunction(propertyDescriptor.value))) {
-                    memberInfos[propertyName] = this.toDataInfo(propertyDescriptor.value, dataInfo.id, false);
+                    memberInfos[propertyName] = this.toDataInfo(propertyDescriptor.value, false);
                 }
             }
 
             currentObj = Object.getPrototypeOf(currentObj);
         }
 
-        return ref.setRefDataInfo(target, dataInfo);
+        return target[this.symbol_dataInfo] = dataInfo;
     }
 
-    private generateDisposeFunc(refId: string, parentId?: string, superDisposeFunc?: () => Promise<void>): () => Promise<void> {
-        return async () => {
-            if (superDisposeFunc) {
-                await superDisposeFunc();
-            }
-
-            await this.releaseByIdAsync(refId, parentId, false);
-        };
-    }
-
-    private realizeFunctionDataInfo(dataInfo: IDataInfo, parentId?: string): any {
+    /**
+     * @private
+     * @param {Donuts.Remote.IDataInfo} dataInfo 
+     * @param {string} [parentId]
+     * @returns {*}
+     */
+    realizeFunctionDataInfo(dataInfo, parentId) {
         const base = () => undefined;
 
         base[FuncName_DisposeAsync] = this.generateDisposeFunc(dataInfo.id, parentId);
@@ -291,7 +282,13 @@ export class DataInfoManager implements IDisposable {
         return funcProxy;
     }
 
-    private realizeObjectDataInfo(dataInfo: IObjectDataInfo, parentId?: string): any & IDisposable {
+    /**
+     * @private
+     * @param {IObjectDataInfo} dataInfo 
+     * @param {string} [parentId]
+     * @returns {*}
+     */
+    realizeObjectDataInfo(dataInfo, parentId) {
         const base = Object.create(null);
         const handlers: ProxyHandler<Function> = {
             get: (target, property, receiver): any | Promise<any> => {
@@ -352,3 +349,4 @@ export class DataInfoManager implements IDisposable {
         return objProxy;
     }
 }
+exports.DataInfoManager = DataInfoManager;

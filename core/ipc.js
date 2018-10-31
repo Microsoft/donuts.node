@@ -8,7 +8,6 @@ const net = require("net");
 const path = require("path");
 const uuidv4 = require("uuid/v4");
 const tmp = require("tmp");
-const utils = require("./utils");
 const fileSytem = require("./fileSystem");
 
 /**

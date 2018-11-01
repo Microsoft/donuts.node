@@ -417,14 +417,14 @@ class ObjectRemotingProxy {
 
     /**
      * @public
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    dispose() {
+    async disposeAsync() {
         if (this._communicator) {
             this.communicator.unmap(this.routePattern);
 
             if (this.ownCommunicator) {
-                this._communicator.dispose();
+                await this._communicator.disposeAsync();
             }
 
             this._communicator = undefined;

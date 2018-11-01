@@ -39,17 +39,10 @@
             "args": [
                 "--timeout",
                 "999999",
+                "--exit",
                 "--colors",
                 "${file}"
-            ],
-            "windows": {
-                "args": [
-                    "--timeout",
-                    "999999",
-                    "--colors",
-                    "${file}"
-                ]
-            }
+            ]
         }
     ]
 }

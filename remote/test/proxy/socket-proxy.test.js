@@ -9,12 +9,27 @@ const ipc = require("./ipc");
 const { SocketProxy } = require("../../proxy/socket-proxy");
 
 describe("SocketProxy", () => {
+    const ipcPath = "SocketProxy";
+
+    /** @type {Array.<import("net").Socket>} */
+    const connections = [];
+
     // @ts-ignore
-    const ipcSvr = ipc.createServer();
+    const ipcSvr =
+        ipc.createServer(ipcPath)
+            .on("connection", (socket) => connections.push(socket));
+
+    after(() => new Promise((resolve, reject) => {
+        ipcSvr.close(() => resolve());
+
+        for (const socket of connections) {
+            socket.destroy();
+        }
+    }));
 
     describe("static", () => {
         it("isValidChannel(): return true if channel is valid net.Socket.", () => {
-            const ipcClient = ipc.createClient();
+            const ipcClient = ipc.createClient(ipcPath);
 
             assert.ok(SocketProxy.isValidChannel(ipcClient));
             ipcClient.destroy();
@@ -26,21 +41,21 @@ describe("SocketProxy", () => {
     });
 
     describe("instances", () => {
-        it(".constructor()", () => {
-            const ipcClient = ipc.createClient();
+        it(".constructor()", async () => {
+            const ipcClient = ipc.createClient(ipcPath);
             const proxy = new SocketProxy(ipcClient);
 
-            proxy.dispose();
+            await proxy.disposeAsync();
         });
 
-        it(".dispose()", () => new Promise((resolve, reject) => {
-            const ipcClient = ipc.createClient();
+        it(".disposeAsync()", () => new Promise((resolve, reject) => {
+            const ipcClient = ipc.createClient(ipcPath);
 
             ipcClient.on("close", () => resolve());
 
             const proxy = new SocketProxy(ipcClient);
 
-            proxy.dispose();
+            proxy.disposeAsync();
         }));
 
         it("send/receive data.", () => {
@@ -57,12 +72,12 @@ describe("SocketProxy", () => {
                                 }
                             }));
 
-                const ipcClient = ipc.createClient();
+                const ipcClient = ipc.createClient(ipcPath);
                 const proxy = new SocketProxy(ipcClient);
 
-                proxy.setHandler("data", (channel, data) => {
+                proxy.setHandler("data", async (channel, data) => {
                     assert.equal("Received.", data);
-                    proxy.dispose();
+                    await proxy.disposeAsync();
                     resolve();
                 });
 

@@ -237,14 +237,14 @@ class Communicator {
     }
 
     /**
-     * @return {void}
+     * @return {Promise<void>}
      */
-    dispose() {
+    async disposeAsync() {
         if (this.disposed) {
             return;
         }
 
-        this.channelProxy.dispose();
+        await this.channelProxy.disposeAsync();
         Object.values(this.ongoingPromiseDict).forEach((resolver) => resolver.reject(new Error(`Communicator (${this.id}) is disposed.`)));
 
         this.channelProxy.setHandler("data", undefined);

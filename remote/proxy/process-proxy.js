@@ -45,14 +45,14 @@ class ProcessProxy extends ChannelProxy {
 
     /**
      * @public
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    dispose() {
+    async disposeAsync() {
         if (!this.disposed) {
             this.channel.removeListener("message", this.onMessage);
         }
 
-        super.dispose();
+        await super.disposeAsync();
     }
 
     /**

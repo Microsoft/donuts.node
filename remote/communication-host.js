@@ -88,7 +88,6 @@ class CommunicationHost extends EventEmitter {
          * @type {Donuts.Remote.ChannelHostProxyEventHandler}
          */
         this.onClose = (hostProxy) => {
-            this.dispose();
             this.emit("close", this);
         };
 
@@ -170,14 +169,14 @@ class CommunicationHost extends EventEmitter {
     }
 
     /**
-     * @return {void}
+     * @return {Promise<void>}
      */
-    dispose() {
+    async disposeAsync() {
         if (this.disposed) {
             return;
         }
 
-        this.host.dispose();
+        await this.host.disposeAsync();
 
         this.host.setHandler("close", undefined);
         this.host.setHandler("connection", undefined);
@@ -189,7 +188,7 @@ class CommunicationHost extends EventEmitter {
         this.routes = undefined;
 
         for (const propName in this.communicators) {
-            this.communicators[propName].dispose();
+            await this.communicators[propName].disposeAsync();
 
             delete this.communicators[propName];
         }

@@ -7,6 +7,6 @@ namespace Donuts {
     type FunctionType = (...args: Array<any>) => any;
 
     interface IDisposable {
-        dispose(): void;
+        disposeAsync(): Promise<void>;
     }
 }

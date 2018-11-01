@@ -5,18 +5,19 @@
 'use strict';
 
 const ipc = require("donuts.node/ipc");
+const path = require("path");
 
-/** @type {string} */
-const IpcPath = "donuts.node-remote/test";
+/** @type {Array.<string>} */
+const IpcPath = ["donuts.node-remote", "test"];
 
 /**
- * @param {string} [ipcPath]
+ * @param {string} ipcPath
  */
 exports.createServer =
-    (ipcPath) => ipc.host(ipcPath || IpcPath);
+    (ipcPath) => ipc.host(path.join(...IpcPath, ipcPath));
 
 /**
- * @param {string} [ipcPath]
+ * @param {string} ipcPath
  */
 exports.createClient =
-    (ipcPath) => ipc.connect(ipcPath || IpcPath);
+    (ipcPath) => ipc.connect(path.join(...IpcPath, ipcPath));

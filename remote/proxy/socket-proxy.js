@@ -34,15 +34,15 @@ class SocketProxy extends ChannelProxy {
 
     /**
      * @public
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    dispose() {
+    async disposeAsync() {
         if (!this.disposed) {
             this.channel.removeListener("data", this.onChannelData);
             this.channel.destroy();
         }
 
-        super.dispose();
+        await super.disposeAsync();
     }
 
     /**

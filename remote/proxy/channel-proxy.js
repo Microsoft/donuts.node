@@ -44,9 +44,9 @@ class ChannelProxy {
 
     /**
      * @public
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    dispose() {
+    async disposeAsync() {
         this.dataHandler = undefined;
         this._channel = undefined;
     }

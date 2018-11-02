@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-/// <reference path="./remote.d.ts" />
+/// <reference path="./types.remote.d.ts" />
 
 /**
  * Check if the given object is a ChannelProxy (IChannelProxy).
@@ -53,3 +53,22 @@ declare export function isConnectionInfo(value: any): value is Donuts.Remote.ICo
  * @returns The instance of the communicator which connects to the remote.
  */
 declare export function connect(connectionInfo: Donuts.Remote.IConnectionInfo): Donuts.Remote.ICommunicator;
+
+declare export { Communicator } from "./communicator";
+declare export { CommunicationHost } from "./communication-host";
+declare export { ObjectRemotingProxy } from "./object-remoting-proxy";
+
+declare namespace Proxy {
+    declare export { ChannelHostProxy } from "./proxy/channel-host-proxy";
+    declare export { ChannelProxy } from "./proxy/channel-proxy";
+
+    declare export { ProcessProxy } from "./proxy/process-proxy";
+
+    declare export { SocketHostProxy } from "./proxy/socket-host-proxy";
+    declare export { SocketProxy } from "./proxy/socket-proxy";
+}
+
+declare namespace Pattern {
+    declare export { Regex } from "./pattern/regex";
+    declare export { String } from "./pattern/string";
+}

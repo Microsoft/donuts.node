@@ -3,7 +3,7 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-/// <reference path="weak.d.ts" />
+/// <reference path="types.weak.d.ts" />
 
 /**
  * Create a native weak reference pointing to the target object.

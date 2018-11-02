@@ -1,0 +1,24 @@
+{
+  "name": "donuts.node-modularity",
+  "version": "1.0.0-private",
+  "description": "",
+  "types": "index.d.ts",
+  "main": "index.js",
+  "weak-reference.node": {
+    "version": "1.0.0-private"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Microsoft/donuts.node.git"
+  },
+  "author": "Microsoft Corporation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Microsoft/donuts.node/issues"
+  },
+  "homepage": "https://github.com/Microsoft/donuts.node",
+  "devDependencies": {
+    "donuts.node": "file:../core",
+    "donuts.node-remote": "file:../remote"
+  }
+}

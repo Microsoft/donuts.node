@@ -11,10 +11,10 @@ const utils = require("./utils");
  */
 
 /**
- * 
+ * @template T
  * @param {Descriptor} typeDescriptor 
  * @param {Array.<string>} injects 
- * @returns {Donuts.DI.IDiDescriptor}
+ * @returns {Donuts.DI.IDiDescriptor.<T>}
  */
 exports.dedication = (typeDescriptor, injects) => {
     if (!utils.isFunction(typeDescriptor)) {
@@ -23,14 +23,17 @@ exports.dedication = (typeDescriptor, injects) => {
 
     if (utils.array.isNullUndefinedOrEmpty(injects)) {
         injects = undefined;
+
     } else if (!Array.isArray(injects)) {
         throw new Error("inject must be an array of string.");
+
     } else {
         for (let injectIndex = 0; injectIndex < injects.length; injectIndex++) {
             const inject = injects[injectIndex];
 
             if (utils.string.isEmptyOrWhitespace(inject)) {
                 injects[injectIndex] = undefined;
+                
             } else if (!utils.isString(inject)) {
                 throw new Error("Inject identity must be a string.");
             }
@@ -70,17 +73,17 @@ exports.dedication = (typeDescriptor, injects) => {
 }
 
 /**
- * 
+ * @template T
  * @param {*} instance 
- * @returns {Donuts.DI.IDiDescriptor}
+ * @returns {Donuts.DI.IDiDescriptor.<T>}
  */
 exports.singleton = (instance) => (container) => instance;
 
 /**
- * 
+ * @template T
  * @param {Descriptor} typeDescriptor 
  * @param {Array.<string>} injects 
- * @returns {Donuts.DI.IDiDescriptor}
+ * @returns {Donuts.DI.IDiDescriptor<T>}
  */
 exports.lazySingleton = (typeDescriptor, injects) => {
     let descriptor = exports.dedication(typeDescriptor, injects);

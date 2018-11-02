@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "weak"
+		},
+		{
+			"path": "modularity"
 		}
 	],
 	"settings": {}

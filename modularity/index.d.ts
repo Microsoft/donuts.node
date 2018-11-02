@@ -3,8 +3,8 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-/// <reference path="./types.common.d.ts" />
-/// <reference path="./types.di.d.ts" />
-/// <reference path="./logging/types.logging.d.ts" />
+/// <reference path="./types.modularity.d.ts" />
 
-declare export = {};
+declare export function createModuleManager(connectionInfo: Donuts.Remote.IConnectionInfo): Donuts.Modularity.IModuleManager;
+
+declare export { ModuleManager } from "./module-manager";

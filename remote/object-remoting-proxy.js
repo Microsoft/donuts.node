@@ -7,7 +7,7 @@
 const uuidv4 = require("uuid/v4");
 const utils = require("donuts.node/utils");
 const { DataInfoManager } = require("./data-info-manager");
-const { StringPattern } = require("./pattern/string");
+const StringPattern = require("./pattern/string").String;
 
 /**
  * 

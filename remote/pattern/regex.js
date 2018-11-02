@@ -8,7 +8,7 @@
  * @class
  * @implements {Donuts.Remote.IRoutePattern}
  */
-class RegexPattern {
+class Regex {
     /**
      * 
      * @param {RegExp} pattern 
@@ -76,4 +76,4 @@ class RegexPattern {
         return info;
     }
 }
-exports.RegexPattern = RegexPattern;
+exports.Regex = Regex;

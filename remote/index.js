@@ -8,6 +8,24 @@ const utils = require("donuts.node/utils");
 const { EventEmitter } = require("events");
 const { Communicator } = require("./communicator");
 
+exports.Communicator = Communicator;
+exports.CommunicationHost = require("./communication-host").CommunicationHost;
+exports.ObjectRemotingProxy = require("./object-remoting-proxy").ObjectRemotingProxy;
+
+exports.Proxy = {
+    ChannelHostProxy: require("./proxy/channel-host-proxy").ChannelHostProxy,
+    ChannelProxy: require("./proxy/channel-proxy").ChannelProxy,
+
+    ProcessProxy: require("./proxy/process-proxy").ProcessProxy,
+    SocketHostProxy: require("./proxy/socket-host-proxy").SocketHostProxy,
+    SocketProxy: require("./proxy/socket-proxy").SocketProxy
+};
+
+exports.Pattern = {
+    Regex: require("./pattern/regex").Regex,
+    String: require("./pattern/string").String
+};
+
 /**
  * Check if the given object is a ChannelProxy (IChannelProxy).
  * @param {*} value The object to check.

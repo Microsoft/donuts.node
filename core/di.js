@@ -12,18 +12,18 @@ const utils = require("./utils");
  */
 class DiDescriptorDictionary {
     constructor() {
-        /** @type {Object.<string, Donuts.DI.IDiDescriptor>} */
+        /** @type {Object.<string, Donuts.DI.IDiDescriptor.<*>>} */
         this.descriptorDictionary = Object.create(null);
     }
 
     /**
-     * 
+     * @template T
      * @param {string} name 
-     * @return {Donuts.DI.IDiDescriptor}
+     * @return {Donuts.DI.IDiDescriptor.<T>}
      */
     get(name) {
-        if (utils.string.isEmptyOrWhitespace(name)) {
-            throw new Error("name should not be null/undefined/empty.");
+        if (!utils.isString(name)) {
+            throw new Error("name must be a string.");
         }
 
         return this.descriptorDictionary[name];
@@ -32,19 +32,22 @@ class DiDescriptorDictionary {
     /**
      * 
      * @param {string} name 
-     * @param {Donuts.DI.IDiDescriptor} descriptor 
-     * @returns {void}
+     * @param {Donuts.DI.IDiDescriptor.<*>} descriptor 
+     * @returns {this}
      */
     set(name, descriptor) {
-        if (utils.string.isEmptyOrWhitespace(name)) {
-            throw new Error("name should not be null/undefined/empty.");
+        if (!utils.isString(name)) {
+            throw new Error("name must be a string.");
         }
 
         if (utils.isNullOrUndefined(descriptor)) {
             delete this.descriptorDictionary[name];
+
         } else {
             this.descriptorDictionary[name] = descriptor;
         }
+
+        return this;
     }
 }
 exports.DiDescriptorDictionary = DiDescriptorDictionary;
@@ -71,8 +74,8 @@ class DiContainer {
     }
 
     /**
-     * @template T
-     * 
+     * @public
+     * @template T 
      * @param {string} name 
      * @param  {...*} extraArgs 
      * @returns {T}
@@ -88,13 +91,14 @@ class DiContainer {
     }
 
     /**
-     * 
+     * @public
+     * @template T
      * @param {string} name 
-     * @returns {Donuts.DI.IDiDescriptor}
+     * @returns {Donuts.DI.IDiDescriptor.<T>}
      */
     get(name) {
-        if (utils.string.isEmptyOrWhitespace(name)) {
-            throw new Error("name should not be null/undefined/empty.");
+        if (!utils.isString(name)) {
+            throw new Error("name must be a string.");
         }
 
         return this.descriptorDictionary.get(name);
@@ -103,12 +107,12 @@ class DiContainer {
     /**
      * 
      * @param {string} name 
-     * @param {Donuts.DI.IDiDescriptor} descriptor 
-     * @returns {Donuts.DI.IDiContainer}
+     * @param {Donuts.DI.IDiDescriptor.<*>} descriptor 
+     * @returns {this}
      */
     set(name, descriptor) {
-        if (utils.string.isEmptyOrWhitespace(name)) {
-            throw new Error("name should not be null/undefined/empty.");
+        if (!utils.isString(name)) {
+            throw new Error("name must be a string.");
         }
 
         if (utils.isNullOrUndefined(descriptor)) {

@@ -4,18 +4,18 @@
 //-----------------------------------------------------------------------------
 
 namespace Donuts.DI {
-    interface IDiDescriptor {
-        (diContainer: IDiContainer, ...extraArgs: Array<any>): any;
+    interface IDiDescriptor<T> {
+        (diContainer: IDiContainer, ...extraArgs: Array<any>): T;
     }
 
     interface IDiContainer {
         getDep<T>(name: string, ...extraArgs: Array<any>): T;
-        get(name: string): IDiDescriptor;
-        set(name: string, descriptor: IDiDescriptor): IDiContainer;
+        get<T>(name: string): IDiDescriptor<T>;
+        set(name: string, descriptor: IDiDescriptor<any>): this;
     }
 
     interface IDiDescriptorDictionary {
-        get(name: string): IDiDescriptor;
-        set(name: string, descriptor: IDiDescriptor): void;
+        get<T>(name: string): IDiDescriptor<T>;
+        set(name: string, descriptor: IDiDescriptor<any>): this;
     }
 }

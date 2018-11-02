@@ -49,4 +49,4 @@ class StringPattern {
         };
     }
 }
-exports.StringPattern = StringPattern;
+exports.String = StringPattern;

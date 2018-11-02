@@ -22,7 +22,9 @@
   "homepage": "https://github.com/Microsoft/donuts.node",
   "devDependencies": {
     "donuts.node": "file:../core",
+    "donuts.node-build": "file:../.build",
     "donuts.node-remote": "file:../remote",
+    "gulp": "^4.0.0",
     "mocha": "^5.2.0"
   }
 }

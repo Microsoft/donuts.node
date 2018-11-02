@@ -23,7 +23,9 @@
   },
   "devDependencies": {
     "@types/node": "^10.12.0",
+    "donuts.node-build": "file:../.build",
     "donuts.node-weak": "file:../weak",
+    "gulp": "^4.0.0",
     "mocha": "^5.2.0"
   }
 }

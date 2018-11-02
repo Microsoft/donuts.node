@@ -24,6 +24,8 @@
   "homepage": "https://github.com/Microsoft/donuts.node",
   "devDependencies": {
     "@types/node": "^10.12.0",
+    "donuts.node-build": "file:../.build",
+    "gulp": "^4.0.0",
     "mocha": "^5.2.0",
     "nan": "^2.11.1",
     "node-gyp": "^3.8.0"

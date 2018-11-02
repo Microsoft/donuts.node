@@ -1,6 +1,9 @@
 {
 	"folders": [
 		{
+			"path": ".build"
+		},
+		{
 			"path": "core"
 		},
 		{

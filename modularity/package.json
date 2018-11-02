@@ -4,6 +4,9 @@
   "description": "",
   "types": "index.d.ts",
   "main": "index.js",
+  "scripts": {
+    "test": "mocha --recursive \"./test/**/*.test.js\" --exit"
+  },
   "weak-reference.node": {
     "version": "1.0.0-private"
   },
@@ -19,6 +22,7 @@
   "homepage": "https://github.com/Microsoft/donuts.node",
   "devDependencies": {
     "donuts.node": "file:../core",
-    "donuts.node-remote": "file:../remote"
+    "donuts.node-remote": "file:../remote",
+    "mocha": "^5.2.0"
   }
 }

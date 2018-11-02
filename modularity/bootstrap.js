@@ -4,12 +4,8 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-// Bootstrap: initialize the default module manager.
-require("./bootstrap");
-
 const shell = require("donuts.node/shell");
 const modularity = require(".");
-const modulePath = shell.getCmdArg(modularity.CmdArgs.ModulePath);
+const connectionInfo = JSON.parse(shell.getCmdArg(modularity.CmdArgs.ConnectionInfo));
 
-// Load the main module.
-require(modulePath);
+modularity.setModuleManager(modularity.createModuleManager(connectionInfo));

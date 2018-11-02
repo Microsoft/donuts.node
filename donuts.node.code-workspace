@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "modularity"
+		},
+		{
+			"path": "settings"
 		}
 	],
 	"settings": {}

@@ -334,3 +334,46 @@ exports.fork = (modulePath, forkArgs) => {
 
     return cp.fork(modulePath, args);
 }
+
+/**
+ * @returns {string}
+ */
+exports.getAppDataDir = () => {
+    switch (process.platform) {
+        case "linux":
+            return path.resolve("~/.config");
+
+        case "darwin":
+            return path.resolve("~/Library/Application Support");
+
+        case "win32":
+            return process.env["APPDATA"];
+
+        default:
+            throw new Error(`Unsupported platform: ${process.platform}`);
+    }
+};
+
+/** 
+ * @typedef {"UserData" | "AppData" | "AppDir"} DirName
+ */
+
+/**
+ * @param {DirName} dirName
+ * @return {string}
+ */
+exports.getDir = (dirName) => {
+    switch (dirName) {
+        case "AppData":
+            return exports.getAppDataDir();
+
+        case "AppDir":
+            return exports.getAppDir();
+
+        case "UserData":
+            return path.join(exports.getDir("AppData"), path.basename(process.execPath, path.extname(process.execPath)));
+
+        default:
+            return undefined;
+    }
+}

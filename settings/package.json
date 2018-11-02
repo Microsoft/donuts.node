@@ -1,0 +1,27 @@
+{
+  "name": "donuts.node-settings",
+  "version": "1.0.0-private",
+  "description": "",
+  "types": "index.d.ts",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --recursive \"./test/**/*.test.js\" --exit"
+  },
+  "weak-reference.node": {
+    "version": "1.0.0-private"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Microsoft/donuts.node.git"
+  },
+  "author": "Microsoft Corporation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Microsoft/donuts.node/issues"
+  },
+  "homepage": "https://github.com/Microsoft/donuts.node",
+  "devDependencies": {
+    "donuts.node": "file:../core",
+    "mocha": "^5.2.0"
+  }
+}

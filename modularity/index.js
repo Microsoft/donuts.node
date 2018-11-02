@@ -66,7 +66,6 @@ exports.fork = (moduleManager, modulePath) => {
         throw new Error("Failed to fork a new process as there is no connection info bound with the given module manager.");
     }
 
-    const cp = require("child_process");
     const shell = require("donuts.node/shell");
 
     /** @type {Object.<string, string>} */
@@ -75,7 +74,7 @@ exports.fork = (moduleManager, modulePath) => {
     args[exports.CmdArgs.ConnectionInfo] = JSON.stringify(connectionInfo);
     args[exports.CmdArgs.ModulePath] = modulePath;
 
-    return cp.fork("./fork.js", shell.toCmdArgs(args));
+    return shell.fork("./fork.js", shell.toCmdArgs(args));
 }
 
 /** @type {Donuts.Modularity.IModuleManager} */

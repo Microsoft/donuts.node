@@ -25,34 +25,22 @@ const publishDir = path.resolve("./publish");
 
 /**
  * 
- * @param {string} category 
- * @param {string} msg 
  * @param {()=>string|void} func
- * @param {boolean} [hasLogs]
+ * @param {...*} logs
  */
-function logStep(category, msg, func, hasLogs) {
-    console.log("--------------------------------------");
-    console.log("- ", category, msg);
-
-    if (hasLogs) {
-        console.log("--------------------------------------");
-    }
+function logStep(func, ...logs) {
+    console.log("*", ...logs);
+    console.log("------------------------------------");
+    console.group()
 
     const result = func();
 
-    if (hasLogs) {
-        console.log("--------------------------------------");
-        console.log("");
-    }
-
     if (result) {
-        if (!hasLogs) {
-            console.log("--------------------------------------");
-        }
-
         console.log(result);
-        console.log("");
     }
+
+    console.groupEnd();
+    console.log();
 }
 
 /**
@@ -137,16 +125,20 @@ function cleanProjectDir(projectDir) {
             continue;
         }
 
+        console.log("======================================");
         console.log("Publishing project: ", dirName);
         console.log("======================================");
+        console.group();
 
-        logStep("DEL", "Clean up project", () => cleanProjectDir(projectDir), true);
-        logStep("NPM", "Install", () => execSync("npm install", { cwd: projectDir, encoding: "utf8" }), true);
-        logStep("GULP", "clean-build", () => execSync("gulp clean-build", { cwd: projectDir, encoding: "utf8" }), false);
-        logStep("GULP", "npm-pack", () => execSync("gulp npm-pack", { cwd: projectDir, encoding: "utf8" }), false);
+        logStep(() => cleanProjectDir(projectDir), "Clean up project");
+        logStep(() => execSync("npm install", { cwd: projectDir, encoding: "utf8" }), "npm install");
+        logStep(() => execSync("gulp clean-build", { cwd: projectDir, encoding: "utf8" }), "gulp clean-build");
+        logStep(() => execSync("gulp npm-pack", { cwd: projectDir, encoding: "utf8" }), "gulp npm-pack");
 
-        logStep("COPY", "Copy tgz files", () => copyTgzFiles(projectDir), true);
+        logStep(() => copyTgzFiles(projectDir), "Copy tgz files");
 
-        logStep("PACKAGE.JSON", "Update the versions of internal dependencies", () => updateDependenciesVersion(projectDir), true);
+        logStep(() => updateDependenciesVersion(projectDir),  "Update the versions of internal dependencies");
+
+        console.groupEnd();
     }
 })();

@@ -69,7 +69,7 @@ module.exports = (gulp) => {
             console.log(
                 execSync(
                     `npm version --allow-same-version ${process.env["BUILD_BUILDNUMBER"]}`,
-                    { cwd: buildDir }));
+                    { cwd: buildDir, encoding: "utf8" }));
         }
 
         /** @type {Object.<string, string>} */
@@ -79,7 +79,7 @@ module.exports = (gulp) => {
         const tgzName = `${packageName}-${packageVersion}.tgz`;
 
         console.log("NPM", "Packing");
-        console.log(execSync("npm pack", { cwd: buildDir }));
+        console.log(execSync("npm pack", { cwd: buildDir, encoding: "utf8" }));
 
         fs.copyFileSync(
             path.join(buildDir, tgzName),

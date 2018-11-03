@@ -89,8 +89,11 @@ function updateDependenciesVersion(projectDir) {
             continue;
         }
 
-        console.log(`Updating dependency "depName" version: ${dependencies[depName]} => ${buildNumber}`);
-        dependencies[depName] = buildNumber;
+        const projectName = depName.substring(prefix.length) || "core";
+        const depVersion = `https://github.com/Microsoft/donuts.node/releases/download/${projectName}-${buildNumber}/${depName}-${buildNumber}.tgz`
+
+        console.log(`Updating dependency "depName" version: ${dependencies[depName]} => ${depVersion}`);
+        dependencies[depName] = depVersion;
     }
 
     fs.writeFileSync(path.join(buildDir, "package.json"), JSON.stringify(packageJson, null, 4));
@@ -125,7 +128,6 @@ function cleanProjectDir(projectDir) {
             continue;
         }
 
-        console.log("======================================");
         console.log("Publishing project: ", dirName);
         console.log("======================================");
         console.group();

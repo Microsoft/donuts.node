@@ -265,7 +265,7 @@ exports.getCmdArg = (argName) => {
     //@ts-ignore
     if (!process[Symbol_CmdArgs]) {
         //@ts-ignore
-        process[Symbol_CmdArgs] = toArgDict(process.argv);
+        process[Symbol_CmdArgs] = exports.toArgDict(process.argv);
     }
 
     //@ts-ignore

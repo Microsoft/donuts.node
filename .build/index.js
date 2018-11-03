@@ -11,33 +11,6 @@ const delAsync = require("del");
 const util = require("util");
 const makedirAsync = util.promisify(fs.mkdir);
 
-async function pack() {
-    const buildDir = path.resolve("./build");
-    const publishDir = path.resolve("./publish");
-
-    if (process.env["BUILD_BUILDNUMBER"]) {
-        console.log("NPM", "Versioning");
-        console.log(
-            execSync(
-                `npm version --allow-same-version ${process.env["BUILD_BUILDNUMBER"]}`,
-                { cwd: buildDir }));
-    }
-
-    /** @type {Object.<string, string>} */
-    const packageJson = JSON.parse(fs.readFileSync(path.join(buildDir, "package.json"), { encoding: "utf8" }));
-    const packageVersion = packageJson["version"];
-    const packageName = packageJson["name"];
-    const tgzName = `${packageName}-${packageVersion}.tgz`;
-
-    console.log("NPM", "Packing");
-    console.log(execSync("npm pack", { cwd: buildDir }));
-
-    fs.copyFileSync(
-        path.join(buildDir, tgzName),
-        path.join(publishDir, tgzName));
-    fs.unlinkSync(path.join(buildDir, tgzName));
-}
-
 /** 
  * @param {typeof import("gulp")} gulp
  * @return {void}
@@ -87,8 +60,35 @@ module.exports = (gulp) => {
 
     gulp.task("clean-build", gulp.series("clean", "init", "build"));
 
+    gulp.task("npm-pack", async () => {
+        const buildDir = path.resolve("./build");
+        const publishDir = path.resolve("./publish");
+
+        if (process.env["BUILD_BUILDNUMBER"]) {
+            console.log("NPM", "Versioning");
+            console.log(
+                execSync(
+                    `npm version --allow-same-version ${process.env["BUILD_BUILDNUMBER"]}`,
+                    { cwd: buildDir }));
+        }
+
+        /** @type {Object.<string, string>} */
+        const packageJson = JSON.parse(fs.readFileSync(path.join(buildDir, "package.json"), { encoding: "utf8" }));
+        const packageVersion = packageJson["version"];
+        const packageName = packageJson["name"];
+        const tgzName = `${packageName}-${packageVersion}.tgz`;
+
+        console.log("NPM", "Packing");
+        console.log(execSync("npm pack", { cwd: buildDir }));
+
+        fs.copyFileSync(
+            path.join(buildDir, tgzName),
+            path.join(publishDir, tgzName));
+        fs.unlinkSync(path.join(buildDir, tgzName));
+    });
+
     gulp.task("publish", gulp.series(
         "clean-build",
-        pack
+        "npm-pack"
     ));
 };

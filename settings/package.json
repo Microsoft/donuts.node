@@ -20,8 +20,10 @@
     "url": "https://github.com/Microsoft/donuts.node/issues"
   },
   "homepage": "https://github.com/Microsoft/donuts.node",
+  "dependencies": {
+    "donuts.node": "file:../core"
+  },
   "devDependencies": {
-    "donuts.node": "file:../core",
     "donuts.node-build": "file:../.build",
     "gulp": "^4.0.0",
     "mocha": "^5.2.0"

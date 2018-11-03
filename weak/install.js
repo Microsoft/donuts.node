@@ -70,7 +70,7 @@ function downloadAsync(url, filename) {
     const packageJson = JSON.parse(fs.readFileSync("./package.json", "utf8"));
 
     for (const arch of archs) {
-        const url = `${packageJson.homepage}/releases/download/weak-reference.node-${packageJson["weak-reference.node"].version}/weak-reference.${process.platform}.${arch}.node`;
+        const url = `${packageJson.homepage}/releases/download/weak-${packageJson["weak-reference.node"].version}/weak-reference.${process.platform}.${arch}.node`;
 
         console.log("Downloading", url);
         downloadAsync(url, `./weak-reference.${process.platform}.${arch}.node`);

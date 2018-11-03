@@ -7,4 +7,8 @@
 /// <reference path="./types.di.d.ts" />
 /// <reference path="./logging/types.logging.d.ts" />
 
-declare export = {};
+/**
+ * Sleep for given time.
+ * @param ms time in milliseconds.
+ */
+declare export function sleepAsync(ms: number): Promise<void>;

@@ -89,8 +89,7 @@ function updateDependenciesVersion(projectDir) {
             continue;
         }
 
-        const projectName = depName.substring(prefix.length) || "core";
-        const depVersion = `https://github.com/Microsoft/donuts.node/releases/download/${projectName}-${buildNumber}/${depName}-${buildNumber}.tgz`
+        const depVersion = `https://github.com/Microsoft/donuts.node/releases/download/${prefix}-${buildNumber}/${depName}-${buildNumber}.tgz`
 
         console.log(`Updating dependency "depName" version: ${dependencies[depName]} => ${depVersion}`);
         dependencies[depName] = depVersion;

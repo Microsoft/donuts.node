@@ -317,6 +317,46 @@ exports.array = {
     }
 }
 
+exports.date = {
+    /**
+     * Format the current date.
+     * @param {Date} date The data to format.
+     * @param {string} format The date format.
+     * @returns {string} The formatted date.
+     */
+    format(date, format) {
+        return format
+            // Year
+            .replace("yyyy", date.getFullYear().toString().padStart(4, "0"))
+            .replace("yy", date.getFullYear().toString().substr(2, 2))
+
+            // Month
+            .replace("MM", date.getMonth().toString().padStart(2, "0"))
+            .replace("M", date.getMonth().toString())
+
+            // Day of Month
+            .replace("dd", date.getDate().toString().padStart(2, "0"))
+            .replace("d", date.getDate().toString())
+
+            // Hours
+            .replace("HH", date.getHours().toString().padStart(2, "0"))
+            .replace("H", date.getHours().toString())
+
+            // Minutes
+            .replace("mm", date.getMinutes().toString().padStart(2, "0"))
+            .replace("m", date.getMinutes().toString())
+
+            // Seconds
+            .replace("ss", date.getSeconds().toString().padStart(2, "0"))
+            .replace("s", date.getSeconds().toString())
+
+            // Thousandths of Second
+            .replace("fff", date.getMilliseconds().toString().padStart(3, "0"))
+            .replace("ff", date.getMilliseconds().toString().padStart(2, "0"))
+            .replace("f", date.getMilliseconds().toString());
+    }
+}
+
 /**
  * @template T
  * Pick the either non-null/non-undefined value between value and defaultValue.

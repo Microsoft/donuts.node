@@ -272,6 +272,37 @@ exports.object = {
         }
 
         return value;
+    },
+
+    /**
+     * Travel the object against the property path and return the value.
+     * @template T
+     * @param {*} target Target the object to travel.
+     * @param {string} propertyPath The property path to travel along.
+     * @param {T} defaultValue The default value to return if the value doesn't exist.
+     * @returns {T} The value of the target property.
+     */
+    getPropertyValue(target, propertyPath, defaultValue = undefined) {
+        if (!exports.isString(propertyPath) || exports.string.isEmptyOrWhitespace(propertyPath)) {
+            throw new Error("Invalid propertyPath.");
+        }
+
+        if (exports.isNullOrUndefined(target)) {
+            return defaultValue;
+        }
+
+        const propertyNames = propertyPath.split(".");
+        let targetObj = target;
+
+        for (const name of propertyNames) {
+            if (targetObj === undefined || targetObj === null) {
+                return defaultValue;
+            } else {
+                targetObj = targetObj[name];
+            }
+        }
+
+        return targetObj;
     }
 };
 

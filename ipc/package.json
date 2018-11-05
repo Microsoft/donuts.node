@@ -1,8 +1,7 @@
 {
-  "name": "donuts.node",
+  "name": "donuts.node-ipc",
   "version": "1.0.0-private",
-  "description": "A sweet framework for node.js.",
-  "types": "index.d.ts",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "mocha --recursive \"./test/**/*.test.js\" --exit"
@@ -22,5 +21,10 @@
     "donuts.node-build": "file:../.build",
     "gulp": "^4.0.0",
     "mocha": "^5.2.0"
+  },
+  "dependencies": {
+    "donuts.node": "file:../core",
+    "tmp": "0.0.33",
+    "uuid": "^3.3.2"
   }
 }

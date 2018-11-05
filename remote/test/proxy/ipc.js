@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-const ipc = require("donuts.node/ipc");
+const ipc = require("donuts.node-ipc");
 const path = require("path");
 
 /** @type {Array.<string>} */

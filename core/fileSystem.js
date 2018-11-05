@@ -24,7 +24,7 @@ exports.createDirectorySync = (dirname) => {
     let currentDir = "";
 
     for (const part of parts) {
-        currentDir = path.join(currentDir, part);
+        currentDir = !currentDir ? part : path.join(currentDir, part);
 
         if (!fs.existsSync(currentDir)) {
             fs.mkdirSync(currentDir);

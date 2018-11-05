@@ -91,7 +91,7 @@ function updateDependenciesVersion(projectDir) {
 
         const depVersion = `https://github.com/Microsoft/donuts.node/releases/download/${prefix}-${buildNumber}/${depName}-${buildNumber}.tgz`
 
-        console.log(`Updating dependency "depName" version: ${dependencies[depName]} => ${depVersion}`);
+        console.log(`Updating dependency "${depName}" version: ${dependencies[depName]} => ${depVersion}`);
         dependencies[depName] = depVersion;
     }
 

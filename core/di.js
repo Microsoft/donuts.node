@@ -8,7 +8,7 @@ const utils = require("./utils");
 
 /**
  * @class
- * @implements {di.IDiDescriptorDictionary}
+ * @implements {Donuts.DI.IDiDescriptorDictionary}
  */
 class DiDescriptorDictionary {
     constructor() {
@@ -54,7 +54,7 @@ exports.DiDescriptorDictionary = DiDescriptorDictionary;
 
 /**
  * @class
- * @implements {di.IDiContainer}
+ * @implements {Donuts.DI.IDiContainer}
  */
 class DiContainer {
     /**

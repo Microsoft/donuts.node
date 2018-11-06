@@ -39,7 +39,8 @@ exports.dedication = (typeDescriptor, injects) => {
             }
         }
     }
-
+    
+    // @ts-ignore
     return (container, ...extraArgs) => {
         /** @type {Array.<*>} */
         const args = [];
@@ -77,6 +78,7 @@ exports.dedication = (typeDescriptor, injects) => {
  * @param {*} instance 
  * @returns {Donuts.DI.IDiDescriptor.<T>}
  */
+// @ts-ignore
 exports.singleton = (instance) => (container) => instance;
 
 /**
@@ -91,6 +93,7 @@ exports.lazySingleton = (typeDescriptor, injects) => {
     /** @type {*} */
     let singleton = undefined;
 
+    // @ts-ignore
     return (container, ...extraArgs) => {
         if (singleton === undefined) {
             singleton = descriptor(container, ...extraArgs);

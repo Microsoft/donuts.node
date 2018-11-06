@@ -11,6 +11,7 @@ const utils = require("./utils");
 
 /**
  * @param {string} path
+ * @returns {boolean}
  */
 exports.existsSync = (path) => {
     try {
@@ -25,6 +26,7 @@ exports.existsSync = (path) => {
 /**
  * 
  * @param {string} dirname 
+ * @return {void}
  */
 exports.createDirectorySync = (dirname) => {
     if (!utils.isString(dirname)) {
@@ -62,6 +64,7 @@ exports.createDirectorySync = (dirname) => {
 /**
  * 
  * @param {string} target 
+ * @return {void}
  */
 exports.removeFileSync = (target) => {
     try {
@@ -85,6 +88,7 @@ exports.removeFileSync = (target) => {
 /**
  * 
  * @param {string} target 
+ * @return {void}
  */
 exports.removeDirectorySync = (target) => {
     if (!exports.existsSync(target)
@@ -123,6 +127,7 @@ exports.removeDirectorySync = (target) => {
  * 
  * @param {string} srcDir 
  * @param {string} destDir 
+ * @return {void}
  */
 exports.copyDirectorySync = (srcDir, destDir) => {
     if (!utils.isString(srcDir)) {
@@ -170,6 +175,7 @@ exports.accessAsync = util.promisify(fs.access);
 
 /**
  * @param {string} path
+ * @returns {Promise<boolean>}
  */
 exports.existsAsync = async (path) => {
     try {
@@ -268,7 +274,7 @@ exports.createDirectoryAsync = async (dirname) => {
 
 /**
  * 
- * @param {*} target 
+ * @param {string} target 
  * @returns {Promise<void>}
  */
 exports.removeDirectoryAsync = async (target) => {

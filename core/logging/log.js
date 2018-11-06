@@ -14,7 +14,19 @@ const { ConsoleLogger } = require("./loggers/console");
  */
 class Log {
     /**
-     * 
+     * @public
+     * @returns {Donuts.Logging.ILog}
+     */
+    static get instance() {
+        if (!Log._instance) {
+            Log._instance = new Log();
+        }
+
+        return Log._instance;
+    }
+
+    /**
+     * @private
      * @param {Error} error 
      * @param {Array.<NodeJS.CallSite>} structuredStackTrace 
      * @returns {*}
@@ -24,6 +36,7 @@ class Log {
     }
 
     /**
+     * @private
      * @returns {import("../utils").CallerInfo}
      */
     static getCallerModuleInfo() {
@@ -58,18 +71,7 @@ class Log {
     }
 
     /**
-     * @returns {Donuts.Logging.ILog}
-     */
-    static get instance() {
-        if (!Log._instance) {
-            Log._instance = new Log();
-        }
-
-        return Log._instance;
-    }
-
-    /**
-     * 
+     * @private
      * @param {*} obj 
      * @returns {string}
      */
@@ -93,16 +95,9 @@ class Log {
 
         return utils.string.stringifier(obj);
     }
-
+    
     /**
-     * @returns {boolean}
-     */
-    get disposed() {
-        return this.loggers === undefined;
-    }
-
-    /**
-     * 
+     * @public
      * @param {boolean} [includeCallerInfo]
      * @param {Object.<string, *>} [defaultProperties]
      */
@@ -129,7 +124,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {Object.<string, string>} properties 
      * @param {Donuts.Logging.Severity} severity 
      * @param {string} messageOrFormat 
@@ -151,7 +146,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {Donuts.Logging.Severity} severity 
      * @param {string} messageOrFormat 
      * @param {...*} params 
@@ -162,7 +157,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
      * @returns {Promise.<void>}
@@ -172,7 +167,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
      * @returns {Promise.<void>}
@@ -182,7 +177,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
      * @returns {Promise.<void>}
@@ -192,7 +187,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
      * @returns {Promise<void>}
@@ -202,7 +197,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
      * @returns {Promise<void>}
@@ -212,7 +207,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {Error} exception 
      * @param {Object.<string, string>} [properties]
      * @returns {Promise.<void>}
@@ -224,7 +219,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {string} name 
      * @param {Object.<string, string>} [properties]
      * @returns {Promise.<void>}
@@ -240,7 +235,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {string} name 
      * @param {number} [value]
      * @param {Object.<string, string>} [properties]
@@ -261,7 +256,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {string} name 
      * @returns {Promise.<Donuts.Logging.ILogger>}
      */
@@ -282,7 +277,7 @@ class Log {
     }
 
     /**
-     * 
+     * @public
      * @param {Donuts.Logging.ILogger} logger 
      * @returns {Promise.<void>}
      */
@@ -299,7 +294,7 @@ class Log {
     }
 
     /**
-     * 
+     * @private
      * @param {Object.<string, string>} properties 
      * @returns {Object.<string, string>}
      */

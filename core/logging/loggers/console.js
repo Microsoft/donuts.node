@@ -4,18 +4,18 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-const path = require("path");
-const utils = require("../../utils");
-
 /**
  * @typedef {Donuts.Logging.ILoggerSettings} IConsoleLoggerSettings
  * @property {boolean} [logAllProperties]
  * @property {boolean} [logCallerInfo]
  */
 
+const path = require("path");
+const utils = require("../../utils");
+
 /**
  * @class
- * @implements {Logging.ILogger}
+ * @implements {Donuts.Logging.ILogger}
  */
 class ConsoleLogger {
     /**

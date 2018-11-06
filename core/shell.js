@@ -217,7 +217,7 @@ exports.toCmdArg =
 exports.toCmdArgs = (argDict) => {
     if (!utils.isNullOrUndefined(argDict)
         && (!utils.isObject(argDict) || Array.isArray(argDict))) {
-        throw new Error("argDict must be an Object.<string, string>.");
+        throw new Error("argDict must be an Donuts.IDictionary.<string, string>.");
     }
 
     /** @type {Array.<string>} */

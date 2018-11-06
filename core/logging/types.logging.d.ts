@@ -16,28 +16,28 @@ namespace Donuts.Logging {
     interface ILoggingSettings {
         logCallerInfo?: boolean;
         loggers?: Array<ILoggerSettings>;
-        properties?: Object.<string, string>;
+        properties?: Donuts.IDictionary<string, string>;
     }
 
     interface ILogger {
         readonly name: string;
 
-        writeAsync(properties: Object.<string, string>, severity: Severity, message: string): Promise<void>;
-        writeExceptionAsync(properties: Object.<string, string>, error: Error): Promise<void>;
-        writeMetricAsync(properties: Object.<string, string>, name: string, value: number): Promise<void>;
+        writeAsync(properties: Donuts.IDictionary<string, string>, severity: Severity, message: string): Promise<void>;
+        writeExceptionAsync(properties: Donuts.IDictionary<string, string>, error: Error): Promise<void>;
+        writeMetricAsync(properties: Donuts.IDictionary<string, string>, name: string, value: number): Promise<void>;
     }
 
     interface ILog {
-        writeMoreAsync(properties: Object.<string, string>, severity: Severity, messageOrFormat: string, ...params: Array<any>): Promise<void>;
+        writeMoreAsync(properties: Donuts.IDictionary<string, string>, severity: Severity, messageOrFormat: string, ...params: Array<any>): Promise<void>;
         writeAsync(severity: Severity, messageOrFormat: string, ...params: Array<any>): Promise<void>;
         writeInfoAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
         writeVerboseAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
         writeWarningAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
         writeErrorAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
         writeCriticalAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
-        writeExceptionAsync(exception: Error, properties?: Object.<string, string>): Promise<void>;
-        writeEventAsync(name: string, properties?: Object.<string, string>): Promise<void>;
-        writeMetricAsync(name: string, value?: number, properties?: Object.<string, string>): Promise<void>;
+        writeExceptionAsync(exception: Error, properties?: Donuts.IDictionary<string, string>): Promise<void>;
+        writeEventAsync(name: string, properties?: Donuts.IDictionary<string, string>): Promise<void>;
+        writeMetricAsync(name: string, value?: number, properties?: Donuts.IDictionary<string, string>): Promise<void>;
 
         removeLoggerAsync(name: string): Promise<ILogger>;
         addLoggerAsync(logger: ILogger): Promise<void>;

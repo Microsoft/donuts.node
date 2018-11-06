@@ -4,6 +4,15 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
+/**
+ * @typedef CallerInfo 
+ * @property {string} fileName
+ * @property {string} functionName
+ * @property {string} typeName
+ * @property {number} lineNumber
+ * @property {number} columnNumber
+ */
+
 const Symbol_Serializable = Symbol("serializable");
 
 /**
@@ -365,15 +374,6 @@ exports.date = {
  * @returns {T} The non-null/non-undefined value between value and defaultValue.
  */
 exports.pick = (value, defaultValue) => (value === undefined || value === null) ? defaultValue : value;
-
-/**
- * @typedef CallerInfo 
- * @property {string} fileName
- * @property {string} functionName
- * @property {string} typeName
- * @property {number} lineNumber
- * @property {number} columnNumber
- */
 
 /**
  * 

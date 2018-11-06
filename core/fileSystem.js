@@ -10,6 +10,19 @@ const fs = require("fs");
 const utils = require("./utils");
 
 /**
+ * @param {string} path
+ */
+exports.existsSync = (path) => {
+    try {
+        fs.lstatSync(path);
+        return true;
+
+    } catch (err) {
+        return false;
+    }
+}
+
+/**
  * 
  * @param {string} dirname 
  */
@@ -34,8 +47,7 @@ exports.createDirectorySync = (dirname) => {
         if (!currentDir) {
             currentDir = "/";
         }
-
-        if (!fs.existsSync(currentDir)) {
+        if (!exports.existsSync(currentDir)) {
             fs.mkdirSync(currentDir);
         }
 
@@ -52,14 +64,19 @@ exports.createDirectorySync = (dirname) => {
  * @param {string} target 
  */
 exports.removeFileSync = (target) => {
-    if (!fs.existsSync(target)) {
-        return;
-    }
+    try {
+        const lstat = fs.lstatSync(target);
 
-    const lstat = fs.lstatSync(target);
+        if (!lstat.isFile() && !lstat.isSymbolicLink()) {
+            return;
+        }
 
-    if (!lstat.isFile() && !lstat.isSymbolicLink()) {
-        return;
+    } catch (err) {
+        if (err.code === "ENOENT") {
+            return;
+        }
+
+        throw err;
     }
 
     fs.unlinkSync(target);
@@ -70,7 +87,7 @@ exports.removeFileSync = (target) => {
  * @param {string} target 
  */
 exports.removeDirectorySync = (target) => {
-    if (!fs.existsSync(target)
+    if (!exports.existsSync(target)
         || !fs.lstatSync(target).isDirectory()) {
         return;
     }
@@ -148,8 +165,21 @@ exports.readdirAsync = util.promisify(fs.readdir);
 exports.statAsync = util.promisify(fs.stat);
 exports.lstatAsync = util.promisify(fs.lstat);
 exports.unlinkAsync = util.promisify(fs.unlink);
-exports.existsAsync = util.promisify(fs.exists);
 exports.copyFileAsync = util.promisify(fs.copyFile);
+exports.accessAsync = util.promisify(fs.access);
+
+/**
+ * @param {string} path
+ */
+exports.existsAsync = async (path) => {
+    try {
+        await exports.lstatAsync(path);
+        return true;
+
+    } catch (err) {
+        return false;
+    }
+}
 
 /**
  * 
@@ -280,14 +310,19 @@ exports.removeDirectoryAsync = async (target) => {
  * @returns {Promise<void>}
  */
 exports.removeFileAsync = async (target) => {
-    if (!(await exports.existsAsync(target))) {
-        return;
-    }
+    try {
+        const lstat = await exports.lstatAsync(target);
 
-    const lstat = await exports.lstatAsync(target);
+        if (!lstat.isFile() && !lstat.isSymbolicLink()) {
+            return;
+        }
 
-    if (!lstat.isFile() && !lstat.isSymbolicLink()) {
-        return;
+    } catch (err) {
+        if (err.code === "ENOENT") {
+            return;
+        }
+
+        throw err;
     }
 
     await exports.unlinkAsync(target);

@@ -24,7 +24,16 @@ exports.createDirectorySync = (dirname) => {
     let currentDir = "";
 
     for (const part of parts) {
-        currentDir = !currentDir ? part : path.join(currentDir, part);
+        currentDir =
+            !currentDir ?
+                // Windows: The first part should be "<driver>:".
+                part :
+                path.join(currentDir, part);
+
+        // Linux: the first part is empty which indicates the root.
+        if (!currentDir) {
+            currentDir = "/";
+        }
 
         if (!fs.existsSync(currentDir)) {
             fs.mkdirSync(currentDir);

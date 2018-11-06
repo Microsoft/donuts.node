@@ -134,11 +134,9 @@ function cleanProjectDir(projectDir) {
         logStep(() => cleanProjectDir(projectDir), "Clean up project");
         logStep(() => execSync("npm install", { cwd: projectDir, encoding: "utf8" }), "npm install");
         logStep(() => execSync("gulp clean-build", { cwd: projectDir, encoding: "utf8" }), "gulp clean-build");
-        logStep(() => execSync("gulp npm-pack", { cwd: projectDir, encoding: "utf8" }), "gulp npm-pack");
-
-        logStep(() => copyTgzFiles(projectDir), "Copy tgz files");
-
         logStep(() => updateDependenciesVersion(projectDir),  "Update the versions of internal dependencies");
+        logStep(() => execSync("gulp npm-pack", { cwd: projectDir, encoding: "utf8" }), "gulp npm-pack");
+        logStep(() => copyTgzFiles(projectDir), "Copy tgz files");
 
         console.groupEnd();
     }

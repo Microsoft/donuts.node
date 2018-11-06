@@ -34,6 +34,12 @@
         console.log(execSync(nodeGypCmd, { encoding: "utf8" }));
 
         fs.copyFileSync(`./build/${buildType}/${targetName}.node`, `./weak-reference.${process.platform}.${arch}.node`);
-        fs.copyFileSync(`./build/${buildType}/${targetName}.pdb`, `./weak-reference.${process.platform}.${arch}.pdb`);
+
+        // Windows only
+        const pdbPath = `./build/${buildType}/${targetName}.pdb`;
+
+        if (fs.existsSync(pdbPath)) {
+            fs.copyFileSync(pdbPath, `./weak-reference.${process.platform}.${arch}.pdb`);
+        }
     }
 })();

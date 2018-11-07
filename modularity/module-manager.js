@@ -186,7 +186,7 @@ class ModuleManager {
     async disposeAsync() {
         if (this.router) {
             await this.router.disposeAsync();
-            
+
             this.router = undefined;
         }
     }
@@ -281,7 +281,7 @@ class ModuleManager {
      * @param {Array.<string>} deps 
      * @returns {Donuts.DI.IDiDescriptor.<*>}
      */
-    createSingltonDiDescriptor(componentDescriptor, deps) {
+    createSingletonDiDescriptor(componentDescriptor, deps) {
         let dedicationDescriptor = this.createDedicationDiDescriptor(componentDescriptor, deps);
 
         /** @type {Promise<*>} */
@@ -298,19 +298,24 @@ class ModuleManager {
     }
 
     /**
-     * @private
-     * @param {string} moduleName 
+     * @public
+     * @param {string} namespace
      * @param {Array.<Donuts.Modularity.IComponentInfo<*>>} componentInfos 
-     * @returns {void}
+     * @param {boolean} [force=false]
+     * @returns {Promise<this>}
      */
-    registerComponents(moduleName, componentInfos) {
+    async registerComponentsAsync(namespace, componentInfos, force) {
         for (const componentInfo of componentInfos) {
-            const componentName = `${moduleName}.${componentInfo.name}`;
+            const componentName = `${namespace}.${componentInfo.name}`;
+
+            if (force !== true && this.componentsContainer.get(componentName)) {
+                throw new Error(`Component name, "${componentName}", has already been registered.`);
+            }
 
             if (componentInfo.singleton === true) {
                 this.componentsContainer.set(
                     componentName,
-                    this.createSingltonDiDescriptor(componentInfo.descriptor, componentInfo.deps));
+                    this.createSingletonDiDescriptor(componentInfo.descriptor, componentInfo.deps));
 
             } else {
                 this.componentsContainer.set(
@@ -318,6 +323,8 @@ class ModuleManager {
                     this.createDedicationDiDescriptor(componentInfo.descriptor, componentInfo.deps));
             }
         }
+
+        return this;
     }
 
     /**
@@ -376,7 +383,7 @@ class ModuleManager {
             }
 
             this.loadedModules[moduleInfo.name] = moduleInfo.version;
-            this.registerComponents(moduleInfo.namespace || moduleInfo.name, moduleInfo.components);
+            await this.registerComponentsAsync(moduleInfo.namespace || moduleInfo.name, moduleInfo.components);
         }
     }
 }

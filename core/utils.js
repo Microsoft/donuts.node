@@ -4,15 +4,6 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-/**
- * @typedef CallerInfo 
- * @property {string} fileName
- * @property {string} functionName
- * @property {string} typeName
- * @property {number} lineNumber
- * @property {number} columnNumber
- */
-
 const Symbol_Serializable = Symbol("serializable");
 
 /**
@@ -386,7 +377,7 @@ function prepareStackTraceOverride(error, structuredStackTrace) {
 }
 
 /**
- * @returns {CallerInfo}
+ * @returns {import("./utils").CallerInfo}
  */
 exports.getCallerModuleInfo = () => {
     const previousPrepareStackTraceFn = Error.prepareStackTrace;
@@ -398,7 +389,7 @@ exports.getCallerModuleInfo = () => {
         //@ts-ignore
         const callStack = (new Error()).stack;
 
-        /** @type {CallerInfo} */
+        /** @type {import("./utils").CallerInfo} */
         let directCallerInfo = undefined;
 
         for (let callStackIndex = 0; callStackIndex < callStack.length; callStackIndex++) {

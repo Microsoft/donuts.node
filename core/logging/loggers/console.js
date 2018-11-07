@@ -4,12 +4,6 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-/**
- * @typedef {Donuts.Logging.ILoggerSettings} IConsoleLoggerSettings
- * @property {boolean} [logAllProperties]
- * @property {boolean} [logCallerInfo]
- */
-
 const path = require("path");
 const utils = require("../../utils");
 
@@ -20,7 +14,7 @@ const utils = require("../../utils");
 class ConsoleLogger {
     /**
      * 
-     * @param {IConsoleLoggerSettings} [settings]
+     * @param {import("./console").IConsoleLoggerSettings} [settings]
      * @param {Console} [targetConsole]
      */
     constructor(settings, targetConsole) {
@@ -39,7 +33,7 @@ class ConsoleLogger {
 
         /**
         * @readonly
-        * @type {IConsoleLoggerSettings}
+        * @type {import("./console").IConsoleLoggerSettings}
         */
         this.settings = settings;
         this.settings.logAllProperties = utils.pick(settings.logAllProperties, true);

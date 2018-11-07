@@ -5,8 +5,6 @@
 
 /// <reference path="./types.modularity.d.ts" />
 
-declare export { ModuleManager } from "./module-manager";
-
 /**
  * Create a module manager with either a connection info or a communication host.
  * @param options a connection info or a communication host.
@@ -39,9 +37,3 @@ interface ICmdArgs {
 }
 
 declare export const CmdArgs: ICmdArgs;
-
-declare module "donuts.node-modularity/module-manager" {
-    export class ModuleManager implements Donuts.Modularity.IModuleManager {
-        constructor(communication: Donuts.Remote.ICommunicationHost | Donuts.Remote.ICommunicator);
-    }
-}

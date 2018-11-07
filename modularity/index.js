@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-exports.ModuleManager = require("./module-manager").ModuleManager;
+const { ModuleManager } = require("./module-manager");
 
 /** @type {WeakMap<Donuts.Modularity.IModuleManager, Donuts.Remote.IConnectionInfo>} */
 const ConnectionInfoMap = new WeakMap();
@@ -20,11 +20,11 @@ exports.createModuleManager = (options) => {
     let moduleManager;
 
     if (isConnectionInfo(options)) {
-        moduleManager = new exports.ModuleManager(connect(options));
+        moduleManager = new ModuleManager(connect(options));
         ConnectionInfoMap.set(moduleManager, options);
 
     } else if (isCommunicationHost(options)) {
-        moduleManager = new exports.ModuleManager(options);
+        moduleManager = new ModuleManager(options);
         ConnectionInfoMap.set(moduleManager, options.connectionInfo);
 
     } else {

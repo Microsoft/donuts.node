@@ -192,6 +192,7 @@ class ModuleManager {
     }
 
     /**
+     * @private
      * @return {void}
      */
     validateDisposal() {

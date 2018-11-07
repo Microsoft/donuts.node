@@ -116,8 +116,6 @@ class Log {
         this.loggers = Object.create(null);
         this.defaultProperties = defaultProperties;
         this.logCallerInfo = includeCallerInfo === true;
-
-        this.addLoggerAsync("console", new ConsoleLogger());
     }
 
     /**

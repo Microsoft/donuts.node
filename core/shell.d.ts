@@ -15,8 +15,8 @@ declare export function getUsedPorts(ipversion: IPVersion, protocol: TransportPr
 declare export function getRandomPort(ipversion: IPVersion, protocol: TransportProtocol): number;
 
 declare export function toCmdArg(argName: string, argValue: string): string;
-declare export function toCmdArgs(argDict: Donuts.IDictionary<string, string>): Array<string>;
-declare export function toArgDict(args: Array<string>): Donuts.IDictionary<string, string>;
+declare export function toCmdArgs(argDict: Donuts.IStringKeyDictionary<string>): Array<string>;
+declare export function toArgDict(args: Array<string>): Donuts.IStringKeyDictionary<string>;
 declare export function getCmdArg(argName: string): string;
 
 declare export function fork(modulePath: string, forkArgs: Array<string>): ChildProcess;

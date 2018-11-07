@@ -4,9 +4,9 @@
 //-----------------------------------------------------------------------------
 
 declare export class Settings implements Donuts.Settings.ISettings {
-    protected readonly settings: Donuts.IDictionary<string, any>;
+    protected readonly settings: Donuts.IStringKeyDictionary<any>;
 
-    constructor(initialSettings?: Donuts.IDictionary<string, any>, readonly?: boolean, parentSettings?: Donuts.Settings.ISettings);
+    constructor(initialSettings?: Donuts.IStringKeyDictionary<any>, readonly?: boolean, parentSettings?: Donuts.Settings.ISettings);
 
     public getAsync<T>(settingPath: string): Promise<T>;
 

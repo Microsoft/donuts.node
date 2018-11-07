@@ -6,8 +6,16 @@
 namespace Donuts {
     type FunctionType = (...args: Array<any>) => any;
 
-    interface IDictionary<TKey, TValue> {
-        [index: TKey]: TValue;
+    interface IStringKeyDictionary<TValue> {
+        [index: string]: TValue;
+    }
+
+    interface INumberKeyDictionary<TValue> {
+        [index: number]: TValue;
+    }
+
+    interface ISymbolKeyDictionary<TValue> {
+        [index: symbol]: TValue;
     }
 
     interface IDisposable {

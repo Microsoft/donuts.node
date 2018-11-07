@@ -6,7 +6,7 @@
 import { Settings } from "./settings";
 
 declare export class FileSettings extends Settings {
-    protected readonly settings: Donuts.IDictionary<string, any>;
+    protected readonly settings: Donuts.IStringKeyDictionary<any>;
 
     constructor(settingsPath: string, readOnly?: boolean, parentSettings?: Donuts.Settings.ISettings);
 }

@@ -6,18 +6,18 @@
 declare export class Log implements Donuts.Logging.ILog {
     public static get instance(): Donuts.Logging.ILog;
 
-    constructor(includeCallerInfo: boolean, defaultProperties: Donuts.IDictionary<string, any>);
+    constructor(includeCallerInfo: boolean, defaultProperties: Donuts.IStringKeyDictionary<any>);
 
-    public writeMoreAsync(properties: Donuts.IDictionary<string, string>, severity: Donuts.Logging.Severity, messageOrFormat: string, ...params: Array<any>): Promise<this>;
+    public writeMoreAsync(properties: Donuts.IStringKeyDictionary<string>, severity: Donuts.Logging.Severity, messageOrFormat: string, ...params: Array<any>): Promise<this>;
     public writeAsync(severity: Donuts.Logging.Severity, messageOrFormat: string, ...params: Array<any>): Promise<this>;
     public writeInfoAsync(messageOrFormat: string, ...params: Array<any>): Promise<this>;
     public writeVerboseAsync(messageOrFormat: string, ...params: Array<any>): Promise<this>;
     public writeWarningAsync(messageOrFormat: string, ...params: Array<any>): Promise<this>;
     public writeErrorAsync(messageOrFormat: string, ...params: Array<any>): Promise<this>;
     public writeCriticalAsync(messageOrFormat: string, ...params: Array<any>): Promise<this>;
-    public writeExceptionAsync(exception: Error, properties?: Donuts.IDictionary<string, string>): Promise<this>;
-    public writeEventAsync(name: string, properties?: Donuts.IDictionary<string, string>): Promise<this>;
-    public writeMetricAsync(name: string, value?: number, properties?: Donuts.IDictionary<string, string>): Promise<this>;
+    public writeExceptionAsync(exception: Error, properties?: Donuts.IStringKeyDictionary<string>): Promise<this>;
+    public writeEventAsync(name: string, properties?: Donuts.IStringKeyDictionary<string>): Promise<this>;
+    public writeMetricAsync(name: string, value?: number, properties?: Donuts.IStringKeyDictionary<string>): Promise<this>;
 
     public removeLoggerAsync(name: string): Promise<this>;
     public addLoggerAsync(logger: Donuts.Logging.ILogger): Promise<this>;

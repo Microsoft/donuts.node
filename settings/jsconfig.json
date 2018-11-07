@@ -6,6 +6,7 @@
         "alwaysStrict": true,
         "noUnusedLocals": true,
         "noImplicitAny": true,
+        "suppressImplicitAnyIndexErrors": true,
         "checkJs": true
     }
 }

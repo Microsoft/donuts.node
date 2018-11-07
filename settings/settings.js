@@ -62,7 +62,7 @@ class Settings {
         /** @type {Array.<string>} */
         const pathParts = settingPath.split("/");
 
-        /** @type {Object.<string, *>} */
+        /** @type {any} */
         let settingValue = this.settings;
 
         for (const part of pathParts) {
@@ -71,7 +71,6 @@ class Settings {
                 break;
             }
 
-            // @ts-ignore
             settingValue = settingValue[part];
         }
 
@@ -79,7 +78,6 @@ class Settings {
             return this.parentSettings.getAsync(settingPath);
         }
 
-        // @ts-ignore
         return Promise.resolve(settingValue);
     }
 
@@ -114,20 +112,16 @@ class Settings {
 
             if (pathPartIndex === pathParts.length - 1) {
                 if (value === undefined) {
-                    // @ts-ignore
                     delete settingValue[pathPart];
 
                 } else {
-                    // @ts-ignore
                     settingValue[pathPart] = value;
                 }
-            // @ts-ignore
+
             } else if (settingValue[pathPart] === undefined) {
-                // @ts-ignore
                 settingValue[pathPart] = Object.create(null);
             }
 
-            // @ts-ignore
             settingValue = settingValue[pathPart];
         }
     }

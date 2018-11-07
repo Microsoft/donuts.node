@@ -9,17 +9,11 @@ const path = require("path");
 const util = require("util");
 const fs = require("fs");
 const utils = require("./utils");
-
-/**
- * @typedef {"IPv4" | "IPv6"} IPVersion
- */
-
-/**
- * @typedef {"TCP" | "UDP"} TransportProtocol
- */
-
 const execAsync = util.promisify(cp.exec);
 const Symbol_CmdArgs = Symbol("CmdArgs");
+
+/** @typedef {import("./shell").IPVersion} IPVersion */
+/** @typedef {import("./shell").TransportProtocol} TransportProtocol */
 
 /**
  * 
@@ -377,3 +371,8 @@ exports.getDir = (dirName) => {
             return undefined;
     }
 }
+
+/**
+ * @return {string}
+ */
+exports.getAppVersion = () => JSON.parse(fs.readFileSync("./package.json", { encoding: "utf8" })).version;

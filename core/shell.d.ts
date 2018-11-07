@@ -3,8 +3,10 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-import { IPVersion, TransportProtocol } from "./shell";
 import { ChildProcess } from "child_process";
+
+declare export type IPVersion = "IPv4" | "IPv6";
+declare export type TransportProtocol = "TCP" | "UDP";
 
 declare export function startAsync(filePath: string): Promise<string>;
 declare export function start(filePath: string): string;
@@ -22,3 +24,5 @@ declare export function fork(modulePath: string, forkArgs: Array<string>): Child
 declare export function getAppDir(): string;
 declare export function getAppDataDir(): string;
 declare export function getDir(dirName: string): string;
+
+declare export function getAppVersion(): string;

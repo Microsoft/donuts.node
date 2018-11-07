@@ -9,6 +9,7 @@ const utils = require("donuts.node/utils");
 /**
  * @template THost
  * @class
+ * @abstract
  * @implements {Donuts.Remote.IChannelHostProxy}
  */
 class ChannelHostProxy {

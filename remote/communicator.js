@@ -131,7 +131,7 @@ class Communicator {
     }
 
     /**
-     * 
+     * @public
      * @param {Donuts.Remote.IRoutePattern} pattern 
      * @param {Donuts.Remote.AsyncRequestHandler} asyncHandler 
      * @returns {this}
@@ -158,7 +158,7 @@ class Communicator {
     }
 
     /**
-     * 
+     * @public
      * @param {Donuts.Remote.IRoutePattern} pattern
      * @returns {this} 
      */
@@ -181,8 +181,8 @@ class Communicator {
     }
 
     /**
-     * @template TRequest, TResponse
-     * 
+     * @public
+     * @template TRequest, TResponse* 
      * @param {string} path 
      * @param {TRequest} content 
      * @returns {Promise<TResponse>}
@@ -230,6 +230,7 @@ class Communicator {
     }
 
     /**
+     * @public
      * @returns {boolean}
      */
     get disposed() {
@@ -237,6 +238,7 @@ class Communicator {
     }
 
     /**
+     * @public
      * @return {Promise<void>}
      */
     async disposeAsync() {
@@ -253,6 +255,10 @@ class Communicator {
         this.ongoingPromiseDict = undefined;
     }
 
+    /**
+     * @private
+     * @returns {void}
+     */
     validateDisposal() {
         if (this.disposed) {
             throw new Error(`Communicator (${this.id}) already disposed.`);

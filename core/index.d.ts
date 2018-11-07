@@ -30,7 +30,7 @@ declare module "donuts.node/di" {
     }
 
     export class DiContainer implements Donuts.DI.IDiContainer {
-        constructor(dictionary: Donuts.DI.IDiDescriptorDictionary);
+        constructor(dictionary?: Donuts.DI.IDiDescriptorDictionary);
 
         public getDep<T>(name: string, ...extraArgs: Array<any>): T;
         public get<T>(name: string): Donuts.DI.IDiDescriptor<T>;

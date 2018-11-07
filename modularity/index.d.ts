@@ -39,3 +39,9 @@ interface ICmdArgs {
 }
 
 declare export const CmdArgs: ICmdArgs;
+
+declare module "donuts.node-modularity/module-manager" {
+    export class ModuleManager implements Donuts.Modularity.IModuleManager {
+        constructor(communication: Donuts.Remote.ICommunicationHost | Donuts.Remote.ICommunicator);
+    }
+}

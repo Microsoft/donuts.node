@@ -10,7 +10,7 @@
  */
 class Regex {
     /**
-     * 
+     * @public
      * @param {RegExp} pattern 
      */
     constructor(pattern) {
@@ -37,6 +37,7 @@ class Regex {
     }
 
     /**
+     * @public
      * @returns {*}
      */
     getRaw() {
@@ -44,7 +45,7 @@ class Regex {
     }
 
     /**
-     * 
+     * @public
      * @param {Donuts.Remote.IRoutePattern} pattern
      * @returns {boolean} 
      */
@@ -53,7 +54,7 @@ class Regex {
     }
 
     /**
-     * 
+     * @public
      * @param {string} path 
      * @returns {Donuts.Remote.IRoutePathInfo}
      */

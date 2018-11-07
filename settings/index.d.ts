@@ -25,6 +25,20 @@ declare export function openSettingsAsChain(...names: Array<string>): Donuts.Set
  */
 declare export function openSettings(name: string, parentSettings?: Donuts.Settings.ISettings): Donuts.Settings.ISettings;
 
-declare export { Settings } from "./settings";
+declare module "donuts.node-settings/settings" {
+    export class Settings implements Donuts.Settings.ISettings {
+        protected readonly settings: Donuts.IDictionary<string, any>;
 
-declare export { FileSettings } from "./file-settings";
+        constructor(initialSettings?: Donuts.IDictionary<string, any>, readonly?: boolean, parentSettings?: Donuts.Settings.ISettings);
+    }
+}
+
+declare module "donuts.node-settings/file-settings" {
+    import { Settings } from "donuts.node-settings/settings";
+
+    export class FileSettings extends Settings {
+        protected readonly settings: Donuts.IDictionary<string, any>;
+
+        constructor(settingsPath: string, readOnly?: boolean, parentSettings?: Donuts.Settings.ISettings);
+    }
+}

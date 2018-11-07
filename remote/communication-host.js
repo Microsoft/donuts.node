@@ -196,6 +196,8 @@ class CommunicationHost extends EventEmitter {
 
             delete this.communicators[propName];
         }
+
+        this.removeAllListeners();
     }
 }
 exports.CommunicationHost = CommunicationHost;

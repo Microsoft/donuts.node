@@ -21,7 +21,7 @@ class ObjectRemotingRouter {
          * @private
          * @type {Donuts.Remote.IObjectRemotingProxy}
          */
-        this.remote = new ObjectRemotingProxy(remote);
+        this.remote = new ObjectRemotingProxy(remote, null, true);
 
         /**
          * @private

@@ -71,7 +71,7 @@ class ObjectRemotingHostRouter {
          * @returns {void}
          */
         this.onProxyConnection = (host, communicator) => {
-            const proxy = new ObjectRemotingProxy(communicator);
+            const proxy = new ObjectRemotingProxy(communicator, null, true);
 
             communicator.on("close", () => {
                 if (!Array.isArray(this.proxies)) {
@@ -85,6 +85,7 @@ class ObjectRemotingHostRouter {
                 }
 
                 this.proxies.splice(proxyIndex, 1);
+                proxy.disposeAsync();
             });
 
             proxy.resolver = this.onResolve;

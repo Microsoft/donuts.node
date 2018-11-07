@@ -261,6 +261,7 @@ class Communicator extends EventEmitter {
         this.channelProxy = undefined;
         this.routes = undefined;
         this.ongoingPromiseDict = undefined;
+        this.removeAllListeners();
     }
 
     /**

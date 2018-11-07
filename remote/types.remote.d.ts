@@ -81,7 +81,6 @@ namespace Donuts.Remote {
     }
 
     interface ICommunicationHost extends IDisposable {
-        readonly communicators: Object.<string, ICommunicator>;
         readonly connectionInfo: IConnectionInfo;
 
         on(event: "connection", handler: (host: ICommunicationHost, communicator: ICommunicator) => void): this;

@@ -39,22 +39,33 @@ class CommunicationHost extends EventEmitter {
             throw new Error("host must be a IChannelHostProxy object.");
         }
 
-        /** @type {Array.<IRoute>} */
+        /** 
+         * @private
+         * @type {Array.<IRoute>}
+         */
         this.routes = [];
 
         /**
+         * @private
          * @readonly
          * @type {Object.<string, Donuts.Remote.ICommunicator>}
          */
         this.communicators = Object.create(null);
 
-        /** @type {Donuts.Remote.ICommunicatorConstructorOptions} */
+        /** 
+         * @private
+         * @type {Donuts.Remote.ICommunicatorConstructorOptions} 
+         */
         this.communicatorOptions = options;
 
-        /** @type {Donuts.Remote.IChannelHostProxy} */
+        /** 
+         * @private
+         * @type {Donuts.Remote.IChannelHostProxy} 
+         */
         this.host = host;
 
         /**
+         * @public
          * @readonly
          * @type {Donuts.Remote.IConnectionInfo}
          */

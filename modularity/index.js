@@ -41,6 +41,18 @@ exports.CmdArgs = {
 
 /**
  * @param {Donuts.Modularity.IModuleManager} moduleManager
+ * @return {Donuts.Remote.IConnectionInfo}
+ */
+exports.getConnectionInfo = (moduleManager) => {
+    if (!moduleManager) {
+        throw new Error("moduleManager must be supplied.");
+    }
+
+    return ConnectionInfoMap.get(moduleManager);
+};
+
+/**
+ * @param {Donuts.Modularity.IModuleManager} moduleManager
  * @param {string} modulePath
  * @returns {import("child_process").ChildProcess}
  */

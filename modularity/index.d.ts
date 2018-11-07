@@ -13,6 +13,13 @@
 declare export function createModuleManager(options: Donuts.Remote.IConnectionInfo | Donuts.Remote.ICommunicationHost): Donuts.Modularity.IModuleManager;
 
 /**
+ * Get the connection info of the given module manager.
+ * @param moduleManager
+ * @returns The connection info for the given module manager.
+ */
+declare export function getConnectionInfo(moduleManager: Donuts.Modularity.IModuleManager): Donuts.Remote.IConnectionInfo;
+
+/**
  * Spawn a new node.js process with a module manager initialized as default.
  * @param connectionInfo The connection info for the child process connect with.
  * @param modulePath The path to the module to run.

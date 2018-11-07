@@ -9,19 +9,9 @@ declare export interface IConsoleLoggerSettings extends Donuts.Logging.ILoggerSe
 }
 
 declare export class ConsoleLogger implements Donuts.Logging.ILogger {
-    constructor(settings: IConsoleLoggerSettings, targetConsole: Console);
+    constructor(settings?: IConsoleLoggerSettings, targetConsole?: Console);
 
-    public writeMoreAsync(properties: Donuts.IDictionary<string, string>, severity: Donuts.Logging.Severity, messageOrFormat: string, ...params: Array<any>): Promise<void>;
-    public writeAsync(severity: Donuts.Logging.Severity, messageOrFormat: string, ...params: Array<any>): Promise<void>;
-    public writeInfoAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
-    public writeVerboseAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
-    public writeWarningAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
-    public writeErrorAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
-    public writeCriticalAsync(messageOrFormat: string, ...params: Array<any>): Promise<void>;
-    public writeExceptionAsync(exception: Error, properties?: Donuts.IDictionary<string, string>): Promise<void>;
-    public writeEventAsync(name: string, properties?: Donuts.IDictionary<string, string>): Promise<void>;
-    public writeMetricAsync(name: string, value?: number, properties?: Donuts.IDictionary<string, string>): Promise<void>;
-
-    public removeLoggerAsync(name: string): Promise<Donuts.Logging.ILogger>;
-    public addLoggerAsync(logger: Donuts.Logging.ILogger): Promise<void>;
+    public writeAsync(properties: Donuts.IDictionary<string, string>, severity: Severity, message: string): Promise<this>;
+    public writeExceptionAsync(properties: Donuts.IDictionary<string, string>, error: Error): Promise<this>;
+    public writeMetricAsync(properties: Donuts.IDictionary<string, string>, name: string, value: number): Promise<this>;
 }

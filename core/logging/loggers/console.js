@@ -39,12 +39,6 @@ class ConsoleLogger {
         this.settings.logAllProperties = utils.pick(settings.logAllProperties, true);
         this.settings.logCallerInfo = utils.pick(settings.logCallerInfo, true);
 
-        /** 
-         * @readonly
-         * @type {string} 
-         */
-        this.name = this.settings.name;
-
         if (!utils.isNullOrUndefined(targetConsole)) {
             this.console = targetConsole;
         }
@@ -55,7 +49,7 @@ class ConsoleLogger {
      * @param {Object.<string, string>} properties 
      * @param {Donuts.Logging.Severity} severity 
      * @param {string} message 
-     * @returns {Promise<void>}
+     * @returns {Promise<this>}
      */
     async writeAsync(properties, severity, message) {
         /** @type {string} */
@@ -85,13 +79,15 @@ class ConsoleLogger {
                 this.console.log(consoleMsg);
                 break;
         }
+
+        return this;
     }
 
     /**
      * 
      * @param {Object.<string, string>} properties 
      * @param {Error} error 
-     * @returns {Promise<void>}
+     * @returns {Promise<this>}
      */
     async writeExceptionAsync(properties, error) {
         /** @type {string} */
@@ -102,6 +98,8 @@ class ConsoleLogger {
         exceptionMsg += error.stack;
 
         this.console.error(this.formatConsoleMsg(properties, exceptionMsg));
+        
+        return this;
     }
 
     /**
@@ -109,10 +107,12 @@ class ConsoleLogger {
      * @param {Object.<string, string>} properties 
      * @param {string} name 
      * @param {number} value 
-     * @returns {Promise<void>}
+     * @returns {Promise<this>}
      */
     async writeMetricAsync(properties, name, value) {
         this.console.info(this.formatConsoleMsg(properties, name + ": " + value.toString()));
+
+        return this;
     }
 
     /**

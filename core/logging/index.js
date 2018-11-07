@@ -33,7 +33,7 @@ exports.setLog = (log) => defaultLog = log;
  * @param {Donuts.Logging.Severity} severity 
  * @param {string} messageOrFormat 
  * @param {...*} params 
- * @returns {Promise<void>}
+ * @returns {Promise<Donuts.Logging.ILog>}
  */
 exports.writeMoreAsync = (properties, severity, messageOrFormat, ...params) =>
     defaultLog.writeMoreAsync(properties, severity, messageOrFormat, ...params);
@@ -43,7 +43,7 @@ exports.writeMoreAsync = (properties, severity, messageOrFormat, ...params) =>
  * @param {Donuts.Logging.Severity} severity 
  * @param {string} messageOrFormat 
  * @param {...*} params 
- * @returns {Promise<void>}
+ * @returns {Promise<Donuts.Logging.ILog>}
  */
 exports.writeAsync = (severity, messageOrFormat, ...params) => defaultLog.writeAsync(severity, messageOrFormat, ...params);
 
@@ -51,7 +51,7 @@ exports.writeAsync = (severity, messageOrFormat, ...params) => defaultLog.writeA
  * 
  * @param {string} messageOrFormat 
  * @param {...*} params 
- * @returns {Promise.<void>}
+ * @returns {Promise.<Donuts.Logging.ILog>}
  */
 exports.writeInfoAsync = (messageOrFormat, ...params) => defaultLog.writeInfoAsync(messageOrFormat, ...params);
 
@@ -59,7 +59,7 @@ exports.writeInfoAsync = (messageOrFormat, ...params) => defaultLog.writeInfoAsy
  * 
  * @param {string} messageOrFormat 
  * @param {...*} params 
- * @returns {Promise.<void>}
+ * @returns {Promise.<Donuts.Logging.ILog>}
  */
 exports.writeVerboseAsync = (messageOrFormat, ...params) => defaultLog.writeVerboseAsync(messageOrFormat, ...params);
 
@@ -67,7 +67,7 @@ exports.writeVerboseAsync = (messageOrFormat, ...params) => defaultLog.writeVerb
  * 
  * @param {string} messageOrFormat 
  * @param {...*} params 
- * @returns {Promise.<void>}
+ * @returns {Promise.<Donuts.Logging.ILog>}
  */
 exports.writeWarningAsync = (messageOrFormat, ...params) => defaultLog.writeWarningAsync(messageOrFormat, ...params);
 
@@ -75,7 +75,7 @@ exports.writeWarningAsync = (messageOrFormat, ...params) => defaultLog.writeWarn
  * 
  * @param {string} messageOrFormat 
  * @param {...*} params 
- * @returns {Promise<void>}
+ * @returns {Promise<Donuts.Logging.ILog>}
  */
 exports.writeErrorAsync = (messageOrFormat, ...params) => defaultLog.writeErrorAsync(messageOrFormat, ...params);
 
@@ -83,7 +83,7 @@ exports.writeErrorAsync = (messageOrFormat, ...params) => defaultLog.writeErrorA
  * 
  * @param {string} messageOrFormat 
  * @param {...*} params 
- * @returns {Promise<void>}
+ * @returns {Promise<Donuts.Logging.ILog>}
  */
 exports.writeCriticalAsync = (messageOrFormat, ...params) => defaultLog.writeCriticalAsync(messageOrFormat, ...params);
 
@@ -91,7 +91,7 @@ exports.writeCriticalAsync = (messageOrFormat, ...params) => defaultLog.writeCri
  * 
  * @param {Error} exception 
  * @param {Object.<string, string>} [properties]
- * @returns {Promise.<void>}
+ * @returns {Promise.<Donuts.Logging.ILog>}
  */
 exports.writeExceptionAsync = (exception, properties) => defaultLog.writeExceptionAsync(exception, properties);
 
@@ -99,7 +99,7 @@ exports.writeExceptionAsync = (exception, properties) => defaultLog.writeExcepti
  * 
  * @param {string} name 
  * @param {Object.<string, string>} [properties]
- * @returns {Promise.<void>}
+ * @returns {Promise.<Donuts.Logging.ILog>}
  */
 exports.writeEventAsync = (name, properties) => defaultLog.writeEventAsync(name, properties);
 
@@ -108,20 +108,27 @@ exports.writeEventAsync = (name, properties) => defaultLog.writeEventAsync(name,
  * @param {string} name 
  * @param {number} [value]
  * @param {Object.<string, string>} [properties]
- * @returns {Promise.<void>}
+ * @returns {Promise.<Donuts.Logging.ILog>}
  */
 exports.writeMetricAsync = (name, value, properties) => defaultLog.writeMetricAsync(name, value, properties);
 
 /**
  * 
  * @param {string} name 
- * @returns {Promise.<Donuts.Logging.ILogger>}
+ * @returns {Promise.<Donuts.Logging.ILog>}
  */
 exports.removeLoggerAsync = (name) => defaultLog.removeLoggerAsync(name);
 
 /**
  * 
- * @param {Donuts.Logging.ILogger} logger 
- * @returns {Promise.<void>}
+ * @param {string} name 
+ * @returns {Promise.<Donuts.Logging.ILogger>}
  */
-exports.addLoggerAsync = (logger) => defaultLog.addLoggerAsync(logger);
+exports.getLoggerAsync = (name) => defaultLog.getLoggerAsync(name);
+
+/**
+ * @param {string} name
+ * @param {Donuts.Logging.ILogger} logger 
+ * @returns {Promise.<Donuts.Logging.ILog>}
+ */
+exports.addLoggerAsync = (name, logger) => defaultLog.addLoggerAsync(name, logger);

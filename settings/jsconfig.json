@@ -8,5 +8,9 @@
         "noImplicitAny": true,
         "suppressImplicitAnyIndexErrors": true,
         "checkJs": true
-    }
+    },
+    "exclude": [
+        "build/",
+        "publish/"
+    ]
 }

@@ -7,5 +7,9 @@
         "noUnusedLocals": true,
         "noImplicitAny": true,
         "checkJs": true
-    }
+    },
+    "exclude": [
+        "build/",
+        "publish/"
+    ]
 }

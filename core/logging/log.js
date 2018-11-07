@@ -95,16 +95,13 @@ class Log {
 
         return utils.string.stringifier(obj);
     }
-    
+
     /**
      * @public
      * @param {boolean} [includeCallerInfo]
      * @param {Object.<string, *>} [defaultProperties]
      */
     constructor(includeCallerInfo, defaultProperties) {
-        /** @type {Array.<Donuts.Logging.ILogger>} */
-        this.loggers = undefined;
-
         /** @type {Object.<string, *>} */
         this.defaultProperties = undefined;
 
@@ -115,12 +112,12 @@ class Log {
             && !utils.isObject(defaultProperties)) {
             throw new Error("defaultProperties must be an object.");
         }
-
-        this.loggers = [];
+        /** @type {Object.<string, Donuts.Logging.ILogger>} */
+        this.loggers = Object.create(null);
         this.defaultProperties = defaultProperties;
         this.logCallerInfo = includeCallerInfo === true;
 
-        this.addLoggerAsync(new ConsoleLogger());
+        this.addLoggerAsync("console", new ConsoleLogger());
     }
 
     /**
@@ -129,7 +126,7 @@ class Log {
      * @param {Donuts.Logging.Severity} severity 
      * @param {string} messageOrFormat 
      * @param {...*} params 
-     * @returns {Promise<void>}
+     * @returns {Promise<this>}
      */
     async writeMoreAsync(properties, severity, messageOrFormat, ...params) {
         if (!utils.isString(messageOrFormat)) {
@@ -142,7 +139,8 @@ class Log {
 
         properties = this.generateProperties(properties);
 
-        await Promise.all(this.loggers.map((logger) => logger.writeAsync(properties, severity, messageOrFormat)));
+        await Promise.all(Object.values(this.loggers).map((logger) => logger.writeAsync(properties, severity, messageOrFormat)));
+        return this;
     }
 
     /**
@@ -150,7 +148,7 @@ class Log {
      * @param {Donuts.Logging.Severity} severity 
      * @param {string} messageOrFormat 
      * @param {...*} params 
-     * @returns {Promise<void>}
+     * @returns {Promise<this>}
      */
     writeAsync(severity, messageOrFormat, ...params) {
         return this.writeMoreAsync(null, severity, messageOrFormat, ...params);
@@ -160,7 +158,7 @@ class Log {
      * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
-     * @returns {Promise.<void>}
+     * @returns {Promise.<this>}
      */
     writeInfoAsync(messageOrFormat, ...params) {
         return this.writeAsync("info", messageOrFormat, ...params);
@@ -170,7 +168,7 @@ class Log {
      * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
-     * @returns {Promise.<void>}
+     * @returns {Promise.<this>}
      */
     writeVerboseAsync(messageOrFormat, ...params) {
         return this.writeAsync("verbose", messageOrFormat, ...params);
@@ -180,7 +178,7 @@ class Log {
      * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
-     * @returns {Promise.<void>}
+     * @returns {Promise.<this>}
      */
     writeWarningAsync(messageOrFormat, ...params) {
         return this.writeAsync("warning", messageOrFormat, ...params);
@@ -190,7 +188,7 @@ class Log {
      * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
-     * @returns {Promise<void>}
+     * @returns {Promise<this>}
      */
     writeErrorAsync(messageOrFormat, ...params) {
         return this.writeAsync("error", messageOrFormat, ...params);
@@ -200,7 +198,7 @@ class Log {
      * @public
      * @param {string} messageOrFormat 
      * @param {...*} params 
-     * @returns {Promise<void>}
+     * @returns {Promise<this>}
      */
     writeCriticalAsync(messageOrFormat, ...params) {
         return this.writeAsync("critical", messageOrFormat, ...params);
@@ -210,19 +208,20 @@ class Log {
      * @public
      * @param {Error} exception 
      * @param {Object.<string, string>} [properties]
-     * @returns {Promise.<void>}
+     * @returns {Promise.<this>}
      */
     async writeExceptionAsync(exception, properties) {
         properties = this.generateProperties(properties);
 
-        await Promise.all(this.loggers.map((logger) => logger.writeExceptionAsync(properties, exception)));
+        await Promise.all(Object.values(this.loggers).map((logger) => logger.writeExceptionAsync(properties, exception)));
+        return this;
     }
 
     /**
      * @public
      * @param {string} name 
      * @param {Object.<string, string>} [properties]
-     * @returns {Promise.<void>}
+     * @returns {Promise.<this>}
      */
     async writeEventAsync(name, properties) {
         if (!utils.isString(name)) {
@@ -231,7 +230,9 @@ class Log {
 
         properties = this.generateProperties(properties);
 
-        await Promise.all(this.loggers.map((logger) => logger.writeAsync(properties, "event", name)));
+        await Promise.all(Object.values(this.loggers).map((logger) => logger.writeAsync(properties, "event", name)));
+
+        return this;
     }
 
     /**
@@ -239,7 +240,7 @@ class Log {
      * @param {string} name 
      * @param {number} [value]
      * @param {Object.<string, string>} [properties]
-     * @returns {Promise.<void>}
+     * @returns {Promise.<this>}
      */
     async writeMetricAsync(name, value, properties) {
         if (!utils.isString(name)) {
@@ -252,36 +253,37 @@ class Log {
 
         properties = this.generateProperties(properties);
 
-        await Promise.all(this.loggers.map((logger) => logger.writeMetricAsync(properties, name, value)));
+        await Promise.all(Object.values(this.loggers).map((logger) => logger.writeMetricAsync(properties, name, value)));
+        
+        return this;
     }
 
     /**
      * @public
      * @param {string} name 
-     * @returns {Promise.<Donuts.Logging.ILogger>}
+     * @returns {Promise.<this>}
      */
     async removeLoggerAsync(name) {
         if (!utils.isString(name)) {
             throw new Error("name must be supplied.");
         }
 
-        for (let loggerIndex = 0; loggerIndex < this.loggers.length; loggerIndex++) {
-            const logger = this.loggers[loggerIndex];
+        delete this.loggers[name];
 
-            if (name === logger.name) {
-                return this.loggers.splice(loggerIndex, 1)[0];
-            }
-        }
-
-        return undefined;
+        return this;
     }
 
     /**
      * @public
+     * @param {string} name
      * @param {Donuts.Logging.ILogger} logger 
-     * @returns {Promise.<void>}
+     * @returns {Promise.<this>}
      */
-    async addLoggerAsync(logger) {
+    async addLoggerAsync(name, logger) {
+        if (!utils.isString(name)) {
+            throw new Error("name must be a string.");
+        }
+
         if (!logger) {
             throw new Error("logger must be provided.");
         }
@@ -290,7 +292,22 @@ class Log {
             throw new Error("logger must be an object implementing ILogger.");
         }
 
-        this.loggers.push(logger);
+        this.loggers[name] = logger;
+        
+        return this;
+    }
+
+    /**
+     * @public
+     * @param {string} name 
+     * @return {Promise<Donuts.Logging.ILogger>}
+     */
+    async getLoggerAsync(name) {
+        if (!utils.isString(name)) {
+            throw new Error("name must be a string.");
+        }
+
+        return this.loggers[name];
     }
 
     /**

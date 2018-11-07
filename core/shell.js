@@ -236,14 +236,14 @@ exports.toArgDict = (args) => {
 
     /** @type {Object.<string, string>} */
     const argDict = Object.create(null);
-    const CmdArgParseFormat = /^\s*\-\-([a-zA-Z0-9_\-+@]+)\=?(.*)$/g;
+    const CmdArgParseFormat = /^\s*(?:\/|\-\-?)?([^=]+)(?:\=(.*))?\s*$/i;
 
     for (const arg of args) {
         /** @type {RegExpExecArray} */
-        let matchResult;
+        let matchResult = CmdArgParseFormat.exec(arg);
 
-        while (matchResult = CmdArgParseFormat.exec(arg)) {
-            argDict[matchResult[1]] = matchResult[2];
+        if (matchResult) {
+            argDict[matchResult[1]] = matchResult[2] === undefined ? "true" : matchResult[2];
         }
     }
 

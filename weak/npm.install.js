@@ -6,6 +6,7 @@
 
 const fs = require("fs");
 const https = require("https");
+const util = require("./npm.util");
 
 /**
  * @param {string} url
@@ -45,32 +46,40 @@ function downloadAsync(url, filename) {
                 return Promise.reject(new Error(`Failed to download: HTTP ${response.statusCode} ${response.statusMessage}`));
         }
     });
+}
 
+/**
+ * @returns {string}
+ */
+function getFlavor() {
+    /** @type {string} */
+    let flavor = util.getFlavorCmdArg();
 
+    if (!flavor) {
+        flavor = util.getElectronVersion();
+
+        if (flavor) {
+            flavor = `electron.${flavor}`;
+
+        } else {
+            flavor = "";
+        }
+    }
+
+    return flavor ? `.${flavor}` : "";
 }
 
 (() => {
-    /** @enum {string} */
-    const NodeEnv = {
-        prod: "production",
-        dev: "development"
-    };
-
-    /** @type {NodeEnv} */
-    const node_env = process.env["NODE_ENV"];
-
-    if (node_env !== NodeEnv.prod && fs.existsSync("./weak-reference.cc")) {
-        require("./build");
-        return;
-    }
-
     const archs = ["ia32", "x64"];
 
+    /** @type {string} */
+    let flavor = getFlavor();
+    
     /** @type {PackageJson} */
     const packageJson = JSON.parse(fs.readFileSync("./package.json", "utf8"));
 
     for (const arch of archs) {
-        const url = `${packageJson.homepage}/releases/download/weak-${packageJson["weak-reference.node"].version}/weak-reference.${process.platform}.${arch}.node`;
+        const url = `${packageJson.homepage}/releases/download/weak-${packageJson["weak-reference.node"].version}/weak-reference${flavor}.${process.platform}.${arch}.node`;
 
         console.log("Downloading", url);
         downloadAsync(url, `./weak-reference.${process.platform}.${arch}.node`);

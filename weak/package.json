@@ -5,8 +5,8 @@
   "types": "index.d.ts",
   "main": "index.js",
   "scripts": {
-    "install": "node install.js",
-    "build": "node build.js",
+    "install": "node npm.install.js",
+    "build": "node npm.build.js",
     "test": "mocha --recursive \"./test/**/*.test.js\" --exit"
   },
   "weak-reference.node": {
@@ -22,13 +22,19 @@
     "url": "https://github.com/Microsoft/donuts.node/issues"
   },
   "homepage": "https://github.com/Microsoft/donuts.node",
+  "dependencies": {
+    "donuts.node": "file:../core"
+  },
   "devDependencies": {
     "@types/node": "^10.12.0",
     "donuts.node-build": "file:../.build",
+    "electron-rebuild": "^1.8.2",
     "gulp": "^4.0.0",
     "mocha": "^5.2.0",
     "nan": "^2.11.1",
     "node-gyp": "^3.8.0"
   },
-  "dependencies": {}
+  "peerDependencies": {
+    "electron": "^3.0.8"
+  }
 }

@@ -8,16 +8,16 @@ const net = require("net");
 const path = require("path");
 const uuidv4 = require("uuid/v4");
 const tmp = require("tmp");
-const fileSytem = require("donuts.node/fileSystem");
+const fileSystem = require("donuts.node/fileSystem");
 
 /**
  * 
- * @param  {...string} segements 
+ * @param  {...string} segments 
  * @returns {string}
  */
-function generateWin32IpcPath(...segements) {
-    if (segements.length > 0) {
-        return path.join("\\\\?\\pipe", ...segements);
+function generateWin32IpcPath(...segments) {
+    if (segments.length > 0) {
+        return path.join("\\\\?\\pipe", ...segments);
     }
 
     return path.join("\\\\?\\pipe", process.mainModule.filename, uuidv4());
@@ -25,37 +25,37 @@ function generateWin32IpcPath(...segements) {
 
 /**
  * 
- * @param  {...string} segements 
+ * @param  {...string} segments 
  * @returns {string}
  */
-function generateUnixIpcPath(...segements) {
+function generateUnixIpcPath(...segments) {
     /** @type {string} */
     let filePath;
 
-    if (segements.length > 0) {
-        filePath = path.join(...segements);
+    if (segments.length > 0) {
+        filePath = path.join(...segments);
 
     } else {
         filePath = tmp.fileSync().name;
     }
 
-    fileSytem.createDirectorySync(path.dirname(filePath));
+    fileSystem.createDirectorySync(path.dirname(filePath));
 
     return filePath;
 }
 
 /**
- * @param {...string} segements
+ * @param {...string} segments
  * @returns {string}
  */
-function generateIpcPath(...segements) {
+function generateIpcPath(...segments) {
     switch (process.platform) {
         case "win32":
-            return generateWin32IpcPath(...segements);
+            return generateWin32IpcPath(...segments);
 
         case "linux":
         case "darwin":
-            return generateUnixIpcPath(...segements);
+            return generateUnixIpcPath(...segments);
 
         default:
             throw new Error(`Unsupported platform: ${process.platform}`);
@@ -64,14 +64,14 @@ function generateIpcPath(...segements) {
 
 /**
  * 
- * @param {...string} pathSegements 
+ * @param {...string} pathSegments 
  * @returns {import("net").Socket}
  */
-exports.connect = (pathSegements) => net.connect({ path: generateIpcPath(pathSegements) });
+exports.connect = (pathSegments) => net.connect({ path: generateIpcPath(pathSegments) });
 
 /**
  * 
- * @param {...string} pathSegements 
+ * @param {...string} pathSegments 
  * @returns {import("net").Server}
  */
-exports.host = (pathSegements) => net.createServer().listen(generateIpcPath(pathSegements));
+exports.host = (pathSegments) => net.createServer().listen(generateIpcPath(pathSegments));

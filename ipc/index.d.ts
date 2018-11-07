@@ -5,6 +5,6 @@
 
 import { Socket, Server } from "net";
 
-declare export function connect(...pathSegements: Array<string>): Socket;
+declare export function connect(...pathSegments: Array<string>): Socket;
 
-declare export function host(...pathSegements: Array<string>): Server;
+declare export function host(...pathSegments: Array<string>): Server;

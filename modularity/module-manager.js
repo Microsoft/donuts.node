@@ -376,7 +376,7 @@ class ModuleManager {
             }
 
             this.loadedModules[moduleInfo.name] = moduleInfo.version;
-            this.registerComponents(moduleInfo.name, moduleInfo.components);
+            this.registerComponents(moduleInfo.namespace || moduleInfo.name, moduleInfo.components);
         }
     }
 }

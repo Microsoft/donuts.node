@@ -8,6 +8,11 @@ namespace Donuts.Modularity {
 
     interface IModuleInfo {
         name: string;
+        /**
+         * The namespace for the components in the module to register under.
+         * If the namespace is not provided, module name will be used.
+         */
+        namespace?: string;
         version: string;
         hostVersion?: string;
         dependencies?: {

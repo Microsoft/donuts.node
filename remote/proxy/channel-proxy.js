@@ -35,10 +35,16 @@ class ChannelProxy {
      * @param {TChannel} channel 
      */
     constructor(channel) {
-        /** @type {Donuts.Remote.ChannelProxyDataHandler} */
-        this.dataHandler = undefined;
+        /** 
+         * @private
+         * @type {Object.<string, (channel: Donuts.Remote.IChannelProxy, ...args: Array.<*>)=>void>} 
+         * */
+        this.handlers = Object.create(null)
 
-        /** @type {TChannel} */
+        /**
+         * @private 
+         * @type {TChannel} 
+         * */
         this._channel = channel;
     }
 
@@ -65,7 +71,7 @@ class ChannelProxy {
      * 
      * @public
      * @param {string} type 
-     * @param {Donuts.Remote.ChannelProxyDataHandler} handler 
+     * @param {Donuts.Remote.ChannelProxyHandler} handler 
      * @returns {this}
      */
     setHandler(type, handler) {
@@ -75,23 +81,34 @@ class ChannelProxy {
             throw new Error("Channel proxy already disposed.");
         }
 
-        this.dataHandler = handler;
+        if (!utils.isString(type)) {
+            throw new Error("type must be a string.");
+        }
+
+        this.handlers[type] = handler;
+
         return this;
     }
 
     /**
      * @protected
-     * @param {*} data 
+     * @param {string} type
+     * @param {...*} args
      * @return {void}
      */
-    triggerDataHandler(data) {
-        if (utils.isFunction(this.dataHandler)) {
-            try {
-                this.dataHandler(this, data);
-            } catch (error) {
-                Log.instance.writeExceptionAsync(error);
-                throw error;
-            }
+    triggerHandler(type, ...args) {
+        const handler = this.handlers[type];
+
+        if (!utils.isFunction(handler)) {
+            return;
+        }
+
+        try {
+            handler(this, ...args);
+            
+        } catch (error) {
+            Log.instance.writeExceptionAsync(error);
+            throw error;
         }
     }
 }

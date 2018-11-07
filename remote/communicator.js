@@ -7,6 +7,7 @@
 const uuidv4 = require("uuid/v4");
 const utils = require("donuts.node/utils");
 const { isChannelProxy } = require(".");
+const { EventEmitter } = require("events");
 
 /**
  * @typedef IPromiseResolver 
@@ -26,7 +27,7 @@ exports.UuidNamespace = "65ef6f94-e6c9-4c95-8360-6d29de87b1dd";
  * @class
  * @implements {Donuts.Remote.ICommunicator}
  */
-class Communicator {
+class Communicator extends EventEmitter {
     /**
      * 
      * @param {Donuts.Remote.IChannelProxy} channelProxy 
@@ -37,6 +38,8 @@ class Communicator {
         if (!isChannelProxy(channelProxy)) {
             throw new Error("channelProxy must be a IChannelProxy object.");
         }
+
+        super();
 
         /** @type {Array.<IRoute>} */
         this.routes = [];
@@ -127,7 +130,12 @@ class Communicator {
             }
         };
 
+        this.onCloseAsync = () => {
+            this.emit("close", this);
+        };
+
         this.channelProxy.setHandler("data", this.onMessageAsync);
+        this.channelProxy.setHandler("close", this.onCloseAsync);
     }
 
     /**

@@ -5,12 +5,20 @@
 
 declare export abstract class ChannelProxy<TChannel> implements Donuts.Remote.IChannelProxy {
     public get channel(): TChannel;
+
     protected get disposed(): boolean;
 
     constructor(channel: TChannel);
-    public disposeAsync(): Promise<void>;
-    public abstract sendData(data: any): boolean;
-    public setHandler(type: string, handler: Donuts.Remote.ChannelProxyDataHandler): this;
 
-    protected triggerDataHandler(data: any): void;
+    public disposeAsync(): Promise<void>;
+
+    public abstract sendData(data: any): boolean;
+
+    public setHandler(type: "close", handler: Donuts.Remote.ChannelProxyHandler): this;
+    public setHandler(type: "data", handler: Donuts.Remote.ChannelProxyDataHandler): this;
+    public setHandler(type: string, handler: Donuts.Remote.ChannelProxyHandler): this;
+
+    protected triggerDataHandler(type: "data", data: any): void;
+    protected triggerDataHandler(type: "close", ...args: Array<any>): void;
+    protected triggerDataHandler(type: string, ...args: Array<any>): void;
 }

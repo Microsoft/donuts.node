@@ -69,6 +69,10 @@ class CommunicationHost extends EventEmitter {
         this.onConnection = (hostProxy, channelProxy) => {
             const communicator = new Communicator(channelProxy, this.communicatorOptions);
 
+            channelProxy.setHandler("close", () => {
+                delete this.communicators[communicator.id];
+            });
+
             for (const route of this.routes) {
                 communicator.map(route.pattern, route.asyncHandler);
             }
@@ -83,7 +87,7 @@ class CommunicationHost extends EventEmitter {
         this.onError = (hostProxy, error) => {
             this.emit("error", this, error);
         }
-        
+
         /**
          * @type {Donuts.Remote.ChannelHostProxyEventHandler}
          */

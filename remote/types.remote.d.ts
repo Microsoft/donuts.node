@@ -3,6 +3,7 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 namespace Donuts.Remote {
+    type ChannelProxyHandler = (channel: IChannelProxy, ...args: Array<any>) => void;
     type ChannelProxyDataHandler = (channel: IChannelProxy, data: any) => void;
     type AsyncRequestHandler = (communicator: ICommunicator, pathInfo: IRoutePathInfo, content: any) => Promise<any>;
     type ChannelHostProxyConnectionHandler = (hostProxy: IChannelHostProxy, channelProxy: IChannelProxy) => void;
@@ -28,6 +29,8 @@ namespace Donuts.Remote {
     interface IChannelProxy extends IDisposable {
         sendData(data: any): boolean;
         setHandler(type: "data", handler: ChannelProxyDataHandler): this;
+        setHandler(type: "close", handler: ChannelProxyHandler): this;
+        setHandler(type: string, handler: ChannelProxyHandler): this;
     }
 
     interface IChannelHostProxy extends IDisposable {
@@ -41,7 +44,7 @@ namespace Donuts.Remote {
 
     interface IRoutePathInfo {
         [index: string]: string;
-        
+
         /**
          * The raw path.
          */
@@ -85,22 +88,22 @@ namespace Donuts.Remote {
         on(event: "error", handler: (host: ICommunicationHost, error: any) => void): this;
         on(event: "close", handler: (host: ICommunicationHost) => void): this;
         on(event: "listening", handler: (host: ICommunicationHost) => void): this;
-        on(event: string, listener: (...args: any[]) => void): this;
+        on(event: string, listener: (...args: Array<any>) => void): this;
 
         once(event: "connection", handler: (host: ICommunicationHost, communicator: ICommunicator) => void): this;
         once(event: "error", handler: (host: ICommunicationHost, error: any) => void): this;
         once(event: "close", handler: (host: ICommunicationHost) => void): this;
         once(event: "listening", handler: (host: ICommunicationHost) => void): this;
-        once(event: string, listener: (...args: any[]) => void): this;
+        once(event: string, listener: (...args: Array<any>) => void): this;
 
         off(event: "connection", handler: (host: ICommunicationHost, communicator: ICommunicator) => void): this;
         off(event: "error", handler: (host: ICommunicationHost, error: any) => void): this;
         off(event: "close", handler: (host: ICommunicationHost) => void): this;
         off(event: "listening", handler: (host: ICommunicationHost) => void): this;
-        off(event: string, listener: (...args: any[]) => void): this;
+        off(event: string, listener: (...args: Array<any>) => void): this;
 
         removeAllListeners(event?: string): this;
-        emit(event: string, ...args: any[]): boolean;
+        emit(event: string, ...args: Array<any>): boolean;
 
         /**
          * Map the pattern to the given asyncHandler for all the communicators belonging to the host.
@@ -141,6 +144,17 @@ namespace Donuts.Remote {
          * @returns A promise representing the async task with the remote response as the result.
          */
         sendAsync<TRequest, TResponse>(path: string, content: TRequest): Promise<TResponse>;
+
+        on(event: "close", handler: (communicator: Donuts.Remote.ICommunicator) => void): this;
+        on(event: string, handler: (communicator: Donuts.Remote.ICommunicator, ...args: Array<any>) => void): this;
+
+        once(event: "close", handler: (communicator: Donuts.Remote.ICommunicator) => void): this;
+        once(event: string, handler: (communicator: Donuts.Remote.ICommunicator, ...args: Array<any>) => void): this;
+
+        off(event: "close", handler: (communicator: Donuts.Remote.ICommunicator) => void): this;
+        off(event: string, handler: (communicator: Donuts.Remote.ICommunicator, ...args: Array<any>) => void): this;
+
+        emit(event: string, ...args: Array<any>): boolean;
     }
 
     interface ObjectResolver {

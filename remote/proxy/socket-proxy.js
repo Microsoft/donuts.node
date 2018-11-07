@@ -75,7 +75,7 @@ class SocketProxy extends ChannelProxy {
                     data = data.toString("utf8");
                 }
 
-                this.triggerDataHandler(JSON.parse(data));
+                this.triggerDataHandler("data", JSON.parse(data));
 
             } catch (error) {
                 Log.instance.writeExceptionAsync(error);
@@ -83,7 +83,12 @@ class SocketProxy extends ChannelProxy {
             }
         };
 
+        this.onChannelClose = () => {
+            this.triggerDataHandler("close");
+        };
+
         this.channel.on("data", this.onChannelData);
+        this.channel.on("close", this.onChannelClose);
     }
 }
 exports.SocketProxy = SocketProxy;

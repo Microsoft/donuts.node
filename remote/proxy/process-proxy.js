@@ -82,7 +82,8 @@ class ProcessProxy extends ChannelProxy {
         this.onMessage = (message) => {
             if (utils.isString(message)) {
                 try {
-                    this.triggerDataHandler(JSON.parse(message));
+                    this.triggerDataHandler("data", JSON.parse(message));
+
                 } catch (error) {
                     Log.instance.writeExceptionAsync(error);
                     throw error;
@@ -90,6 +91,12 @@ class ProcessProxy extends ChannelProxy {
             }
         }
 
+        this.onDisconnect = () => {
+            this.triggerDataHandler("close");
+        };
+
+        this.channel.on("disconnect", this.onDisconnect);
+        this.channel.on("close", this.onDisconnect);
         this.channel.on("message", this.onMessage);
     }
 }

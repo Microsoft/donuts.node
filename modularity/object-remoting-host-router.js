@@ -73,6 +73,20 @@ class ObjectRemotingHostRouter {
         this.onProxyConnection = (host, communicator) => {
             const proxy = new ObjectRemotingProxy(communicator);
 
+            communicator.on("close", () => {
+                if (!Array.isArray(this.proxies)) {
+                    return;
+                }
+
+                const proxyIndex = this.proxies.findIndex((itemProxy) => itemProxy === proxy);
+
+                if (proxyIndex < 0) {
+                    return;
+                }
+
+                this.proxies.splice(proxyIndex, 1);
+            });
+
             proxy.resolver = this.onResolve;
             this.proxies.push(proxy);
         };

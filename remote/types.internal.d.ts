@@ -55,6 +55,6 @@ namespace Donuts.Remote {
     }
 
     interface IObjectDataInfo extends IDataInfo {
-        memberInfos: Object.<string, IDataInfo>
+        memberInfos: Donuts.IStringKeyDictionary<IDataInfo>;
     }
 }

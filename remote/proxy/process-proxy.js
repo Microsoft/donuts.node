@@ -44,49 +44,12 @@ class ProcessProxy extends ChannelProxy {
     }
 
     /**
-     * @public
-     * @returns {Promise<void>}
-     */
-    async disposeAsync() {
-        if (!this.disposed) {
-            this.channel.removeListener("message", this.onMessage);
-        }
-
-        await super.disposeAsync();
-    }
-
-    /**
-     * @public
-     * @param {*} data 
-     * @returns {Promise<void>}
-     */
-    sendDataAsync(data) {
-        if (this.disposed) {
-            throw new Error("Channel proxy already disposed.");
-        }
-
-        const sendData = () => new Promise((resolve, reject) => {
-            this.channel.send(
-                JSON.stringify(data), 
-                (error) => error ? reject(error) : resolve());
-        });
-
-        return this.outgoingDataQueue.then(sendData, sendData)
-    }
-
-    /**
      * 
      * @param {ChildProcess} channel 
      */
     constructor(channel) {
         super(channel);
-
-        /**
-         * @private
-         * @type {Promise<void>}
-         */
-        this.outgoingDataQueue = Promise.resolve();
-
+        
         /**
          * @private
          * @param {*} message
@@ -110,6 +73,35 @@ class ProcessProxy extends ChannelProxy {
         this.channel.on("disconnect", this.onDisconnect);
         this.channel.on("close", this.onDisconnect);
         this.channel.on("message", this.onMessage);
+    }
+
+    /**
+     * @public
+     * @returns {Promise<void>}
+     */
+    async disposeAsync() {
+        if (!this.disposed) {
+            this.channel.removeListener("message", this.onMessage);
+        }
+
+        await super.disposeAsync();
+    }
+
+    /**
+     * @public
+     * @param {*} data 
+     * @returns {Promise<void>}
+     */
+    sendDataAsync(data) {
+        if (this.disposed) {
+            throw new Error("Channel proxy already disposed.");
+        }
+
+        return new Promise((resolve, reject) => {
+            this.channel.send(
+                JSON.stringify(data),
+                (error) => error ? reject(error) : resolve());
+        });
     }
 }
 exports.ProcessProxy = ProcessProxy;

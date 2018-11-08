@@ -41,6 +41,50 @@ class SocketProxy extends ChannelProxy {
     }
 
     /**
+     * 
+     * @param {Socket} channel 
+     */
+    constructor(channel) {
+        super(channel);
+
+        /**
+         * @private
+         * @param {Buffer | string} data
+         * @returns {void}
+         */
+        this.onChannelData = (data) => {
+            try {
+                if (Buffer.isBuffer(data)) {
+                    data = data.toString("utf8");
+                }
+
+                if (!data) {
+                    return;
+                }
+
+                for (const dataEntry of data.split(";")) {
+                    if (!dataEntry) {
+                        continue;
+                    }
+
+                    this.triggerHandler("data", JSON.parse(Buffer.from(dataEntry, "base64").toString("utf8")));
+                }
+
+            } catch (error) {
+                Log.instance.writeExceptionAsync(error);
+                throw error;
+            }
+        };
+
+        this.onChannelClose = () => {
+            this.triggerHandler("close");
+        };
+
+        this.channel.on("data", this.onChannelData);
+        this.channel.on("close", this.onChannelClose);
+    }
+
+    /**
      * @public
      * @returns {Promise<void>}
      */
@@ -63,50 +107,13 @@ class SocketProxy extends ChannelProxy {
             throw new Error("Channel proxy already disposed.");
         }
 
-        const sendData = () => new Promise((resolve, reject) => {
-            this.channel.write(JSON.stringify(data), () => resolve());
+        /**
+         * @return {Promise<void>}
+         */
+        return new Promise((resolve, reject) => {
+            this.channel.write(Buffer.from(JSON.stringify(data)).toString("base64"));
+            this.channel.write(";", () => resolve());
         });
-
-        return this.outgoingDataQueue.then(sendData, sendData)
-    }
-
-    /**
-     * 
-     * @param {Socket} channel 
-     */
-    constructor(channel) {
-        super(channel);
-
-        /**
-         * @private
-         * @type {Promise<void>}
-         */
-        this.outgoingDataQueue = Promise.resolve();
-
-        /**
-         * @private
-         * @param {Buffer | string} data
-         */
-        this.onChannelData = (data) => {
-            try {
-                if (Buffer.isBuffer(data)) {
-                    data = data.toString("utf8");
-                }
-
-                this.triggerHandler("data", JSON.parse(data));
-
-            } catch (error) {
-                Log.instance.writeExceptionAsync(error);
-                throw error;
-            }
-        };
-
-        this.onChannelClose = () => {
-            this.triggerHandler("close");
-        };
-
-        this.channel.on("data", this.onChannelData);
-        this.channel.on("close", this.onChannelClose);
     }
 }
 exports.SocketProxy = SocketProxy;

@@ -96,7 +96,7 @@ exports.connect = (connectionInfo) => {
         obj = obj[memberName];
     }
 
-    /** @type {(connectionInfo: Donuts.Remote.IConnectionInfo) => Donuts.Remote.IChannelProxy} */
+    /** @type {(...args: Array<any>) => Donuts.Remote.IChannelProxy} */
     const init = obj;
 
     if (!utils.isFunction(init)) {
@@ -105,5 +105,5 @@ exports.connect = (connectionInfo) => {
 
     const { Communicator } = require("./communicator");
 
-    return new Communicator(init(connectionInfo), connectionInfo.communicatorOptions);
+    return new Communicator(init(...connectionInfo.initFunctionParams), connectionInfo.communicatorOptions);
 }

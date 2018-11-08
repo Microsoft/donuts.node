@@ -6,6 +6,8 @@
 import { Server } from "net";
 import { ChannelHostProxy } from "./channel-host-proxy";
 
+declare export function connectIpc(path: string): Donuts.Remote.IChannelProxy;
+
 declare export class SocketHostProxy extends ChannelHostProxy<Server> {
     public static generateConnectionInfo(socketServer: Server): Donuts.Remote.IConnectionInfo;
 

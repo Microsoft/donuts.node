@@ -17,6 +17,12 @@ const utils = require("donuts.node/utils");
  */
 
 /**
+ * @param {string} ipcPath
+ * @returns {Donuts.Remote.IChannelProxy}
+ */
+exports.connectIpc = (ipcPath) => new SocketProxy(net.connect({ path: ipcPath }));
+
+/**
  * @class
  * @extends {ChannelHostProxy<SocketServer>}
  */
@@ -31,14 +37,14 @@ class SocketHostProxy extends ChannelHostProxy {
             throw new Error("socketServer must be a net.Server object.");
         }
 
-        /** @type {*} */
+        // IPC socket
         // @ts-ignore
         if (utils.isString(socketServer._pipeName)) {
             return {
-                moduleName: "net",
-                initFunction: "connect",
+                moduleName: "donuts.node-remote/proxy/socket-host-proxy",
+                initFunction: "connectIpc",
                 // @ts-ignore
-                initFunctionParams: [{ path: socketServer._pipeName }]
+                initFunctionParams: [socketServer._pipeName]
             };
 
         } else {

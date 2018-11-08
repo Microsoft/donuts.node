@@ -18,7 +18,7 @@ declare export abstract class ChannelProxy<TChannel> implements Donuts.Remote.IC
     public setHandler(type: "data", handler: Donuts.Remote.ChannelProxyDataHandler): this;
     public setHandler(type: string, handler: Donuts.Remote.ChannelProxyHandler): this;
 
-    protected triggerDataHandler(type: "data", data: any): void;
-    protected triggerDataHandler(type: "close", ...args: Array<any>): void;
-    protected triggerDataHandler(type: string, ...args: Array<any>): void;
+    protected triggerHandler(type: "data", data: any): void;
+    protected triggerHandler(type: "close"): void;
+    protected triggerHandler(type: string, ...args: Array<any>): void;
 }

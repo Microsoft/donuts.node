@@ -91,6 +91,8 @@ class ObjectRemotingHostRouter {
             proxy.resolver = this.onResolve;
             this.proxies.push(proxy);
         };
+
+        this.remote.on("connection", this.onProxyConnection);
     }
 
     /**

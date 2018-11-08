@@ -58,14 +58,20 @@ class ProcessProxy extends ChannelProxy {
     /**
      * @public
      * @param {*} data 
-     * @returns {boolean}
+     * @returns {Promise<void>}
      */
-    sendData(data) {
+    sendDataAsync(data) {
         if (this.disposed) {
             throw new Error("Channel proxy already disposed.");
         }
 
-        return this.channel.send(JSON.stringify(data));
+        const sendData = () => new Promise((resolve, reject) => {
+            this.channel.send(
+                JSON.stringify(data), 
+                (error) => error ? reject(error) : resolve());
+        });
+
+        return this.outgoingDataQueue.then(sendData, sendData)
     }
 
     /**
@@ -74,6 +80,12 @@ class ProcessProxy extends ChannelProxy {
      */
     constructor(channel) {
         super(channel);
+
+        /**
+         * @private
+         * @type {Promise<void>}
+         */
+        this.outgoingDataQueue = Promise.resolve();
 
         /**
          * @private

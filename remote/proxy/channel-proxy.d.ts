@@ -12,7 +12,7 @@ declare export abstract class ChannelProxy<TChannel> implements Donuts.Remote.IC
 
     public disposeAsync(): Promise<void>;
 
-    public abstract sendData(data: any): boolean;
+    public abstract sendDataAsync(data: any): Promise<void>;
 
     public setHandler(type: "close", handler: Donuts.Remote.ChannelProxyHandler): this;
     public setHandler(type: "data", handler: Donuts.Remote.ChannelProxyDataHandler): this;

@@ -135,18 +135,16 @@ class Communicator extends EventEmitter {
                     // @ts-ignore
                     if (response instanceof Error && !response["toJSON"]) {
                         // @ts-ignore
-                       response.toJSON = ErrorToJSON;
+                        response.toJSON = ErrorToJSON;
                     }
                 }
 
-                if (!this.channelProxy.sendData({
+                await this.channelProxy.sendDataAsync({
                     id: msg.id,
                     path: msg.path,
                     succeeded: succeeded,
                     body: response
-                })) {
-                    // Log if failed.
-                }
+                });
             }
         };
 
@@ -230,10 +228,8 @@ class Communicator extends EventEmitter {
                 body: content
             };
 
-            if (!this.channelProxy.sendData(msg)) {
-                reject(new Error("Failed to send request. The remote channel may be closed."));
-                return;
-            }
+            this.channelProxy.sendDataAsync(msg)
+                .catch((error) => reject(new Error(`Failed to send request. The remote channel may be closed. Error: ${error}`)));
 
             if (this.timeout) {
                 setTimeout(

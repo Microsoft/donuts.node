@@ -10,9 +10,17 @@ const { ChannelProxy } = require("./channel-proxy");
 const { Log } = require("donuts.node/logging/log");
 
 /** @typedef {import("net").Socket} Socket */
+
 /** 
  * @template TChannel
  * @typedef {import("./channel-proxy").ChannelProxy<TChannel>} ChannelProxy
+ */
+
+/**
+ * @typedef OutgoingQueueItem
+ * @property {*} data
+ * @property {(result?:any)=>void} resolve
+ * @property {(reason?:any)=>void} reject
  */
 
 /**
@@ -48,14 +56,18 @@ class SocketProxy extends ChannelProxy {
     /**
      * @public
      * @param {*} data 
-     * @returns {boolean}
+     * @returns {Promise<void>}
      */
-    sendData(data) {
+    sendDataAsync(data) {
         if (this.disposed) {
             throw new Error("Channel proxy already disposed.");
         }
 
-        return this.channel.write(JSON.stringify(data));
+        const sendData = () => new Promise((resolve, reject) => {
+            this.channel.write(JSON.stringify(data), () => resolve());
+        });
+
+        return this.outgoingDataQueue.then(sendData, sendData)
     }
 
     /**
@@ -64,6 +76,12 @@ class SocketProxy extends ChannelProxy {
      */
     constructor(channel) {
         super(channel);
+
+        /**
+         * @private
+         * @type {Promise<void>}
+         */
+        this.outgoingDataQueue = Promise.resolve();
 
         /**
          * @private

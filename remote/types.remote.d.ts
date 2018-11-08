@@ -27,7 +27,7 @@ namespace Donuts.Remote {
     }
 
     interface IChannelProxy extends IDisposable {
-        sendData(data: any): boolean;
+        sendDataAsync(data: any): Promise<void>;
         setHandler(type: "data", handler: ChannelProxyDataHandler): this;
         setHandler(type: "close", handler: ChannelProxyHandler): this;
         setHandler(type: string, handler: ChannelProxyHandler): this;

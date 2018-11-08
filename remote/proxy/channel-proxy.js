@@ -61,10 +61,10 @@ class ChannelProxy {
      * @public
      * @abstract
      * @param {*} data 
-     * @return {boolean}
+     * @return {Promise<void>}
      */
-    sendData(data) {
-        return false;
+    sendDataAsync(data) {
+        return Promise.resolve();
     }
 
     /**

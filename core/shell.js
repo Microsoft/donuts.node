@@ -202,7 +202,7 @@ exports.getRandomPort = (ipversion, protocol) => {
  */
 exports.toCmdArg =
     (argName, argValue) =>
-        `--"${argName.replace("\\", "\\\\").replace("\"", "\\\"")}"="${argValue.replace("\\", "\\\\").replace("\"", "\\\"")}"`;
+        `--${argName}=${argValue}`;
 
 /**
  * @param {Object.<string, string>} argDict

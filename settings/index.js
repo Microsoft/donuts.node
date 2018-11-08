@@ -11,9 +11,6 @@ const { FileSettings } = require("./file-settings");
 
 fileSystem.createDirectorySync(shell.getDir("UserData"));
 
-/** @type {Donuts.Settings.ISettings} */
-exports.defaultSettings = exports.openSettings("settings");
-
 /**
  * Open a set of settings as a settings chain. If the last settings doesn't support writing,
  * a new writable settings will be created and placed under userData to wrap the settings chain
@@ -64,3 +61,6 @@ exports.openSettings = (name, parentSettings) => {
 
     return new FileSettings(settingsPath, null, parentSettings);
 }
+
+/** @type {Donuts.Settings.ISettings} */
+exports.defaultSettings = exports.openSettings("settings");

@@ -50,6 +50,8 @@ module.exports = (gulp) => {
                 "!publish",
                 "!node_modules",
                 "!node_modules/**/*",
+                "!bin",
+                "!bin/**/*",
                 "!test",
                 "!test/**/*",
                 "!.vscode",

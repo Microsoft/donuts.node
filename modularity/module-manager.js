@@ -335,21 +335,29 @@ class ModuleManager {
     async initializeModulesAync(toInitializedModules) {
         const moduleInfos = Object.values(toInitializedModules);
 
-        /** @type {Donuts.Modularity.ILoadedModuleInfo} */
-        let moduleInfo;
-
         /** @type {number} */
         let previousCount = moduleInfos.length;
 
         /** @type {number} */
         let triedCount = 0;
 
-        moduleLoop:
-        while (moduleInfo = moduleInfos.shift()) {
-            if (this.loadedModules[moduleInfo.name] === moduleInfo.version) {
-                continue moduleLoop;
+        /** @type {Donuts.Modularity.ILoadedModuleInfo} */
+        let moduleInfo;
+
+        for (moduleInfo of moduleInfos) {
+            if (this.loadedModules[moduleInfo.name]) {
+                if (this.loadedModules[moduleInfo.name] === moduleInfo.version) {
+                    continue;
+                }
+
+                throw new Error(`A different version of module ${moduleInfo.name}@${this.loadedModules[moduleInfo.name]} already registered. (Module to register: ${moduleInfo.name}@${moduleInfo.version}).`);
             }
 
+            await this.registerComponentsAsync(moduleInfo.namespace || moduleInfo.name, moduleInfo.components);
+        }
+
+        moduleLoop:
+        while (moduleInfo = moduleInfos.shift()) {
             for (const depName in moduleInfo.dependencies) {
                 if (!(depName in this.loadedModules)) {
 
@@ -383,7 +391,6 @@ class ModuleManager {
             }
 
             this.loadedModules[moduleInfo.name] = moduleInfo.version;
-            await this.registerComponentsAsync(moduleInfo.namespace || moduleInfo.name, moduleInfo.components);
         }
     }
 }

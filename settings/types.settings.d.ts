@@ -5,6 +5,8 @@
 
 namespace Donuts.Settings {
     interface ISettings {
+        readonly readonly: boolean;
+
         getAsync<T>(settingPath: string): Promise<T>;
 
         setAsync<T>(settingPath: string, value: T): Promise<void>;

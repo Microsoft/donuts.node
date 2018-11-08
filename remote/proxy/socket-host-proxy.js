@@ -36,7 +36,7 @@ class SocketHostProxy extends ChannelHostProxy {
         if (utils.isString(socketServer._pipeName)) {
             return {
                 moduleName: "net",
-                initFunction: "createServer",
+                initFunction: "connect",
                 // @ts-ignore
                 initFunctionParams: [{ path: socketServer._pipeName }]
             };

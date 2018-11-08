@@ -98,7 +98,7 @@ class ConsoleLogger {
         exceptionMsg += error.stack;
 
         this.console.error(this.formatConsoleMsg(properties, exceptionMsg));
-        
+
         return this;
     }
 
@@ -134,10 +134,14 @@ class ConsoleLogger {
                 }
             }
 
-            if (this.settings.logCallerInfo
-                && (!utils.string.isEmptyOrWhitespace(properties["Caller.FileName"])
-                    || !utils.string.isEmptyOrWhitespace(properties["Caller.Name"]))) {
-                consoleMsg += `[${path.basename(properties["Caller.FileName"])}:${properties["Caller.Name"]}]`;
+            if (this.settings.logCallerInfo) {
+                const callerFileName = properties["Caller.FileName"];
+                const callerName = properties["Caller.Name"];
+
+                if ((callerFileName && !utils.string.isEmptyOrWhitespace(callerFileName))
+                    || (callerName && !utils.string.isEmptyOrWhitespace(callerName))) {
+                    consoleMsg += `[${path.basename(callerFileName)}:${callerName}]`;
+                }
             }
         }
 

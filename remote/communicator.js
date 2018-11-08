@@ -24,6 +24,19 @@ const { EventEmitter } = require("events");
 exports.UuidNamespace = "65ef6f94-e6c9-4c95-8360-6d29de87b1dd";
 
 /**
+ * @this {Error}
+ * @returns {string}
+ */
+function ErrorToJSON() {
+    const error = Object.create(null);
+
+    error.message = `Error: ${this.message}`;
+    error.stack = this.stack;
+
+    return error;
+}
+
+/**
  * @class
  * @implements {Donuts.Remote.ICommunicator}
  */
@@ -114,9 +127,16 @@ class Communicator extends EventEmitter {
                 try {
                     response = await asyncHandler(this, pathInfo, msg.body);
                     succeeded = true;
+
                 } catch (exception) {
                     response = exception;
                     succeeded = false;
+
+                    // @ts-ignore
+                    if (response instanceof Error && !response["toJSON"]) {
+                        // @ts-ignore
+                       response.toJSON = ErrorToJSON;
+                    }
                 }
 
                 if (!this.channelProxy.sendData({

@@ -6,7 +6,6 @@
 
 const path = require("path");
 const utils = require("../utils");
-const { ConsoleLogger } = require("./loggers/console");
 
 /**
  * @class

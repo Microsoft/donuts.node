@@ -155,8 +155,13 @@ class DataInfoManager {
      */
     toDataInfo(target, recursive) {
         /** @type {Donuts.Remote.IDataInfo} */
-        let dataInfo = target ? target[this.symbol_dataInfo] : { type: dataTypeOf(target) };
+        let dataInfo;
 
+        if (target) {
+            dataInfo = target[this.symbol_dataInfo];
+        }
+
+        dataInfo = dataInfo || { type: dataTypeOf(target) };
         recursive = !(recursive === false);
 
         if (dataInfo.id) {
@@ -184,7 +189,7 @@ class DataInfoManager {
                 });
 
         } else if (recursive && dataInfo.type === "object") {
-            return this.toObjectDataInfo(target);
+            dataInfo = this.toObjectDataInfo(target);
 
         } else if (dataInfo.type === "function") {
             dataInfo = this.toFunctionDataInfo(target);

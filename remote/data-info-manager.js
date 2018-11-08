@@ -296,8 +296,8 @@ class DataInfoManager {
      * @returns {T}
      */
     registerRealizedObject(obj) {
-        /** @type {Donuts.Weak.NativeWeakReference<*>} */
-        const weakRef = weak.createNative(obj);
+        /** @type {Donuts.Weak.WeakReference<*>} */
+        const weakRef = weak.create(obj);
 
         /** @type {Donuts.Remote.IDataInfo} */
         // @ts-ignore
@@ -306,7 +306,7 @@ class DataInfoManager {
         /** @type {string} */
         const refId = dataInfo.id;
 
-        weakRef.setWatcher(() => {
+        weakRef.on("died", () => {
             this.proxy.releaseAsync(refId);
             delete this.remoteRefs[refId];
         });

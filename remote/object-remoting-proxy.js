@@ -287,7 +287,7 @@ class ObjectRemotingProxy {
         /** @type {Donuts.Remote.IDataInfo} */
         const targetDataInfo = await this.communicator.sendAsync(this.routePattern.getRaw(), requestResourceMsg);
 
-        return this.dataInfoManager.realizeDataInfo(targetDataInfo);
+        return Promise.resolve(this.dataInfoManager.realizeDataInfo(targetDataInfo));
     }
 
     /**

@@ -10,6 +10,12 @@ const weakReference = require(`./weak-reference.${process.platform}.${process.ar
 const { EventEmitter } = require("events");
 
 /**
+ * Interval in ms for checking death.
+ * @type {number}
+ */
+const CheckDeathInterval = 1;
+
+/**
  * @template {object} T
  * @implements {Donuts.Weak.WeakReference.<T>}
  */
@@ -22,7 +28,21 @@ class WeakReferenceImpl extends EventEmitter {
         super();
 
         this.nativeWeakRef = nativeWeakRef;
-        this.nativeWeakRef.setWatcher(() => this.emit("died", this));
+
+        /** 
+         * @private
+         * @returns {void}
+         */
+        this.onCheckDeath = () => {
+            if (this.nativeWeakRef.isDead()) {
+                this.emit("died", this);
+
+            } else {
+                setTimeout(this.onCheckDeath, CheckDeathInterval);
+            }
+        };
+
+        setTimeout(this.onCheckDeath, CheckDeathInterval);
     }
 
     /**

@@ -21,7 +21,7 @@ namespace WeakReference
     class Container {
     public:
         Persistent<Object> Target;
-        Persistent<Function> WatcherCallback;
+        //Persistent<Function> WatcherCallback;
         Persistent<Object> WeakReference;
     };
 
@@ -46,29 +46,29 @@ namespace WeakReference
         info.GetReturnValue().Set(Nan::New<Boolean>(pContainer->Target.IsEmpty()));
     }
 
-    NAN_METHOD(SetWatcher)
-    {
-        if (info.Length() > 0 || (!info[0]->IsFunction() && !info[0]->IsNullOrUndefined()))
-        {
-            if (!info[0]->IsFunction())
-            {
-                Nan::ThrowTypeError("target must be an object");
-            }
-        }
+    //NAN_METHOD(SetWatcher)
+    //{
+    //    if (info.Length() > 0 || (!info[0]->IsFunction() && !info[0]->IsNullOrUndefined()))
+    //    {
+    //        if (!info[0]->IsFunction())
+    //        {
+    //            Nan::ThrowTypeError("target must be an object");
+    //        }
+    //    }
 
-        Container *pContainer = reinterpret_cast<Container*>(Nan::GetInternalFieldPointer(info.This(), WeakReferenceClassField::ContainerField));
+    //    Container *pContainer = reinterpret_cast<Container*>(Nan::GetInternalFieldPointer(info.This(), WeakReferenceClassField::ContainerField));
 
-        if (info[0]->IsNullOrUndefined())
-        {
-            pContainer->WatcherCallback.Reset();
-        }
-        else
-        {
-            pContainer->WatcherCallback.Reset(info[0].As<Function>());
-        }
+    //    if (info[0]->IsNullOrUndefined())
+    //    {
+    //        pContainer->WatcherCallback.Reset();
+    //    }
+    //    else
+    //    {
+    //        pContainer->WatcherCallback.Reset(info[0].As<Function>());
+    //    }
 
-        info.GetReturnValue().Set(info.This());
-    }
+    //    info.GetReturnValue().Set(info.This());
+    //}
 
     NAN_METHOD(Ref)
     {
@@ -92,10 +92,10 @@ namespace WeakReference
     {
         Container *pContainer = data.GetParameter();
 
-        if (!pContainer->WatcherCallback.IsEmpty()) {
+        //if (!pContainer->WatcherCallback.IsEmpty()) {
 
-            pContainer->WatcherCallback.Reset();
-        }
+        //    pContainer->WatcherCallback.Reset();
+        //}
 
         pContainer->Target.Reset();
         pContainer->WeakReference.Reset();
@@ -105,18 +105,19 @@ namespace WeakReference
 
     void TargetWeakCallback(const WeakCallbackInfo<Container> &data)
     {
+        Nan::HandleScope scope;
         Container *pContainer = data.GetParameter();
 
         pContainer->Target.Reset();
 
-        if (!pContainer->WatcherCallback.IsEmpty()) {
-            Callback watcherCallback(Nan::New<Function>(pContainer->WatcherCallback));
-            Local<Value> argv[] = { Nan::New(pContainer->WeakReference) };
+        //if (!pContainer->WatcherCallback.IsEmpty()) {
+        //    Callback watcherCallback(Nan::New<Function>(pContainer->WatcherCallback));
+        //    Local<Value> argv[] = { Nan::New(pContainer->WeakReference) };
 
-            Nan::Call(watcherCallback, 1, argv);
+        //    Nan::Call(watcherCallback, 1, argv);
 
-            pContainer->WatcherCallback.Reset();
-        }
+        //    pContainer->WatcherCallback.Reset();
+        //}
     }
 
     // Create an instance of WeakReferenceClass
@@ -149,7 +150,7 @@ namespace WeakReference
         Local<ObjectTemplate> classHolder = Nan::New<ObjectTemplate>();
 
         Nan::SetMethod(classHolder, "isDead", IsDead);
-        Nan::SetMethod(classHolder, "setWatcher", SetWatcher);
+        /*Nan::SetMethod(classHolder, "setWatcher", SetWatcher);*/
         Nan::SetMethod(classHolder, "ref", Ref);
 
         classHolder->SetInternalFieldCount(WeakReferenceClassField::FieldCount);

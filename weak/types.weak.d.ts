@@ -34,12 +34,5 @@ namespace Donuts.Weak {
          * @returns The strong reference to the target object if the target is alive. Otherwise, undefined.
          */
         ref(): T;
-    
-        /**
-         * Set a watcher to watch whether the target object is dead.
-         * @param watcher The handler to callback when the target object is dead.
-         * @returns The weak reference itself.
-         */
-        setWatcher(watcher: (weakRef: WeakReference<T>) => void): this;
     }
 }

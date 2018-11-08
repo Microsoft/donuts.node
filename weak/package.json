@@ -33,8 +33,5 @@
     "mocha": "^5.2.0",
     "nan": "^2.11.1",
     "node-gyp": "^3.8.0"
-  },
-  "peerDependencies": {
-    "electron": "^2.0.13"
   }
 }

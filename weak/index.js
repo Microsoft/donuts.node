@@ -55,20 +55,3 @@ exports.createNative = (target) => weakReference.create(target);
  * @returns {Donuts.Weak.WeakReference<T>} The weak reference object pointing to the target object.
  */
 exports.create = (target) => new WeakReferenceImpl(exports.createNative(target));
-
-const { app, BrowserWindow, remote } = require("electron");
-
-if (!remote) {
-
-    /** @type {BrowserWindow} */
-    let main;
-
-    app.commandLine.appendSwitch("js-flags", "--expose_gc");
-
-    app.on("ready", () => {
-        main = new BrowserWindow();
-
-        main.show();
-        main.loadURL("https://github.com/karma-runner/karma-chrome-launcher/issues/138");
-    });
-}

@@ -33,7 +33,7 @@ function generateUnixIpcPath(...segments) {
     let filePath;
 
     if (segments.length > 0) {
-        filePath = path.join(...segments);
+        filePath = path.join("/", ...segments);
 
     } else {
         filePath = tmp.fileSync().name;
@@ -67,11 +67,11 @@ function generateIpcPath(...segments) {
  * @param {...string} pathSegments 
  * @returns {import("net").Socket}
  */
-exports.connect = (pathSegments) => net.connect({ path: generateIpcPath(pathSegments) });
+exports.connect = (...pathSegments) => net.connect({ path: generateIpcPath(...pathSegments) });
 
 /**
  * 
  * @param {...string} pathSegments 
  * @returns {import("net").Server}
  */
-exports.host = (pathSegments) => net.createServer().listen(generateIpcPath(pathSegments));
+exports.host = (...pathSegments) => net.createServer().listen(generateIpcPath(...pathSegments));

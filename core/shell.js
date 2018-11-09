@@ -348,12 +348,8 @@ exports.getAppDataDir = () => {
     }
 };
 
-/** 
- * @typedef {"UserData" | "AppData" | "AppDir"} DirName
- */
-
 /**
- * @param {DirName} dirName
+ * @param {import("./shell").DirName} dirName
  * @return {string}
  */
 exports.getDir = (dirName) => {
@@ -366,6 +362,17 @@ exports.getDir = (dirName) => {
 
         case "UserData":
             return path.join(exports.getDir("AppData"), path.basename(process.execPath, path.extname(process.execPath)));
+
+        case "Temp":
+            switch (process.platform) {
+                case "win32":
+                    return process.env["TEMP"];
+
+                case "darwin":
+                case "linux":
+                default:
+                    return "/tmp"
+            }
 
         default:
             return undefined;

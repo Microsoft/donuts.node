@@ -47,6 +47,9 @@ class SocketProxy extends ChannelProxy {
     constructor(channel) {
         super(channel);
 
+        /** @type {string} */
+        this.incomingBuffer = "";
+
         /**
          * @private
          * @param {Buffer | string} data
@@ -58,11 +61,19 @@ class SocketProxy extends ChannelProxy {
                     data = data.toString("utf8");
                 }
 
-                if (!data) {
+                this.incomingBuffer = this.incomingBuffer + data;
+
+                const segmentEnd = this.incomingBuffer.indexOf(";");
+
+                if (segmentEnd < 0) {
                     return;
                 }
 
-                for (const dataEntry of data.split(";")) {
+                const segments = this.incomingBuffer.split(";");
+
+                for (let dataEntryIndex = 0; dataEntryIndex < segments.length - 1; dataEntryIndex++) {
+                    const dataEntry = segments[dataEntryIndex];
+
                     if (!dataEntry) {
                         continue;
                     }
@@ -70,6 +81,7 @@ class SocketProxy extends ChannelProxy {
                     this.triggerHandler("data", JSON.parse(Buffer.from(dataEntry, "base64").toString("utf8")));
                 }
 
+                this.incomingBuffer = segments.pop() || "";
             } catch (error) {
                 Log.instance.writeExceptionAsync(error);
                 throw error;

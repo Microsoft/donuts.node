@@ -14,13 +14,24 @@ const utils = require("donuts.node/utils");
  * @implements {Donuts.Modularity.IComponentCollection}
  */
 class ComponentCollection {
-    constructor() {
+    /**
+     * 
+     * @param {Donuts.Modularity.ComponentType} componentType 
+     */
+    constructor(componentType) {
         /**
          * @public
          * @readonly
          * @type {Object.<string, Donuts.Modularity.IComponentInfo<*>>}
          */
         this.components = Object.create(null);
+
+        /**
+         * @private
+         * @readonly
+         * @type {string}
+         */
+        this.componentType = componentType;
     }
 
     /**
@@ -44,6 +55,10 @@ class ComponentCollection {
         if (!utils.isNullOrUndefined(componentInfo.deps)
             && !Array.isArray(componentInfo.deps)) {
             throw new Error(`The deps of component "${componentInfo.name}" should be an array of string.`);
+        }
+
+        if (this.componentType && this.componentType !== componentInfo.type) {
+            return this;
         }
 
         if (Array.isArray(componentInfo.deps)) {
@@ -122,16 +137,17 @@ class ModuleManager {
     /**
      * @public
      * @param {Array.<string>} modulePaths
+     * @param {Donuts.Modularity.ComponentType} [componentType]
      * @return {Promise.<this>}
      */
-    async loadModulesAsync(modulePaths) {
+    async loadModulesAsync(modulePaths, componentType) {
         this.validateDisposal();
 
         if (!Array.isArray(modulePaths)) {
             throw new Error("modulePaths must be an array of string.");
         }
 
-        await this.initializeModulesAync(this.loadModuleInfos(modulePaths));
+        await this.initializeModulesAync(this.loadModuleInfos(modulePaths, componentType));
 
         return this;
     }
@@ -204,9 +220,10 @@ class ModuleManager {
     /**
      * @private
      * @param {Array.<string>} modulePaths
+     * @param {Donuts.Modularity.ComponentType} componentType
      * @returns {Object.<string, Donuts.Modularity.ILoadedModuleInfo>}
      */
-    loadModuleInfos(modulePaths) {
+    loadModuleInfos(modulePaths, componentType) {
         /** @type {Object.<string, Donuts.Modularity.ILoadedModuleInfo>} */
         const moduleInfos = Object.create(null);
 
@@ -223,7 +240,7 @@ class ModuleManager {
             }
 
             /** @type {ComponentCollection} */
-            const componentCollection = new ComponentCollection();
+            const componentCollection = new ComponentCollection(componentType);
             const moduleInfo = loadedModule.getModuleMetadata(componentCollection);
 
             if (!utils.isObject(moduleInfo)) {
@@ -241,6 +258,10 @@ class ModuleManager {
             if (moduleInfo.name in moduleInfos
                 || moduleInfo.name in this.loadedModules) {
                 throw new Error(`module with name "${moduleInfo.name}" is already registered.`);
+            }
+
+            if (utils.object.isEmpty(componentCollection.components)) {
+                continue;
             }
 
             // @ts-ignore
@@ -308,7 +329,7 @@ class ModuleManager {
         for (const componentInfo of componentInfos) {
             const componentName = `${namespace}.${componentInfo.name}`;
 
-            if (force !== true && this.componentsContainer.get(componentName)) {
+            if (force !== true && this.components[componentName]) {
                 throw new Error(`Component name, "${componentName}", has already been registered.`);
             }
 
@@ -322,6 +343,8 @@ class ModuleManager {
                     componentName,
                     this.createDedicationDiDescriptor(componentInfo.descriptor, componentInfo.deps));
             }
+
+            this.components[componentName] = componentInfo;
         }
 
         return this;

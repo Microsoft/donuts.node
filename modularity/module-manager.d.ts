@@ -6,7 +6,7 @@
 declare export class ModuleManager implements Donuts.Modularity.IModuleManager {
     constructor(communication: Donuts.Remote.ICommunicationHost | Donuts.Remote.ICommunicator);
 
-    public loadModulesAsync(modulePaths: Array<string>): Promise<this>;
+    public loadModulesAsync(modulePaths: Array<string>, componentType?: Donuts.Modularity.ComponentType): Promise<this>;
 
     /**
      * Dynamically register/override components.

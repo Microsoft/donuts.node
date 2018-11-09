@@ -16,7 +16,7 @@ exports.isChannelProxy =
     (value) =>
         !utils.isNullOrUndefined(value)
         && utils.isFunction(value.setHandler)
-        && utils.isFunction(value.sendDataAsync);
+        && utils.isFunction(value.sendData);
 
 /**
  * Check if the given object is a ChannelHostProxy (IChannelHostProxy).

@@ -96,7 +96,7 @@ namespace Donuts.Modularity {
     }
 
     interface IModuleManager extends IDisposable {
-        loadModulesAsync(modulePaths: Array<string>): Promise<this>;
+        loadModulesAsync(modulePaths: Array<string>, componentType?: Donuts.Modularity.ComponentType): Promise<this>;
 
         registerComponentsAsync(namespace: string, componentInfos: Array<Donuts.Modularity.IComponentInfo<any>>, force?: boolean): Promise<this>;
         

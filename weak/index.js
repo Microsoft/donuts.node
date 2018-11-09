@@ -13,7 +13,7 @@ const { EventEmitter } = require("events");
  * Interval in ms for checking death.
  * @type {number}
  */
-const CheckDeathInterval = 1;
+const CheckDeathInterval = 300;
 
 /**
  * @template {object} T

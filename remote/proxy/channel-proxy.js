@@ -61,10 +61,9 @@ class ChannelProxy {
      * @public
      * @abstract
      * @param {*} data 
-     * @return {Promise<void>}
+     * @return {void}
      */
-    sendDataAsync(data) {
-        return Promise.resolve();
+    sendData(data) {
     }
 
     /**
@@ -105,7 +104,7 @@ class ChannelProxy {
 
         try {
             handler(this, ...args);
-            
+
         } catch (error) {
             Log.instance.writeExceptionAsync(error);
             throw error;

@@ -5,7 +5,10 @@
 namespace Donuts.Remote {
     type ChannelProxyHandler = (channel: IChannelProxy, ...args: Array<any>) => void;
     type ChannelProxyDataHandler = (channel: IChannelProxy, data: any) => void;
+    type ChannelProxyErrorHandler = (channel: IChannelProxy, err: Error) => void;
+
     type AsyncRequestHandler = (communicator: ICommunicator, pathInfo: IRoutePathInfo, content: any) => Promise<any>;
+    
     type ChannelHostProxyConnectionHandler = (hostProxy: IChannelHostProxy, channelProxy: IChannelProxy) => void;
     type ChannelHostProxyErrorHandler = (hostProxy: IChannelHostProxy, error: any) => void;
     type ChannelHostProxyEventHandler = (hostProxy: IChannelHostProxy) => void;
@@ -27,9 +30,10 @@ namespace Donuts.Remote {
     }
 
     interface IChannelProxy extends IDisposable {
-        sendDataAsync(data: any): Promise<void>;
+        sendData(data: any): void;
         setHandler(type: "data", handler: ChannelProxyDataHandler): this;
         setHandler(type: "close", handler: ChannelProxyHandler): this;
+        setHandler(type: "error", handler: ChannelProxyErrorHandler): this;
         setHandler(type: string, handler: ChannelProxyHandler): this;
     }
 

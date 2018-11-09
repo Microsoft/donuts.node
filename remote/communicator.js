@@ -54,13 +54,20 @@ class Communicator extends EventEmitter {
 
         super();
 
-        /** @type {Array.<IRoute>} */
+        /** 
+         * @private
+         * @type {Array.<IRoute>}
+         */
         this.routes = [];
 
-        /** @type {Object.<string, IPromiseResolver>} */
+        /** 
+         * @private
+         * @type {Object.<string, IPromiseResolver>} 
+         */
         this.ongoingPromiseDict = Object.create(null);
 
         /**
+         * @public
          * @readonly 
          * @type {string}
          */
@@ -81,10 +88,14 @@ class Communicator extends EventEmitter {
             }
         }
 
-        /** @type {Donuts.Remote.IChannelProxy} */
+        /** 
+         * @private
+         * @type {Donuts.Remote.IChannelProxy}
+         */
         this.channelProxy = channelProxy;
 
         /**
+         * @private
          * @param {Donuts.Remote.IChannelProxy} channel
          * @param {Donuts.Remote.IMessage} msg
          * @returns {Promise<void>}
@@ -139,7 +150,7 @@ class Communicator extends EventEmitter {
                     }
                 }
 
-                await this.channelProxy.sendDataAsync({
+                this.channelProxy.sendData({
                     id: msg.id,
                     path: msg.path,
                     succeeded: succeeded,
@@ -148,12 +159,28 @@ class Communicator extends EventEmitter {
             }
         };
 
-        this.onCloseAsync = () => {
+        /**
+         * @private
+         * @param {Donuts.Remote.IChannelProxy} proxy
+         * @return {void}
+         */
+        this.onClose = (proxy) => {
             this.emit("close", this);
         };
 
+        /**
+         * @private
+         * @param {Donuts.Remote.IChannelProxy} proxy
+         * @param {Error} err
+         * @return {void}
+         */
+        this.onError = (proxy, err) => {
+            this.emit("error", this, err);
+        };
+
         this.channelProxy.setHandler("data", this.onMessageAsync);
-        this.channelProxy.setHandler("close", this.onCloseAsync);
+        this.channelProxy.setHandler("close", this.onClose);
+        this.channelProxy.setHandler("error", this.onError);
     }
 
     /**
@@ -228,8 +255,7 @@ class Communicator extends EventEmitter {
                 body: content
             };
 
-            this.channelProxy.sendDataAsync(msg)
-                .catch((error) => reject(new Error(`Failed to send request. The remote channel may be closed. Error: ${error}`)));
+            this.channelProxy.sendData(msg);
 
             if (this.timeout) {
                 setTimeout(

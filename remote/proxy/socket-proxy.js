@@ -80,8 +80,17 @@ class SocketProxy extends ChannelProxy {
             this.triggerHandler("close");
         };
 
+        /**
+         * @param {Error} err
+         * @returns {void}
+         */
+        this.onChannelError = (err) => {
+            this.triggerHandler("error", err);
+        };
+
         this.channel.on("data", this.onChannelData);
         this.channel.on("close", this.onChannelClose);
+        this.channel.on("error", this.onChannelError);
     }
 
     /**
@@ -100,20 +109,14 @@ class SocketProxy extends ChannelProxy {
     /**
      * @public
      * @param {*} data 
-     * @returns {Promise<void>}
+     * @returns {void}
      */
-    sendDataAsync(data) {
+    sendData(data) {
         if (this.disposed) {
             throw new Error("Channel proxy already disposed.");
         }
 
-        /**
-         * @return {Promise<void>}
-         */
-        return new Promise((resolve, reject) => {
-            this.channel.write(Buffer.from(JSON.stringify(data)).toString("base64"));
-            this.channel.write(";", () => resolve());
-        });
+        this.channel.write(Buffer.from(JSON.stringify(data)).toString("base64") + ";");
     }
 }
 exports.SocketProxy = SocketProxy;

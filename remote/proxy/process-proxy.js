@@ -49,7 +49,7 @@ class ProcessProxy extends ChannelProxy {
      */
     constructor(channel) {
         super(channel);
-        
+
         /**
          * @private
          * @param {*} message
@@ -90,18 +90,24 @@ class ProcessProxy extends ChannelProxy {
     /**
      * @public
      * @param {*} data 
-     * @returns {Promise<void>}
+     * @returns {void}
      */
-    sendDataAsync(data) {
+    sendData(data) {
         if (this.disposed) {
             throw new Error("Channel proxy already disposed.");
         }
 
-        return new Promise((resolve, reject) => {
-            this.channel.send(
-                JSON.stringify(data),
-                (error) => error ? reject(error) : resolve());
-        });
+        this.channel.send(
+            JSON.stringify(data),
+
+            /**
+             * @param {Error} err
+             */
+            (err) => {
+                if (err) {
+                    this.triggerHandler("error", err);
+                };
+            });
     }
 }
 exports.ProcessProxy = ProcessProxy;

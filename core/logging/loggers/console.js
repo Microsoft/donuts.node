@@ -156,7 +156,7 @@ class ConsoleLogger {
      */
     formatConsoleMsg(properties, message) {
         /** @type {string} */
-        let consoleMsg = "[" + new Date().toLocaleTimeString() + "]";
+        let consoleMsg = "[" + new Date().toISOString() + "]";
 
         const formatedProperties = this.formatProperties(properties);
 

@@ -42,9 +42,9 @@ class DataInfoManager {
 
         /**
          * @readonly
-         * @type {symbol}
+         * @type {WeakMap<*, Donuts.Remote.IDataInfo>}
          */
-        this.symbol_dataInfo = Symbol("dataInfo");
+        this.dataInfoMap = new WeakMap();
     }
 
     /**
@@ -138,7 +138,7 @@ class DataInfoManager {
         }
 
         /** @type {Donuts.Remote.IDataInfo} */
-        const dataInfo = target[this.symbol_dataInfo];
+        const dataInfo = this.dataInfoMap.get(target);
 
         if (!dataInfo) {
             return undefined;
@@ -158,7 +158,7 @@ class DataInfoManager {
         let dataInfo;
 
         if (target) {
-            dataInfo = target[this.symbol_dataInfo];
+            dataInfo = this.dataInfoMap.get(target);
         }
 
         dataInfo = dataInfo || { type: dataTypeOf(target) };
@@ -222,8 +222,8 @@ class DataInfoManager {
      */
     toFunctionDataInfo(target) {
         /** @type {Donuts.Remote.IDataInfo} */
-        let dataInfo = target[this.symbol_dataInfo];
-
+        let dataInfo = this.dataInfoMap.get(target);
+        
         if (!dataInfo) {
             dataInfo = {
                 type: "function",
@@ -231,7 +231,9 @@ class DataInfoManager {
             };
         }
 
-        return target[this.symbol_dataInfo] = dataInfo;
+        this.dataInfoMap.set(target, dataInfo);
+
+        return dataInfo;
     }
 
     /**
@@ -241,8 +243,9 @@ class DataInfoManager {
      */
     toObjectDataInfo(target) {
         /** @type {Donuts.Remote.IObjectDataInfo} */
-        let dataInfo = target[this.symbol_dataInfo];
-
+        // @ts-ignore
+        let dataInfo = this.dataInfoMap.get(target);
+        
         if (dataInfo) {
             return dataInfo;
         }
@@ -286,7 +289,9 @@ class DataInfoManager {
             currentObj = Object.getPrototypeOf(currentObj);
         }
 
-        return target[this.symbol_dataInfo] = dataInfo;
+        this.dataInfoMap.set(target, dataInfo);
+
+        return dataInfo;
     }
 
     /**
@@ -301,7 +306,7 @@ class DataInfoManager {
 
         /** @type {Donuts.Remote.IDataInfo} */
         // @ts-ignore
-        const dataInfo = obj[this.symbol_dataInfo];
+        const dataInfo = this.dataInfoMap.get(obj);
 
         /** @type {string} */
         const refId = dataInfo.id;
@@ -331,9 +336,6 @@ class DataInfoManager {
         /** @type {()=>void} */
         const base = () => undefined;
 
-        // @ts-ignore
-        base[this.symbol_dataInfo] = dataInfo;
-
         /** @type {string} */
         const refId = dataInfo.id;
 
@@ -350,9 +352,8 @@ class DataInfoManager {
 
         const funcProxy = new Proxy(base, handlers);
 
-        this.registerRealizedObject(funcProxy);
-
-        return funcProxy;
+        this.dataInfoMap.set(funcProxy, dataInfo);
+        return this.registerRealizedObject(funcProxy);
     }
 
     /**
@@ -369,8 +370,6 @@ class DataInfoManager {
 
         /** @type {object} */
         const base = Object.create(null);
-
-        base[this.symbol_dataInfo] = dataInfo;
 
         /** @type {string} */
         const refId = dataInfo.id;
@@ -435,6 +434,7 @@ class DataInfoManager {
             }
         }
 
+        this.dataInfoMap.set(objProxy, dataInfo);
         return this.registerRealizedObject(objProxy);
     }
 }

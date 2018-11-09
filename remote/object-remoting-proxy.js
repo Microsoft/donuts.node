@@ -220,7 +220,7 @@ class ObjectRemotingProxy {
             }
 
             /** @type {*} */
-            const result = target.apply(this.dataInfoManager.realizeDataInfo(msg.thisArg), args);
+            const result = await target.apply(this.dataInfoManager.realizeDataInfo(msg.thisArg), args);
 
             return this.dataInfoManager.toDataInfo(result);
         }

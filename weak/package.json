@@ -10,7 +10,7 @@
     "test": "mocha --recursive \"./test/**/*.test.js\" --exit"
   },
   "weak-reference.node": {
-    "version": "1.0.0-private"
+    "version": "1.0.0"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"path": ".build"
+		},
+		{
+			"path": "core"
+		},
+		{
+			"path": "remote"
+		},
+		{
+			"path": "weak"
+		},
+		{
+			"path": "modularity"
+		},
+		{
+			"path": "settings"
+		},
+		{
+			"path": "ipc"
+		}
+	],
+	"settings": {}
+}

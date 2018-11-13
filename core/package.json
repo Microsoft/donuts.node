@@ -1,0 +1,26 @@
+{
+  "name": "donuts.node",
+  "version": "1.0.0-private",
+  "description": "A sweet framework for node.js.",
+  "types": "index.d.ts",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --recursive \"./test/**/*.test.js\" --exit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Microsoft/donuts.node.git"
+  },
+  "author": "Microsoft Corporation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Microsoft/donuts.node/issues"
+  },
+  "homepage": "https://github.com/Microsoft/donuts.node#readme",
+  "devDependencies": {
+    "@types/node": "^10.12.0",
+    "donuts.node-build": "file:../.build",
+    "gulp": "^4.0.0",
+    "mocha": "^5.2.0"
+  }
+}

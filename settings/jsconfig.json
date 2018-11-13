@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "ES2017",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "alwaysStrict": true,
+        "noUnusedLocals": true,
+        "noImplicitAny": true,
+        "suppressImplicitAnyIndexErrors": true,
+        "checkJs": true
+    },
+    "exclude": [
+        "build/",
+        "publish/"
+    ]
+}

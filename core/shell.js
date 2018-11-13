@@ -382,4 +382,9 @@ exports.getDir = (dirName) => {
 /**
  * @return {string}
  */
-exports.getAppVersion = () => JSON.parse(fs.readFileSync("./package.json", { encoding: "utf8" })).version;
+exports.getAppVersion = () =>
+    JSON.parse(
+        fs.readFileSync(
+            path.join(exports.getAppDir(), "package.json"),
+            { encoding: "utf8" }))
+        .version;

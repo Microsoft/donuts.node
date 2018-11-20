@@ -48,6 +48,43 @@ exports.isObject = (value) => value !== null && typeof value === "object";
  */
 exports.isNumber = (value) => typeof value === "number";
 
+exports.number = {
+    /**
+     * Format the current number.
+     * @param {number} num The number to format.
+     * @param {string} format The number format.
+     * @returns {string} The formatted number.
+     */
+    format(num, format) {
+        const match = /^([a-zA-Z])(\d+)?(.+)?$/i.exec(format);
+
+        if (match) {
+            /** @type {string} */
+            const formatName = match[1];
+
+            /** @type {number} */
+            const digitNum = match[2] ? Number.parseInt(match[2]) : undefined;
+
+            /** @type {string} */
+            const extraArg = match[3];
+
+            switch (formatName) {
+                case "c":
+                case "C":
+                    if (!extraArg) {
+                        throw new Error("Number currency format must include currency code, e.g. USD, CNY.");
+                    }
+                    
+                    return Intl.NumberFormat(undefined, { style: "currency", currency: extraArg, maximumFractionDigits: digitNum, minimumFractionDigits: digitNum ? 0 : undefined }).format(num);
+
+                case "d":
+                case "D":
+                    return Intl.NumberFormat(undefined, { style: "currency" }).format(num);
+            }
+        }
+    }
+};
+
 exports.string = {
     /**
      * Check if there is possiblity that the value is a string.
@@ -78,54 +115,33 @@ exports.string = {
 
     /**
      * 
-     * @param {*} obj 
-     * @param {number} [padding]
+     * @param {string} pattern
+     * @param {*} obj
      * @returns {string}
      */
-    defaultStringifier(obj, padding) {
-        padding = exports.pick(padding, 0);
+    defaultStringifier(pattern, obj) {
+        const objType = typeof obj;
 
-        if (obj === null) {
-            return "null";
+        switch (objType) {
+            case "string":
+                return obj;
 
-        } else if (obj === undefined) {
-            return "undefined";
-
-        } else {
-            const objType = typeof obj;
-
-            if ((objType !== "object")
-                || (objType === "object"
-                    && exports.isFunction(obj.toString)
-                    && obj.toString !== Object.prototype.toString)) {
-                return obj.toString();
-
-            } else {
-                /** @type {string} */
-                let str = `\n${"".padStart(padding)}{\n`;
-
-                for (const propertyName of Object.getOwnPropertyNames(obj)) {
-                    str += `${"".padStart(padding + 4)}${propertyName}: ${exports.string.defaultStringifier(obj[propertyName], padding + 4)}\n`;
+            case "object":
+                if (obj instanceof Date) {
+                    return exports.date.format(obj, pattern);
                 }
 
-                str += `${"".padStart(padding)}}`;
+                if (exports.isFunction(obj["toString"])) {
+                    return obj.toString();
+                }
 
-                return str;
-            }
+                return JSON.stringify(obj, null, 4);
         }
     },
 
     /**
-     * @param {*} obj
-     * @return {string}
-     */
-    stringifier(obj) {
-        return exports.string.defaultStringifier(obj);
-    },
-
-    /**
      * Form a string based on a given format string with the args and a customized stringifier function.
-     * @param {(obj: any) => string} stringifier The function to stringify the value of an arg.
+     * @param {(pattern: string, value: *) => string} stringifier The function to stringify the value of an arg.
      * @param {string} format The format string.
      * @param {Array.<*>} args The args to form the string format.
      * @returns {string} The formated string.
@@ -151,26 +167,46 @@ exports.string = {
 
         return format.replace(/(\{*)(\{(\d*)\})/gi,
             /**
-             * @param {string} substring
+             * @param {string} matchString
              * @param {string} escapeChar
-             * @param {string} argIdentifier
-             * @param {string} argIndexStr
+             * @param {string} argIndex
+             * @param {string} paddingLength
+             * @param {string} pattern
              * @returns {string}
              */
-            (substring, escapeChar, argIdentifier, argIndexStr) => {
+            (matchString, escapeChar, argIndexStr, paddingLengthStr, pattern) => {
                 matchIndex++;
 
                 if (escapeChar.length > 0) {
-                    return argIdentifier;
+                    return matchString.replace("{{", "{");
                 }
 
-                const argIndex = argIndexStr.length === 0 ? matchIndex : parseInt(argIndexStr, 10);
+                /** @type {number} */
+                const argIndex = !argIndexStr ? matchIndex : parseInt(argIndexStr, 10);
 
                 if (isNaN(argIndex) || argIndex < 0 || argIndex >= args.length) {
                     throw new Error(`Referenced arg index, '${argIndexStr}',is out of range of the args.`);
                 }
 
-                return stringifier(args[argIndex]);
+                /** @type {number} */
+                const paddingLength = !paddingLengthStr ? Number.NaN : parseInt(paddingLengthStr, 10);
+
+                /** @type {*} */
+                const arg = args[argIndex];
+
+                /** @type {string} */
+                let str = stringifier(pattern, arg);
+
+                if (paddingLengthStr) {
+                    if (paddingLength >= 0) {
+                        str = str.padStart(paddingLength, " ");
+
+                    } else {
+                        str = str.padEnd(paddingLength, " ");
+                    }
+                }
+
+                return str;
             });
     },
 
@@ -319,12 +355,97 @@ exports.array = {
 
 exports.date = {
     /**
+     * 
+     * @param {number} timezoneOffset 
+     * @returns {string}
+     */
+    toTimezoneOffsetString(timezoneOffset) {
+        if (Number.isNaN(timezoneOffset)) {
+            return "Z";
+        }
+
+        /** @type {number} */
+        const mod = timezoneOffset % 60;
+
+        /** @type {number} */
+        const offset = (timezoneOffset - mod) / 60;
+
+        /** @type {string} */
+        const rotationDirection = offset < 0 ? "+" : "-";
+
+        return rotationDirection + Math.abs(offset).toString(10).padStart(2, "0") + Math.abs(mod).toString(10).padEnd(2, "0");
+    },
+
+    /**
      * Format the current date.
      * @param {Date} date The data to format.
      * @param {string} format The date format.
      * @returns {string} The formatted date.
      */
     format(date, format) {
+        switch (format) {
+            case "d":
+                return date.toLocaleDateString(undefined, { year: "numeric", month: "numeric", day: "numeric" });
+
+            case "D":
+                return date.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+            case "f":
+                return date.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric" });
+
+            case "U":
+            case "F":
+                return date.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" });
+
+            case "g":
+                return date.toLocaleDateString(undefined, { year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" });
+
+            case "G":
+                return date.toLocaleDateString(undefined, { year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" });
+
+            case "M":
+            case "m":
+                return date.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+
+            case "O":
+            case "o":
+                format = "yyyy-MM-ddTHH:mm:ss.fffK";
+                break;
+
+            case "R":
+            case "r":
+                return date.toUTCString();
+
+            case "s":
+                date = new Date(date.toISOString());
+                format = "yyyy-MM-ddTHH:mm:ss.fff";
+                break;
+
+            case "t":
+                return date.toLocaleString(undefined, { hour: "numeric", minute: "numeric" });
+
+            case "T":
+                return date.toLocaleString(undefined, { hour: "numeric", minute: "numeric", second: "numeric" });
+
+            case "u":
+                return exports.string.format(
+                    "{0:0000}-{1:00}-{2:00} {3:00}:{4:00}:{5:00}.{6:000}Z",
+                    date.getUTCFullYear(),
+                    date.getUTCMonth(),
+                    date.getUTCDate(),
+                    date.getUTCHours(),
+                    date.getUTCMinutes(),
+                    date.getUTCSeconds(),
+                    date.getUTCMilliseconds());
+
+            case "Y":
+            case "y":
+                return date.toLocaleDateString(undefined, { year: "numeric", month: "long" });
+
+            default:
+                break;
+        }
+
         return format
             // Year
             .replace("yyyy", date.getFullYear().toString().padStart(4, "0"))
@@ -353,7 +474,10 @@ exports.date = {
             // Thousandths of Second
             .replace("fff", date.getMilliseconds().toString().padStart(3, "0"))
             .replace("ff", date.getMilliseconds().toString().padStart(2, "0"))
-            .replace("f", date.getMilliseconds().toString());
+            .replace("f", date.getMilliseconds().toString())
+
+            // Timezone
+            .replace("K", exports.date.toTimezoneOffsetString(date.getTimezoneOffset()));
     }
 }
 

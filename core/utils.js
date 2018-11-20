@@ -75,7 +75,7 @@ exports.number = {
                         throw new Error("Number currency (C) format must include currency code, e.g. USD, CNY.");
                     }
 
-                    return Intl.NumberFormat(undefined, { style: "currency", currency: extraArg, maximumFractionDigits: digitNum, minimumFractionDigits: digitNum ? 0 : undefined }).format(num);
+                    return Intl.NumberFormat(undefined, { style: "currency", currency: extraArg, minimumFractionDigits: digitNum }).format(num);
 
                 case "d":
                 case "D":
@@ -91,7 +91,7 @@ exports.number = {
 
                 case "f":
                 case "F":
-                    return num.toFixed(digitNum);
+                    return num.toFixed(digitNum >= 0 ? digitNum : 3);
 
                 case "g":
                 case "G":
@@ -103,7 +103,7 @@ exports.number = {
 
                 case "p":
                 case "P":
-                    return Intl.NumberFormat(undefined, { style: "percent", minimumFractionDigits: digitNum }).format(num);
+                    return Intl.NumberFormat(undefined, { style: "percent", minimumFractionDigits: digitNum >= 0 ? digitNum : 2 }).format(num);
 
                 case "r":
                 case "R":
@@ -196,7 +196,7 @@ exports.string = {
                     return exports.date.format(obj, pattern);
                 }
 
-                if (exports.isFunction(obj["toString"])) {
+                if (exports.isFunction(obj["toString"]) && obj.toString !== Object.prototype.toString) {
                     return obj.toString();
                 }
 
@@ -230,20 +230,19 @@ exports.string = {
 
         let matchIndex = -1;
 
-        return format.replace(/(\{*)(\{(\d*)\})/gi,
+        return format.replace(/(?:[\\\{]\{)+|(?:\{\s*(?:\s*(\d+)\s*)?(?:\s*\,\s*(\-?\d*)\s*)?(?:\s*\:([^\{\}]*))?\})/gi,
             /**
              * @param {string} matchString
-             * @param {string} escapeChar
-             * @param {string} argIndex
-             * @param {string} paddingLength
+             * @param {string} argIndexStr
+             * @param {string} paddingLengthStr
              * @param {string} pattern
              * @returns {string}
              */
-            (matchString, escapeChar, argIndexStr, paddingLengthStr, pattern) => {
+            (matchString, argIndexStr, paddingLengthStr, pattern) => {
                 matchIndex++;
 
-                if (escapeChar.length > 0) {
-                    return matchString.replace("{{", "{");
+                if (matchString.startsWith("\\") || matchString.startsWith("{{")) {
+                    return "{";
                 }
 
                 /** @type {number} */
@@ -264,10 +263,10 @@ exports.string = {
 
                 if (paddingLengthStr) {
                     if (paddingLength >= 0) {
-                        str = str.padStart(paddingLength, " ");
+                        str = str.padStart(Math.abs(paddingLength), " ");
 
                     } else {
-                        str = str.padEnd(paddingLength, " ");
+                        str = str.padEnd(Math.abs(paddingLength), " ");
                     }
                 }
 
@@ -513,20 +512,34 @@ exports.date = {
 
         return format
             // Year
+            .replace("yyyyy", date.getFullYear().toString().padStart(5, "0"))
             .replace("yyyy", date.getFullYear().toString().padStart(4, "0"))
+            .replace("yyy", date.getFullYear().toString().padStart(3, "0"))
             .replace("yy", date.getFullYear().toString().substr(2, 2))
 
-            // Month
+            // Month (Name)
+            .replace("MMMM", date.toLocaleDateString(undefined, { month: "long" }))
+            .replace("MMM", date.toLocaleDateString(undefined, { month: "short" }))
+
+            // Month (Number)
             .replace("MM", date.getMonth().toString().padStart(2, "0"))
             .replace("M", date.getMonth().toString())
+
+            // Day of Weak
+            .replace("dddd", date.toLocaleDateString(undefined, { weekday: "long" }))
+            .replace("ddd", date.toLocaleDateString(undefined, { weekday: "short" }))
 
             // Day of Month
             .replace("dd", date.getDate().toString().padStart(2, "0"))
             .replace("d", date.getDate().toString())
 
-            // Hours
+            // Hours (24h)
             .replace("HH", date.getHours().toString().padStart(2, "0"))
             .replace("H", date.getHours().toString())
+
+            // Hours (12h)
+            .replace("hh", (date.getHours() > 12 ? date.getHours() - 12 : date.getHours()).toString().padStart(2, "0"))
+            .replace("h", (date.getHours() > 12 ? date.getHours() - 12 : date.getHours()).toString())
 
             // Minutes
             .replace("mm", date.getMinutes().toString().padStart(2, "0"))
@@ -540,6 +553,11 @@ exports.date = {
             .replace("fff", date.getMilliseconds().toString().padStart(3, "0"))
             .replace("ff", date.getMilliseconds().toString().padStart(2, "0"))
             .replace("f", date.getMilliseconds().toString())
+
+            // Timezone offset
+            .replace("zzz", exports.date.toTimezoneOffsetString(date.getTimezoneOffset()))
+            .replace("zz", exports.date.toTimezoneOffsetString(date.getTimezoneOffset()).substr(0, 3))
+            .replace("z", parseInt(exports.date.toTimezoneOffsetString(date.getTimezoneOffset()).substr(0, 3), 10).toString())
 
             // Timezone
             .replace("K", exports.date.toTimezoneOffsetString(date.getTimezoneOffset()));

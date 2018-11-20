@@ -26,10 +26,13 @@ declare export namespace string {
     function possibleString(value: any): value is string | undefined | null;
     function isEmpty(value: string): boolean;
     function isEmptyOrWhitespace(value: string): boolean;
-    function defaultStringifier(obj: any, padding: number): string;
-    function stringifier(obj: any): string;
+    function defaultStringifier(pattern: string, obj: any): string;
     function formatEx(stringifier: (obj: any) => string, format: string, ...args: Array<any>): string;
     function format(format: string, ...args: Array<any>): string;
+}
+
+declare export namespace number {
+    function format(num: number, format: string): string;
 }
 
 declare export namespace object {

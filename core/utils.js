@@ -56,30 +56,75 @@ exports.number = {
      * @returns {string} The formatted number.
      */
     format(num, format) {
-        const match = /^([a-zA-Z])(\d+)?(.+)?$/i.exec(format);
+        const standardMatch = /^([a-zA-Z])(\d+)?(.+)?$/i.exec(format);
 
-        if (match) {
+        if (standardMatch) {
             /** @type {string} */
-            const formatName = match[1];
+            const formatName = standardMatch[1];
 
             /** @type {number} */
-            const digitNum = match[2] ? Number.parseInt(match[2]) : undefined;
+            const digitNum = standardMatch[2] ? Number.parseInt(standardMatch[2]) : undefined;
 
             /** @type {string} */
-            const extraArg = match[3];
+            const extraArg = standardMatch[3];
 
             switch (formatName) {
                 case "c":
                 case "C":
                     if (!extraArg) {
-                        throw new Error("Number currency format must include currency code, e.g. USD, CNY.");
+                        throw new Error("Number currency (C) format must include currency code, e.g. USD, CNY.");
                     }
-                    
+
                     return Intl.NumberFormat(undefined, { style: "currency", currency: extraArg, maximumFractionDigits: digitNum, minimumFractionDigits: digitNum ? 0 : undefined }).format(num);
 
                 case "d":
                 case "D":
-                    return Intl.NumberFormat(undefined, { style: "currency" }).format(num);
+                    if (!Number.isInteger(num)) {
+                        throw new Error("Decimal (D) format must be applied on an integer.");
+                    }
+
+                    return Intl.NumberFormat(undefined, { style: "decimal", minimumIntegerDigits: digitNum, useGrouping: false }).format(num);
+
+                case "e":
+                case "E":
+                    return num.toExponential(digitNum);
+
+                case "f":
+                case "F":
+                    return num.toFixed(digitNum);
+
+                case "g":
+                case "G":
+                    return num.toPrecision(digitNum);
+
+                case "n":
+                case "N":
+                    return Intl.NumberFormat(undefined, { style: "decimal", minimumFractionDigits: digitNum, useGrouping: true }).format(num);
+
+                case "p":
+                case "P":
+                    return Intl.NumberFormat(undefined, { style: "percent", minimumFractionDigits: digitNum }).format(num);
+
+                case "r":
+                case "R":
+                    return num.toString(10);
+
+                case "x":
+                case "X":
+                    if (!Number.isInteger(num)) {
+                        throw new Error("Hexadecimal (X) format must be applied on an integer.");
+                    }
+
+                    const numStr = num.toString(16);
+
+                    if (digitNum) {
+                        return numStr.padStart(digitNum, "0");
+                    }
+
+                    return numStr;
+
+                default:
+                    throw new Error(`Unsupported numeric format: ${format}`);
             }
         }
     }
@@ -126,7 +171,27 @@ exports.string = {
             case "string":
                 return obj;
 
+            case "number":
+                return exports.number.format(obj, pattern);
+
+            case "function":
+                return obj.toString();
+
+            case "symbol":
+                return obj.toString();
+
+            case "boolean":
+                return obj ? "true" : "false";
+
+            case "undefined":
+                return "undefined";
+
             case "object":
+            default:
+                if (obj === null) {
+                    return "null";
+                }
+
                 if (obj instanceof Date) {
                     return exports.date.format(obj, pattern);
                 }

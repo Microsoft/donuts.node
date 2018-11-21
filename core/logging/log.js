@@ -71,10 +71,11 @@ class Log {
 
     /**
      * @private
+     * @param {string} pattern
      * @param {*} obj 
      * @returns {string}
      */
-    static stringifier(obj) {
+    static stringifier(pattern, obj) {
         if (obj instanceof Error) {
             const errorObj = Object.create(null);
 
@@ -92,7 +93,7 @@ class Log {
             obj = errorObj;
         }
 
-        return utils.string.defaultStringifier(undefined, obj);
+        return utils.string.defaultStringifier(pattern, obj);
     }
 
     /**

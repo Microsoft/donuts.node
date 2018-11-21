@@ -20,8 +20,7 @@
   "dependencies": {
     "donuts.node": "file:../core",
     "donuts.node-ipc": "file:../ipc",
-    "donuts.node-weak": "file:../weak",
-    "uuid": "^3.3.2"
+    "donuts.node-weak": "file:../weak"
   },
   "devDependencies": {
     "@types/node": "^10.12.0",

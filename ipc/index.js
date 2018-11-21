@@ -6,7 +6,7 @@
 
 const net = require("net");
 const path = require("path");
-const uuidv4 = require("uuid/v4");
+const random = require("donuts.node/random");
 const tmp = require("tmp");
 const fileSystem = require("donuts.node/fileSystem");
 
@@ -20,7 +20,7 @@ function generateWin32IpcPath(...segments) {
         return path.join("\\\\?\\pipe", ...segments);
     }
 
-    return path.join("\\\\?\\pipe", process.mainModule.filename, uuidv4());
+    return path.join("\\\\?\\pipe", process.mainModule.filename, random.generateUuidAlike());
 }
 
 /**

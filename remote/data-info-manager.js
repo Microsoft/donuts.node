@@ -6,7 +6,7 @@
 
 const { dataTypeOf } = require("./data-info");
 const utils = require("donuts.node/utils");
-const uuidv4 = require("uuid/v4");
+const random = require("donuts.node/random");
 const weak = require("donuts.node-weak");
 
 /**
@@ -227,7 +227,7 @@ class DataInfoManager {
         if (!dataInfo) {
             dataInfo = {
                 type: "function",
-                id: uuidv4()
+                id: random.generateUuidAlike()
             };
         }
 
@@ -252,7 +252,7 @@ class DataInfoManager {
 
         dataInfo = {
             type: "object",
-            id: uuidv4(),
+            id: random.generateUuidAlike(),
             memberInfos: Object.create(null)
         };
 

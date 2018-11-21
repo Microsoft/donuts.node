@@ -3,8 +3,6 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
-declare export const UuidNamespace: string;
-
 declare export class Communicator implements Donuts.Remote.ICommunicator {
     public readonly id: string;
     public get disposed(): boolean;

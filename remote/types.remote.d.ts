@@ -24,6 +24,8 @@ namespace Donuts.Remote {
 
     interface IMessage {
         id: string;
+        sender: string;
+        timestamp: number;
         succeeded?: boolean;
         path?: string;
         body?: any;

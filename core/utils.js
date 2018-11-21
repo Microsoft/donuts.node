@@ -56,6 +56,10 @@ exports.number = {
      * @returns {string} The formatted number.
      */
     format(num, format) {
+        if (!format) {
+            return num.toString();
+        }
+
         const standardMatch = /^([a-zA-Z])(\d+)?(.+)?$/i.exec(format);
 
         if (standardMatch) {

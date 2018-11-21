@@ -27,7 +27,7 @@ declare export namespace string {
     function isEmpty(value: string): boolean;
     function isEmptyOrWhitespace(value: string): boolean;
     function defaultStringifier(pattern: string, obj: any): string;
-    function formatEx(stringifier: (obj: any) => string, format: string, ...args: Array<any>): string;
+    function formatEx(stringifier: (pattern: string, value: any) => string, format: string, ...args: Array<any>): string;
     function format(format: string, ...args: Array<any>): string;
 }
 

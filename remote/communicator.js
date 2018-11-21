@@ -4,10 +4,11 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-const uuidv4 = require("uuid/v4");
 const utils = require("donuts.node/utils");
+const random = require("donuts.node/random");
 const { isChannelProxy } = require(".");
 const { EventEmitter } = require("events");
+const Log = require("donuts.node/logging").getLog();
 
 /**
  * @typedef IPromiseResolver 
@@ -21,8 +22,6 @@ const { EventEmitter } = require("events");
  * @property {Donuts.Remote.AsyncRequestHandler} asyncHandler
  */
 
-exports.UuidNamespace = "65ef6f94-e6c9-4c95-8360-6d29de87b1dd";
-
 /**
  * @this {Error}
  * @returns {string}
@@ -35,6 +34,15 @@ function ErrorToJSON() {
 
     return error;
 }
+
+/** @enum {string} */
+const Action = {
+    Send: "SEND",
+    Sent: "SENT",
+    Failed: "FAILED",
+    Receive: "RECEIVE",
+    Respond: "RESPOND"
+};
 
 /**
  * @class
@@ -71,7 +79,7 @@ class Communicator extends EventEmitter {
          * @readonly 
          * @type {string}
          */
-        this.id = uuidv4();
+        this.id = random.generateUid(6);
 
         if (options) {
             if (utils.isString(options.id)
@@ -102,6 +110,11 @@ class Communicator extends EventEmitter {
          */
         this.onMessageAsync = async (channel, msg) => {
             const promise = this.ongoingPromiseDict[msg.id];
+
+            /** @type {number} */
+            const receivedTimestamp = Date.now();
+
+            Log.writeInfoAsync("{} REMOTE {,7} {} ~{,4:F0}ms <= {}:{}", this.id, Action.Receive, msg.id, receivedTimestamp - msg.timestamp, msg.sender, msg.path);
 
             if (promise) {
                 delete this.ongoingPromiseDict[msg.id];
@@ -150,12 +163,18 @@ class Communicator extends EventEmitter {
                     }
                 }
 
-                this.channelProxy.sendData({
+                /** @type {Donuts.Remote.IMessage} */
+                const responseMsg = {
                     id: msg.id,
+                    sender: this.id,
+                    timestamp: Date.now(),
                     path: msg.path,
                     succeeded: succeeded,
                     body: response
-                });
+                };
+
+                Log.writeInfoAsync("{} REMOTE {,7} {} ~{,4:F0}ms => {}:{}", this.id, Action.Respond, responseMsg.id, responseMsg.timestamp - receivedTimestamp, msg.sender, msg.path);
+                this.channelProxy.sendData(responseMsg);
             }
         };
 
@@ -250,11 +269,14 @@ class Communicator extends EventEmitter {
         return new Promise((resolve, reject) => {
             /** @type {Donuts.Remote.IMessage} */
             const msg = {
-                id: uuidv4(),
+                id: random.generateUid(8),
+                sender: this.id,
+                timestamp: Date.now(),
                 path: path,
                 body: content
             };
 
+            Log.writeInfoAsync("{} REMOTE {,7} {} => {}", msg.sender, Action.Send, msg.id, msg.path);
             this.channelProxy.sendData(msg);
 
             if (this.timeout) {
@@ -273,8 +295,14 @@ class Communicator extends EventEmitter {
             }
 
             this.ongoingPromiseDict[msg.id] = {
-                resolve: (result) => resolve(result),
-                reject: (error) => reject(error)
+                resolve: (result) => {
+                    Log.writeInfoAsync("{} REMOTE {,7} {} ~{,4:F0}ms => {}", msg.sender, Action.Sent, msg.id, Date.now() - msg.timestamp, msg.path);
+                    resolve(result);
+                },
+                reject: (error) => {
+                    Log.writeErrorAsync("{} REMOTE {,7} {} ~{,4:F0}ms: {}", msg.sender, Action.Failed, msg.id, Date.now() - msg.timestamp, error);
+                    reject(error);
+                }
             };
         });
     }

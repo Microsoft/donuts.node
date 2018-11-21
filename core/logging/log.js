@@ -92,7 +92,7 @@ class Log {
             obj = errorObj;
         }
 
-        return utils.string.stringifier(obj);
+        return utils.string.defaultStringifier(undefined, obj);
     }
 
     /**

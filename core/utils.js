@@ -62,74 +62,76 @@ exports.number = {
 
         const standardMatch = /^([a-zA-Z])(\d+)?(.+)?$/i.exec(format);
 
-        if (standardMatch) {
-            /** @type {string} */
-            const formatName = standardMatch[1];
+        if (!standardMatch) {
+            return format;
+        }
+        
+        /** @type {string} */
+        const formatName = standardMatch[1];
 
-            /** @type {number} */
-            const digitNum = standardMatch[2] ? Number.parseInt(standardMatch[2]) : undefined;
+        /** @type {number} */
+        const digitNum = standardMatch[2] ? Number.parseInt(standardMatch[2]) : undefined;
 
-            /** @type {string} */
-            const extraArg = standardMatch[3];
+        /** @type {string} */
+        const extraArg = standardMatch[3];
 
-            switch (formatName) {
-                case "c":
-                case "C":
-                    if (!extraArg) {
-                        throw new Error("Number currency (C) format must include currency code, e.g. USD, CNY.");
-                    }
+        switch (formatName) {
+            case "c":
+            case "C":
+                if (!extraArg) {
+                    throw new Error("Number currency (C) format must include currency code, e.g. USD, CNY.");
+                }
 
-                    return Intl.NumberFormat(undefined, { style: "currency", currency: extraArg, minimumFractionDigits: digitNum }).format(num);
+                return Intl.NumberFormat(undefined, { style: "currency", currency: extraArg, minimumFractionDigits: digitNum }).format(num);
 
-                case "d":
-                case "D":
-                    if (!Number.isInteger(num)) {
-                        throw new Error("Decimal (D) format must be applied on an integer.");
-                    }
+            case "d":
+            case "D":
+                if (!Number.isInteger(num)) {
+                    throw new Error("Decimal (D) format must be applied on an integer.");
+                }
 
-                    return Intl.NumberFormat(undefined, { style: "decimal", minimumIntegerDigits: digitNum, useGrouping: false }).format(num);
+                return Intl.NumberFormat(undefined, { style: "decimal", minimumIntegerDigits: digitNum, useGrouping: false }).format(num);
 
-                case "e":
-                case "E":
-                    return num.toExponential(digitNum);
+            case "e":
+            case "E":
+                return num.toExponential(digitNum);
 
-                case "f":
-                case "F":
-                    return num.toFixed(digitNum >= 0 ? digitNum : 3);
+            case "f":
+            case "F":
+                return num.toFixed(digitNum >= 0 ? digitNum : 3);
 
-                case "g":
-                case "G":
-                    return num.toPrecision(digitNum);
+            case "g":
+            case "G":
+                return num.toPrecision(digitNum);
 
-                case "n":
-                case "N":
-                    return Intl.NumberFormat(undefined, { style: "decimal", minimumFractionDigits: digitNum, useGrouping: true }).format(num);
+            case "n":
+            case "N":
+                return Intl.NumberFormat(undefined, { style: "decimal", minimumFractionDigits: digitNum, useGrouping: true }).format(num);
 
-                case "p":
-                case "P":
-                    return Intl.NumberFormat(undefined, { style: "percent", minimumFractionDigits: digitNum >= 0 ? digitNum : 2 }).format(num);
+            case "p":
+            case "P":
+                return Intl.NumberFormat(undefined, { style: "percent", minimumFractionDigits: digitNum >= 0 ? digitNum : 2 }).format(num);
 
-                case "r":
-                case "R":
-                    return num.toString(10);
+            case "r":
+            case "R":
+                return num.toString(10);
 
-                case "x":
-                case "X":
-                    if (!Number.isInteger(num)) {
-                        throw new Error("Hexadecimal (X) format must be applied on an integer.");
-                    }
+            case "x":
+            case "X":
+                if (!Number.isInteger(num)) {
+                    throw new Error("Hexadecimal (X) format must be applied on an integer.");
+                }
 
-                    const numStr = num.toString(16);
+                const numStr = num.toString(16);
 
-                    if (digitNum) {
-                        return numStr.padStart(digitNum, "0");
-                    }
+                if (digitNum) {
+                    return numStr.padStart(digitNum, "0");
+                }
 
-                    return numStr;
+                return numStr;
 
-                default:
-                    throw new Error(`Unsupported numeric format: ${format}`);
-            }
+            default:
+                throw new Error(`Unsupported numeric format: ${format}`);
         }
     }
 };
@@ -509,6 +511,10 @@ exports.date = {
             case "Y":
             case "y":
                 return date.toLocaleDateString(undefined, { year: "numeric", month: "long" });
+
+            case undefined:
+            case null:
+                return date.toString();
 
             default:
                 break;

@@ -8,7 +8,7 @@ namespace Donuts.Remote {
     type ChannelProxyErrorHandler = (channel: IChannelProxy, err: Error) => void;
 
     type AsyncRequestHandler = (communicator: ICommunicator, pathInfo: IRoutePathInfo, content: any) => Promise<any>;
-    
+
     type ChannelHostProxyConnectionHandler = (hostProxy: IChannelHostProxy, channelProxy: IChannelProxy) => void;
     type ChannelHostProxyErrorHandler = (hostProxy: IChannelHostProxy, error: any) => void;
     type ChannelHostProxyEventHandler = (hostProxy: IChannelHostProxy) => void;
@@ -179,5 +179,23 @@ namespace Donuts.Remote {
         applyAsync<T>(refId: string, thisArg: any, args: Array<any>): Promise<T>;
         getPropertyAsync<T>(refId: string, property: string | number): Promise<T>;
         setPropertyAsync(refId: string, property: string | number, value: any): Promise<boolean>;
+    }
+
+    type OutgoingAsyncHandler<TOutMsg, TInMsg> = (pipeline: ICommunicationPipeline<TOutMsg, TInMsg>, outgoingMsg: TOutMsg) => Promise<TInMsg>;
+    type IncomingAsyncHandler<TOutMsg, TInMsg> = (pipeline: ICommunicationPipeline<TOutMsg, TInMsg>, outgoingMsg: TOutMsg, incomingMsg: TInMsg) => Promise<TOutMsg>;
+
+    interface ICommunicationPipeline<TOutMsg, TInMsg> extends IDisposable, IEventEmitter {
+        readonly id: string;
+
+        outgoingMsgTemplate: TOutMsg;
+
+        readonly outgoingPipe: Array<OutgoingAsyncHandler<TOutMsg, TInMsg>>;
+        readonly incomingPipe: Array<IncomingAsyncHandler<TOutMsg, TInMsg>>;
+
+        on(event: "message", handler: (pipeline: ICommunicationPipeline<TOutMsg, TInMsg>, incomingMsg: TInMsg) => void): this;
+        once(event: "message", handler: (pipeline: ICommunicationPipeline<TOutMsg, TInMsg>, incomingMsg: TInMsg) => void): this;
+        off(event: "message", handler: (pipeline: ICommunicationPipeline<TOutMsg, TInMsg>, incomingMsg: TInMsg) => void): this;
+
+        sendAsync(msg: TOutMsg): Promise<TInMsg>;
     }
 }

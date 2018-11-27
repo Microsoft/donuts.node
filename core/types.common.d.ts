@@ -21,4 +21,12 @@ namespace Donuts {
     interface IDisposable {
         disposeAsync(): Promise<void>;
     }
+
+    interface IEventEmitter {
+        on(event: string, handler: (...args: Array<any>) => void): this;
+        once(event: string, handler: (...args: Array<any>) => void): this;
+        off(event: string, handler: (...args: Array<any>) => void): this;
+
+        emit(event: string, ...args: Array<any>): this;
+    }
 }

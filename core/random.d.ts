@@ -12,10 +12,10 @@ declare export function randomize(size: number): Buffer;
 
 /**
  * Generate a randomized uid.
- * @param size The length in characters.
+ * @param size The length in characters. Default: 8.
  * @returns the uid string (hex).
  */
-declare export function generateUid(length: number): string;
+declare export function generateUid(length?: number): string;
 
 /**
  * Generate a randomized uid.

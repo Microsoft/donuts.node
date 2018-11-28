@@ -28,7 +28,7 @@ exports.randomize = (size) => {
  */
 exports.generateUid = (length) => {
     if (utils.isNullOrUndefined(length)) {
-        length = 6;
+        length = 8;
 
     } else if (!utils.isNumber(length) || !Number.isInteger(length)) {
         throw new Error("length must be an integer.");

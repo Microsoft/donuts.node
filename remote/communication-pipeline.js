@@ -5,137 +5,262 @@
 
 const { EventEmitter } = require("donuts.node/event-emitter");
 const random = require("donuts.node/random");
-const utils =  require("donuts.node/utils");
+const utils = require("donuts.node/utils");
 
 /**
- * @template TOutMsg, TInMsg
- * @implements {Donuts.Remote.ICommunicationPipeline<TOutMsg, TInMsg>}
+ * @template TOutgoingData, TIncomingData
+ * @implements {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncomingData>}
  */
 class CommunicationPipeline extends EventEmitter {
     /**
      * @public
      * @param {Donuts.Logging.ILog} log
+     * @param {string} [id]
+     * @param {string} [moduleName]
      */
-    constructor(log) {
+    constructor(log, id, moduleName) {
         super();
 
         /**
-         * @private 
-         * @readonly
-         * @type {Donuts.Logging.ILog}
-         */
-        this.log = log;
-
-        /**
          * @public
          * @readonly
          * @type {string}
          */
-        this.id = "";
-
-        /**
-         * @protected
-         * @type {string}
-         */
-        this.moduleName = "REMOTE";
+        this.id = id || random.generateUid();
 
         /**
          * @public
-         * @type {TOutMsg}
+         * @type {TOutgoingData}
          */
-        this.outgoingMsgTemplate = undefined;
+        this.outgoingDataTemplate = undefined;
 
         /**
          * @public
          * @readonly
-         * @type {Array<Donuts.Remote.OutgoingAsyncHandler<TOutMsg, TInMsg>>}
+         * @type {Array<Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
          */
         this.outgoingPipe = [];
 
         /**
          * @public
          * @readonly
-         * @type {Array<Donuts.Remote.OutgoingAsyncHandler<TOutMsg, TInMsg>>}
+         * @type {Array<Donuts.Remote.IncomingAsyncHandler<TOutgoingData, TIncomingData>>}
          */
         this.incomingPipe = [];
+
+        /**
+         * @protected
+         * @type {string}
+         */
+        this.moduleName = moduleName || "REMOTE";
+
+        /**
+         * @protected 
+         * @readonly
+         * @type {Donuts.Logging.ILog}
+         */
+        this.log = log;
+
+        /**
+         * @private
+         * @readonly
+         * @type {Array<Donuts.Remote.ICommunicationListener>}
+         */
+        this.listeners = [];
+
+        /**
+         * @private
+         * @param {Donuts.Remote.ICommunicationListener} listener
+         * @param {Donuts.Remote.IMessage<TIncomingData>} incomingMsg
+         */
+        this.onIncomingMessage = (listener, incomingMsg) => this.emitIncomingMessageAsync(incomingMsg);
+    }
+
+    /**
+     * @returns {Promise<void>}
+     */
+    async disposeAsync() {
+        return;
+    }
+
+    /**
+     * @param {Donuts.Remote.ICommunicationListener} listener
+     * @return {this}
+     */
+    addListener(listener) {
+        const index = this.listeners.findIndex((item) => listener === item);
+
+        if (index < 0) {
+            listener.on("message", this.onIncomingMessage);
+            this.listeners.push(listener);
+        }
+
+        return this;
+    }
+
+    /**
+     * @param {Donuts.Remote.ICommunicationListener} listener
+     * @return {this}
+     */
+    removeListener(listener) {
+        const index = this.listeners.findIndex((item) => listener === item);
+
+        if (index >= 0) {
+            const listener = this.listeners.splice(index, 1)[0];
+
+            listener.off("message", this.onIncomingMessage);
+        }
+
+        return this;
+    }
+
+    /**
+     * @return {Array.<Donuts.Remote.ICommunicationListener>}
+     */
+    getListeners() {
+        return Array.from(this.listeners);
     }
 
     /**
      * @public
-     * @param {TOutMsg} msg 
-     * @returns {Promise<TInMsg>}
+     * @param {TOutgoingData} data 
+     * @returns {Promise<TIncomingData>}
      */
-    sendAsync(msg) {
-        const requestId = random.generateUid(8);
-        const 
+    async pipeAsync(data) {
+        /** @type {Donuts.Remote.IMessage<TOutgoingData>} */
+        const outgoingMsg = this.generateOutgoingMessage(data);
 
-        msg = this.mergeOutgoingMsg(this.outgoingMsgTemplate, msg);
-        this.logInfo(`${this.id} HTTP ${request.method.padStart(4, " ")} ${requestId} => ${request.url}`);
+        this.logMessage(outgoingMsg);
+
+        /** @type {Donuts.Remote.IMessage<TIncomingData>} */
+        let incomingMsg = undefined;
+
+        for (const asyncHandler of this.outgoingPipe) {
+            try {
+                incomingMsg = await asyncHandler(this, outgoingMsg);
+
+            } catch (err) {
+                this.logMessage(outgoingMsg, err && utils.isFunction(err.toString) ? err.toString() : JSON.stringify(err), "error");
+                throw err;
+            }
+
+            if (incomingMsg) {
+                break;
+            }
+        }
+
+        if (!incomingMsg) {
+            this.logMessage(outgoingMsg, "No outgoing handler handles the message.", "error");
+            throw new Error("No outgoing handler handles the message.");
+        }
+
+        this.logMessage(incomingMsg);
+
+        for (const asyncHandler of this.incomingPipe) {
+            try {
+                incomingMsg = await asyncHandler(this, outgoingMsg, incomingMsg);
+
+            } catch (err) {
+                this.logMessage(incomingMsg, err && utils.isFunction(err.toString) ? err.toString() : JSON.stringify(err), "error");
+                throw err;
+            }
+        }
+
+        this.logMessage(incomingMsg, "Incoming message processing completed.");
+
+        return incomingMsg.data;
     }
 
     /**
      * @protected
-     * @param {TOutMsg} baseMsg
-     * @param {TOutMsg} childMsg
-     * @returns {TOutMsg}
+     * @virtual
+     * @param {Donuts.Remote.IMessage<TIncomingData>} incomingMsg
+     * @returns {Promise<void>}
      */
-    mergeOutgoingMsg(baseMsg, childMsg) {
-        return Object.assign(Object.assign(Object.create(null), baseMsg), childMsg);
+    async emitIncomingMessageAsync(incomingMsg) {
+        this.logMessage(incomingMsg);
+
+        for (const asyncHandler of this.incomingPipe) {
+            try {
+                incomingMsg = await asyncHandler(this, undefined, incomingMsg);
+
+            } catch (err) {
+                this.logMessage(incomingMsg, err && utils.isFunction(err.toString) ? err.toString() : JSON.stringify(err), "error");
+                throw err;
+            }
+        }
+
+        this.logMessage(incomingMsg, "Incoming message processing completed.");
+
+        this.emit("data", this, incomingMsg.data);
     }
 
     /**
-     * @param {string} operationName
-     * @param {string} operationId
-     * @param {string} msgId
-     * @param {string} target
-     * @param {number} durationInMS duration in millisenconds.
+     * @protected
+     * @virtual
+     * @param {TOutgoingData} outgoingData 
+     * @returns {Donuts.Remote.IMessage<TOutgoingData>}
+     */
+    generateOutgoingMessage(outgoingData) {
+        /** @type {Donuts.Remote.IMessage<TOutgoingData>} */
+        const outgoingMsg = Object.create(null);
+
+        outgoingMsg.data = Object.assign(Object.assign(Object.create(null), this.outgoingDataTemplate), outgoingData);
+        outgoingMsg.id = random.generateUid();
+        outgoingMsg.source = this.id;
+        outgoingMsg.operationId = random.generateUid();
+        outgoingMsg.timestamp = Date.now();
+
+        return outgoingMsg;
+    }
+
+    /**
+     * @protected
+     * @virtual
+     * @param {Donuts.Remote.IMessage<TOutgoingData | TIncomingData>} message
+     * @param {string} [text]
+     * @param {Donuts.Logging.Severity} [severity]
      * @returns {void}
      */
-    logOperation(operationName, operationId, msgId, target, durationInMS) {
+    logMessage(message, text, severity) {
+        if (!this.log) {
+            return;
+        }
+
+        severity = severity || "info";
+
         /** @type {string} */
         let msg = "";
 
-        if (msgId) {
-            msg += " " + msgId;
+        if (message.id) {
+            msg += " " + message.id;
         }
 
-        if (durationInMS) {
-            msg += utils.string.format(" ~{,4:F0}", durationInMS);
+        if (typeof message.timestamp === "number") {
+            msg += utils.string.format(" ~{,4:F0}", Date.now() - message.timestamp);
         }
 
-        if (target) {
-            msg += " => " + target;
+        if (message.source && message.source !== this.id) {
+            msg += " <= " + message.source;
         }
 
-        this.logInfo("<{}>{,8} {,8}<{}>{}", this.id, this.moduleName, operationName, operationId, msg);
-    }
-
-    /**
-     * @private
-     * @param {string} messageOrFormat
-     * @param {...any} params
-     * @returns {void}
-     */
-    logInfo(messageOrFormat, ...params) {
-        if (!this.log) {
-            return;
+        if (message.target && message.target !== this.id) {
+            msg += " => " + message.target;
         }
 
-        this.log.writeInfoAsync(messageOrFormat, ...params);
-    }
-
-    /**
-     * @private
-     * @param {string} messageOrFormat
-     * @param {...any} params
-     * @returns {void}
-     */
-    logError(messageOrFormat, ...params) {
-        if (!this.log) {
-            return;
+        if (text) {
+            msg += ": " + text;
         }
 
-        this.log.writeErrorAsync(messageOrFormat, ...params);
+        this.log.writeAsync(
+            severity,
+            "<{}>{,8} {}{,8}{}{}", // Format: <{Id}>{ModuleName} {OperationName}{OperationId?}{Msg?}
+            this.id,
+            this.moduleName,
+            message.operationId ? `<${message.operationId}>` : "",
+            message.operationName || "",
+            message.operationDescription ? " " + message.operationDescription : "",
+            msg);
     }
 }
 exports.CommunicationPipeline = CommunicationPipeline;

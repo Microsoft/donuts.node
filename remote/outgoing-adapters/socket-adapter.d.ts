@@ -4,14 +4,21 @@
 //-----------------------------------------------------------------------------
 
 import { EventEmitter } from "donuts.node/event-emitter";
+import { Socket as NetSocket } from "net";
 
 import IMessage = Donuts.Remote.IMessage;
 import ICommunicationPipeline = Donuts.Remote.ICommunicationPipeline;
-import ICommunicationListener = Donuts.Remote.ICommunicationSource;
+import ICommunicationSource = Donuts.Remote.ICommunicationSource;
 
 declare export class SocketAdapter
     extends EventEmitter
-    implements ICommunicationListener {
-    
-    handleOutgoingMessage(pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, outgoingMsg: IMessage<TOutgoingData>): Promise<IMessage<TIncommingData>>;
+    implements ICommunicationSource {
+
+    public constructor(socket: NetSocket, timeout?: number);
+
+    public readonly handleOutgoingMessage: (pipeline: ICommunicationPipeline<any, any>, outgoingMsg: IMessage<any>) => Promise<IMessage<any>>;
+
+    public on(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<any>) => void);
+    public once(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<any>) => void);
+    public off(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<any>) => void);
 }

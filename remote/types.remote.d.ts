@@ -51,10 +51,20 @@ namespace Donuts.Remote {
         signatureIdentifier?: ISignatureIdentifier;
     }
 
-    interface ICommunicationSource {
+    interface ICommunicationSource extends IEventEmitter {
         on<TIncommingData>(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<TIncommingData>) => void);
         once<TIncommingData>(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<TIncommingData>) => void);
         off<TIncommingData>(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<TIncommingData>) => void);
+
+        on<TOutgoingData, TIncommingData>(event: "target-acquired", handler: (source: ICommunicationSource, targetName: string, targetAsyncHandler: OutgoingAsyncHandler<TOutgoingData, TIncommingData>) => void);
+        once<TOutgoingData, TIncommingData>(event: "target-acquired", handler: (source: ICommunicationSource, targetName: string, targetAsyncHandler: OutgoingAsyncHandler<TOutgoingData, TIncommingData>) => void);
+        off<TOutgoingData, TIncommingData>(event: "target-acquired", handler: (source: ICommunicationSource, targetName: string, targetAsyncHandler: OutgoingAsyncHandler<TOutgoingData, TIncommingData>) => void);
+
+        on(event: "target-lost", handler: (source: ICommunicationSource, targetName: string) => void);
+        once(event: "target-lost", handler: (source: ICommunicationSource, targetName: string) => void);
+        off(event: "target-lost", handler: (source: ICommunicationSource, targetName: string) => void);
+
+        getTargetNames?(): Array<string>;
     }
 
     type OutgoingAsyncHandler<TOutgoingData, TIncommingData> = (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, outgoingMsg: IMessage<TOutgoingData>) => Promise<IMessage<TIncommingData>>;

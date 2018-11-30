@@ -94,6 +94,29 @@ class CommunicationPipeline extends EventEmitter {
         this.onIncomingMessage = (source, incomingMsg) => {
             this.emitIncomingMessageAsync(incomingMsg);
         };
+
+        /**
+         * @private
+         * @readonly
+         * @param {Donuts.Remote.ICommunicationSource} source
+         * @param {string} targetName
+         * @param {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>} targetAsyncHandler
+         * @returns {void}
+         */
+        this.onTargetAcquired = (source, targetName, targetAsyncHandler) => {
+            this.setTarget(targetName, targetAsyncHandler);
+        };
+
+        /**
+         * @private
+         * @readonly
+         * @param {Donuts.Remote.ICommunicationSource} source
+         * @param {string} targetName
+         * @returns {void}
+         */
+        this.onTargetLost = (source, targetName) => {
+            this.setTarget(targetName, undefined);
+        };
     }
 
     /**
@@ -142,6 +165,8 @@ class CommunicationPipeline extends EventEmitter {
 
         if (index < 0) {
             source.on("message", this.onIncomingMessage);
+            source.on("target-acquired", this.onTargetAcquired);
+            source.on("target-lost", this.onTargetLost);
             this.sources.push(source);
         }
 
@@ -159,9 +184,17 @@ class CommunicationPipeline extends EventEmitter {
         const index = this.sources.findIndex((item) => source === item);
 
         if (index >= 0) {
-            const listener = this.sources.splice(index, 1)[0];
+            const source = this.sources.splice(index, 1)[0];
 
-            listener.off("message", this.onIncomingMessage);
+            source.off("message", this.onIncomingMessage);
+            source.off("target-acquired", this.onTargetAcquired);
+            source.off("target-lost", this.onTargetLost);
+
+            if (utils.isFunction(source.getTargetNames)) {
+                for (const targetName of source.getTargetNames()) {
+                    this.setTarget(targetName, undefined);
+                }
+            }
         }
 
         return this;

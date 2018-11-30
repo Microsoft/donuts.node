@@ -76,9 +76,9 @@ namespace Donuts.Remote {
         getTarget(name: string): OutgoingAsyncHandler<TOutgoingData, TIncommingData>;
         getTargets(): Donuts.IStringKeyDictionary<OutgoingAsyncHandler<TOutgoingData, TIncommingData>>;
 
-        on(event: "data", handler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => void): this;
-        once(event: "data", handler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => void): this;
-        off(event: "data", handler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => void): this;
+        on(event: "data", asyncHandler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => Promise<TOutgoingData>): this;
+        once(event: "data", asyncHandler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => Promise<TOutgoingData>): this;
+        off(event: "data", asyncHandler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => Promise<TOutgoingData>): this;
 
         pipeAsync(data: TOutgoingData, target?: string): Promise<TIncommingData>;
     }

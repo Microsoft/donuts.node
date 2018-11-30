@@ -134,43 +134,39 @@ class CommunicationPipeline extends EventEmitter {
 
     /**
      * @public
+     * @param {string} name
      * @param {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>} target
      * @return {this}
      */
-    addTarget(target) {
-        
-
-        if (index < 0) {
-            target.on("message", this.onIncomingMessage);
-            this.sources.push(target);
+    setTarget(name, target) {
+        if (target === null || target === undefined) {
+            delete this.targets[name];
         }
+
+        if (!utils.isFunction(target)) {
+            throw new Error("target must be a function.");
+        }
+
+        this.targets[name] = target;
 
         return this;
     }
 
     /**
      * @public
-     * @param {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>} target
-     * @return {this}
+     * @param {string} name
+     * @return {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>}
      */
-    removeTarget(target) {
-        const index = this.sources.findIndex((item) => target === item);
-
-        if (index >= 0) {
-            const listener = this.sources.splice(index, 1)[0];
-
-            listener.off("message", this.onIncomingMessage);
-        }
-
-        return this;
+    getTarget(name) {
+        return this.targets[name];
     }
 
     /**
      * @public
-     * @return {Array.<Donuts.Remote.ICommunicationSource>}
+     * @return {Donuts.IStringKeyDictionary.<Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
      */
     getTargets() {
-        return Array.from(this.sources);
+        return Object.assign(Object.create(null), this.targets);
     }
 
     /**

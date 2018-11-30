@@ -72,9 +72,9 @@ namespace Donuts.Remote {
         removeSource(source: ICommunicationSource): this;
         getSources(): Array<ICommunicationSource>;
 
-        addTarget(target: OutgoingAsyncHandler<TOutgoingData, TIncommingData>, ): this;
-        removeTarget(target: OutgoingAsyncHandler<TOutgoingData, TIncommingData>): this;
-        getTargets(): Array<OutgoingAsyncHandler<TOutgoingData, TIncommingData>>;
+        setTarget(name: string, target: OutgoingAsyncHandler<TOutgoingData, TIncommingData>): this;
+        getTarget(name: string): OutgoingAsyncHandler<TOutgoingData, TIncommingData>;
+        getTargets(): Donuts.IStringKeyDictionary<OutgoingAsyncHandler<TOutgoingData, TIncommingData>>;
 
         on(event: "data", handler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => void): this;
         once(event: "data", handler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => void): this;

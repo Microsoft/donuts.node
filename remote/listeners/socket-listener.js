@@ -12,7 +12,7 @@
  * @typedef {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncommingData>} ICommunicationPipeline 
  */
 
-/** @typedef {Donuts.Remote.ICommunicationSource} ICommunicationListener */
+/** @typedef {Donuts.Remote.ICommunicationSource} ICommunicationSource */
 
 /** 
  * @template TData
@@ -23,7 +23,8 @@ const { EventEmitter } = require("donuts.node/event-emitter");
 const Log = require("donuts.node/logging").getLog();
 
 /**
- * 
+ * @class
+ * @implements {ICommunicationSource}
  */
 class SocketListener extends EventEmitter {
     /**

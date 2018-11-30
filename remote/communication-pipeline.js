@@ -9,6 +9,7 @@ const random = require("donuts.node/random");
 const utils = require("donuts.node/utils");
 
 /**
+ * @class
  * @template TOutgoingData, TIncomingData
  * @implements {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncomingData>}
  */
@@ -51,6 +52,7 @@ class CommunicationPipeline extends EventEmitter {
 
         /**
          * @protected
+         * @readonly
          * @type {string}
          */
         this.moduleName = moduleName || "REMOTE";
@@ -61,6 +63,12 @@ class CommunicationPipeline extends EventEmitter {
          * @type {Donuts.Logging.ILog}
          */
         this.log = log;
+
+        /**
+         * @protected
+         * @type {boolean}
+         */
+        this.disposed = false;
 
         /**
          * @private
@@ -78,17 +86,48 @@ class CommunicationPipeline extends EventEmitter {
 
         /**
          * @private
-         * @param {Donuts.Remote.ICommunicationSource} listener
+         * @readonly
+         * @param {Donuts.Remote.ICommunicationSource} source
          * @param {Donuts.Remote.IMessage<TIncomingData>} incomingMsg
+         * @returns {void}
          */
-        this.onIncomingMessage = (listener, incomingMsg) => this.emitIncomingMessageAsync(incomingMsg);
+        this.onIncomingMessage = (source, incomingMsg) => {
+            this.emitIncomingMessageAsync(incomingMsg);
+        };
     }
 
     /**
+     * @public
      * @returns {Promise<void>}
      */
     async disposeAsync() {
-        return;
+        if (this.outgoingPipe.length > 0) {
+            this.outgoingPipe.splice(0);
+        }
+
+        if (this.incomingPipe.length > 0) {
+            this.incomingPipe.splice(0);
+        }
+
+        if (this.disposed) {
+            return;
+        }
+
+        if (this.sources.length > 0) {
+            for (const source of this.sources) {
+                source.off("message", this.onIncomingMessage);
+            }
+
+            this.sources.splice(0);
+        }
+
+        if (!utils.object.isEmpty(this.targets)) {
+            for (const name in this.targets) {
+                delete this.targets[name];
+            }
+        }
+
+        this.disposed = true;
     }
 
     /**
@@ -97,6 +136,8 @@ class CommunicationPipeline extends EventEmitter {
      * @return {this}
      */
     addSource(source) {
+        this.validateDisposal();
+
         const index = this.sources.findIndex((item) => source === item);
 
         if (index < 0) {
@@ -113,6 +154,8 @@ class CommunicationPipeline extends EventEmitter {
      * @return {this}
      */
     removeSource(source) {
+        this.validateDisposal();
+
         const index = this.sources.findIndex((item) => source === item);
 
         if (index >= 0) {
@@ -129,6 +172,8 @@ class CommunicationPipeline extends EventEmitter {
      * @return {Array.<Donuts.Remote.ICommunicationSource>}
      */
     getSources() {
+        this.validateDisposal();
+
         return Array.from(this.sources);
     }
 
@@ -139,6 +184,8 @@ class CommunicationPipeline extends EventEmitter {
      * @return {this}
      */
     setTarget(name, target) {
+        this.validateDisposal();
+
         if (target === null || target === undefined) {
             delete this.targets[name];
         }
@@ -158,6 +205,8 @@ class CommunicationPipeline extends EventEmitter {
      * @return {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>}
      */
     getTarget(name) {
+        this.validateDisposal();
+
         return this.targets[name];
     }
 
@@ -166,6 +215,8 @@ class CommunicationPipeline extends EventEmitter {
      * @return {Donuts.IStringKeyDictionary.<Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
      */
     getTargets() {
+        this.validateDisposal();
+
         return Object.assign(Object.create(null), this.targets);
     }
 
@@ -176,6 +227,8 @@ class CommunicationPipeline extends EventEmitter {
      * @returns {Promise<TIncomingData>}
      */
     async pipeAsync(data, target) {
+        this.validateDisposal();
+
         /** @type {Donuts.Remote.IMessage<TOutgoingData>} */
         const outgoingMsg = this.generateOutgoingMessage(data);
 
@@ -199,8 +252,16 @@ class CommunicationPipeline extends EventEmitter {
         }
 
         if (!incomingMsg) {
-            this.logMessage(outgoingMsg, "No outgoing handler handles the message.", "error");
-            throw new Error("No outgoing handler handles the message.");
+            const targetAsyncHandler = this.targets[outgoingMsg.target];
+
+            if (targetAsyncHandler) {
+                incomingMsg = await targetAsyncHandler(this, outgoingMsg);
+            }
+        }
+
+        if (!incomingMsg) {
+            this.logMessage(outgoingMsg, "No outgoing handler or target handler handles the message.", "error");
+            throw new Error("No outgoing handler or target handler handles the message.");
         }
 
         this.logMessage(incomingMsg);
@@ -310,6 +371,16 @@ class CommunicationPipeline extends EventEmitter {
             message.operationName || "",
             message.operationDescription ? " " + message.operationDescription : "",
             msg);
+    }
+
+    /**
+     * @protected
+     * @returns {void}
+     */
+    validateDisposal() {
+        if (this.disposed) {
+            throw new Error("Already disposed.");
+        }
     }
 }
 exports.CommunicationPipeline = CommunicationPipeline;

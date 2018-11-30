@@ -28,6 +28,7 @@ const { EventEmitter } = require("donuts.node/event-emitter");
 const Log = require("donuts.node/logging").getLog();
 
 /**
+ * @class
  * @template TOutgoingData, TIncommingData
  * @implements {ICommunicationListener}
  */

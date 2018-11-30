@@ -22,5 +22,7 @@
 			"path": "ipc"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"typescript.surveys.enabled": false
+	}
 }

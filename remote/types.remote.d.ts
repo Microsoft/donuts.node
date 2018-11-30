@@ -51,10 +51,10 @@ namespace Donuts.Remote {
         signatureIdentifier?: ISignatureIdentifier;
     }
 
-    interface ICommunicationListener {
-        on<TIncommingData>(event: "message", handler: (listener: ICommunicationListener, incomingMessage: IMessage<TIncommingData>) => void);
-        once<TIncommingData>(event: "message", handler: (listener: ICommunicationListener, incomingMessage: IMessage<TIncommingData>) => void);
-        off<TIncommingData>(event: "message", handler: (listener: ICommunicationListener, incomingMessage: IMessage<TIncommingData>) => void);
+    interface ICommunicationSource {
+        on<TIncommingData>(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<TIncommingData>) => void);
+        once<TIncommingData>(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<TIncommingData>) => void);
+        off<TIncommingData>(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<TIncommingData>) => void);
     }
 
     type OutgoingAsyncHandler<TOutgoingData, TIncommingData> = (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, outgoingMsg: IMessage<TOutgoingData>) => Promise<IMessage<TIncommingData>>;
@@ -68,14 +68,18 @@ namespace Donuts.Remote {
         readonly outgoingPipe: Array<OutgoingAsyncHandler<TOutgoingData, TIncommingData>>;
         readonly incomingPipe: Array<IncomingAsyncHandler<TOutgoingData, TIncommingData>>;
 
-        addListener(listener: ICommunicationListener): this;
-        removeListener(listener: ICommunicationListener): this;
-        getListeners(): Array<ICommunicationListener>;
+        addSource(source: ICommunicationSource): this;
+        removeSource(source: ICommunicationSource): this;
+        getSources(): Array<ICommunicationSource>;
+
+        addTarget(target: OutgoingAsyncHandler<TOutgoingData, TIncommingData>, ): this;
+        removeTarget(target: OutgoingAsyncHandler<TOutgoingData, TIncommingData>): this;
+        getTargets(): Array<OutgoingAsyncHandler<TOutgoingData, TIncommingData>>;
 
         on(event: "data", handler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => void): this;
         once(event: "data", handler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => void): this;
         off(event: "data", handler: (pipeline: ICommunicationPipeline<TOutgoingData, TIncommingData>, incomingData: TIncommingData) => void): this;
 
-        pipeAsync(data: TOutgoingData): Promise<TIncommingData>;
+        pipeAsync(data: TOutgoingData, target?: string): Promise<TIncommingData>;
     }
 }

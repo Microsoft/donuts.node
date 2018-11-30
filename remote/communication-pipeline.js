@@ -2,6 +2,7 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
+'use strict';
 
 const { EventEmitter } = require("donuts.node/event-emitter");
 const random = require("donuts.node/random");
@@ -64,13 +65,20 @@ class CommunicationPipeline extends EventEmitter {
         /**
          * @private
          * @readonly
-         * @type {Array<Donuts.Remote.ICommunicationListener>}
+         * @type {Array<Donuts.Remote.ICommunicationSource>}
          */
-        this.listeners = [];
+        this.sources = [];
 
         /**
          * @private
-         * @param {Donuts.Remote.ICommunicationListener} listener
+         * @readonly
+         * @type {Donuts.IStringKeyDictionary<Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
+         */
+        this.targets = Object.create(null);
+
+        /**
+         * @private
+         * @param {Donuts.Remote.ICommunicationSource} listener
          * @param {Donuts.Remote.IMessage<TIncomingData>} incomingMsg
          */
         this.onIncomingMessage = (listener, incomingMsg) => this.emitIncomingMessageAsync(incomingMsg);
@@ -84,29 +92,31 @@ class CommunicationPipeline extends EventEmitter {
     }
 
     /**
-     * @param {Donuts.Remote.ICommunicationListener} listener
+     * @public
+     * @param {Donuts.Remote.ICommunicationSource} source
      * @return {this}
      */
-    addListener(listener) {
-        const index = this.listeners.findIndex((item) => listener === item);
+    addSource(source) {
+        const index = this.sources.findIndex((item) => source === item);
 
         if (index < 0) {
-            listener.on("message", this.onIncomingMessage);
-            this.listeners.push(listener);
+            source.on("message", this.onIncomingMessage);
+            this.sources.push(source);
         }
 
         return this;
     }
 
     /**
-     * @param {Donuts.Remote.ICommunicationListener} listener
+     * @public
+     * @param {Donuts.Remote.ICommunicationSource} source
      * @return {this}
      */
-    removeListener(listener) {
-        const index = this.listeners.findIndex((item) => listener === item);
+    removeSource(source) {
+        const index = this.sources.findIndex((item) => source === item);
 
         if (index >= 0) {
-            const listener = this.listeners.splice(index, 1)[0];
+            const listener = this.sources.splice(index, 1)[0];
 
             listener.off("message", this.onIncomingMessage);
         }
@@ -115,18 +125,61 @@ class CommunicationPipeline extends EventEmitter {
     }
 
     /**
-     * @return {Array.<Donuts.Remote.ICommunicationListener>}
+     * @public
+     * @return {Array.<Donuts.Remote.ICommunicationSource>}
      */
-    getListeners() {
-        return Array.from(this.listeners);
+    getSources() {
+        return Array.from(this.sources);
+    }
+
+    /**
+     * @public
+     * @param {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>} target
+     * @return {this}
+     */
+    addTarget(target) {
+        
+
+        if (index < 0) {
+            target.on("message", this.onIncomingMessage);
+            this.sources.push(target);
+        }
+
+        return this;
+    }
+
+    /**
+     * @public
+     * @param {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>} target
+     * @return {this}
+     */
+    removeTarget(target) {
+        const index = this.sources.findIndex((item) => target === item);
+
+        if (index >= 0) {
+            const listener = this.sources.splice(index, 1)[0];
+
+            listener.off("message", this.onIncomingMessage);
+        }
+
+        return this;
+    }
+
+    /**
+     * @public
+     * @return {Array.<Donuts.Remote.ICommunicationSource>}
+     */
+    getTargets() {
+        return Array.from(this.sources);
     }
 
     /**
      * @public
      * @param {TOutgoingData} data 
+     * @param {string} [target]
      * @returns {Promise<TIncomingData>}
      */
-    async pipeAsync(data) {
+    async pipeAsync(data, target) {
         /** @type {Donuts.Remote.IMessage<TOutgoingData>} */
         const outgoingMsg = this.generateOutgoingMessage(data);
 

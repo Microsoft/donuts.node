@@ -4,7 +4,7 @@
 //-----------------------------------------------------------------------------
 "use strict";
 
-/** @typedef {import("net").Socket} NetSocket */
+/** @typedef {import("child_process").ChildProcess} ChildProcess */
 
 /** 
  * @template TOutgoingData, TIncommingData
@@ -26,23 +26,37 @@
 
 const { EventEmitter } = require("donuts.node/event-emitter");
 const Log = require("donuts.node/logging").getLog();
+const utils = require("donuts.node/utils");
 
 /**
  * @class
  * @template TOutgoingData, TIncommingData
  * @implements {ICommunicationSource}
  */
-class SocketAdapter extends EventEmitter {
+class ProcessAdapter extends EventEmitter {
+    /**
+     * @private
+     * @static
+     * @param {*} channel 
+     * @returns {channel is ChildProcess}
+     */
+    static isValidChannel(channel) {
+        return !utils.isNullOrUndefined(channel)
+            && utils.isFunction(channel.kill)
+            && utils.isNumber(channel.pid)
+            && utils.isFunction(channel.send)
+            && utils.isFunction(channel.on)
+            && utils.isFunction(channel.removeListener);
+    }
+
     /**
      * @public
-     * @param {NetSocket} socket
+     * @param {ChildProcess} process
      * @param {number} [timeout]
      */
-    constructor(socket, timeout) {
-        const { Socket } = require("net");
-
-        if (!(socket instanceof Socket)) {
-            throw new Error("socket must be an instance of net.Socket");
+    constructor(process, timeout) {
+        if (!ProcessAdapter.isValidChannel(process)) {
+            throw new Error("process must be an instance of child_process.ChildProcess.");
         }
 
         super();
@@ -50,9 +64,9 @@ class SocketAdapter extends EventEmitter {
         /**
          * @private
          * @readonly
-         * @type {NetSocket}
+         * @type {ChildProcess}
          */
-        this.socket = socket;
+        this.process = process;
 
         /**
          * @private
@@ -70,61 +84,34 @@ class SocketAdapter extends EventEmitter {
 
         /**
          * @private
-         * @type {string}
-         */
-        this.incomingBuffer = "";
-
-        /**
-         * @private
          * @readonly
-         * @param {Buffer | string} data
+         * @param {any} data
          */
-        this.onData = (data) => {
+        this.onMessage = (data) => {
             try {
-                if (Buffer.isBuffer(data)) {
-                    data = data.toString("utf8");
-                }
-
-                this.incomingBuffer = this.incomingBuffer + data;
-
-                const segmentEnd = this.incomingBuffer.indexOf(";");
-
-                if (segmentEnd < 0) {
+                if (!utils.isString(data)) {
                     return;
                 }
 
-                const segments = this.incomingBuffer.split(";");
+                /** @type {IMessage<any>} */
+                const incomingMsg = JSON.parse(data);
 
-                for (let dataEntryIndex = 0; dataEntryIndex < segments.length - 1; dataEntryIndex++) {
-                    const dataEntry = segments[dataEntryIndex];
+                /** @type {IMsgPromiseRecord} */
+                const msgPromiseRecord = this.msgDictionary[incomingMsg.id];
 
-                    if (!dataEntry) {
-                        continue;
-                    }
+                if (!msgPromiseRecord) {
+                    this.emit("message", this, incomingMsg);
 
-                    /** @type {IMessage<any>} */
-                    const incomingMsg = JSON.parse(Buffer.from(dataEntry, "base64").toString("utf8"));
-
-                    /** @type {IMsgPromiseRecord} */
-                    const msgPromiseRecord = this.msgDictionary[incomingMsg.id];
-
-                    if (!msgPromiseRecord) {
-                        this.emit("message", this, incomingMsg);
-
-                    } else {
-                        msgPromiseRecord.resolve(incomingMsg);
-                    }
+                } else {
+                    msgPromiseRecord.resolve(incomingMsg);
                 }
-
-                this.incomingBuffer = segments.pop() || "";
-
             } catch (error) {
                 Log.writeExceptionAsync(error);
                 throw error;
             }
         };
 
-        this.socket.on("data", this.onData);
+        this.process.on("message", this.onMessage);
 
         /**
          * @public
@@ -167,9 +154,14 @@ class SocketAdapter extends EventEmitter {
                     setTimeout(() => msgRecord.reject(new Error(`Timed out (${this.timeout}ms).`)), this.timeout);
                 }
 
-                this.socket.write(Buffer.from(JSON.stringify(msg)).toString("base64") + ";");
+                this.process.send(JSON.stringify(msg),
+                    (err) => {
+                        if (err) {
+                            reject(err);
+                        }
+                    });
             });
         };
     }
 }
-exports.SocketAdapter = SocketAdapter;
+exports.ProcessAdapter = ProcessAdapter;

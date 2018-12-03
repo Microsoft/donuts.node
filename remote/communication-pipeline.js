@@ -8,10 +8,38 @@ const { EventEmitter } = require("donuts.node/event-emitter");
 const random = require("donuts.node/random");
 const utils = require("donuts.node/utils");
 
+/** @typedef {Donuts.Remote.ICommunicationSource} ICommunicationSource */
+
+/**
+ * @template TOutgoingData, TIncomingData
+ * @typedef {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncomingData>} ICommunicationPipeline 
+ */
+
+/**
+ * @template TOutgoingData, TIncomingData
+ * @typedef {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>} OutgoingAsyncHandler 
+ */
+
+/**
+ * @template TOutgoingData, TIncomingData
+ * @typedef {Donuts.Remote.IncomingAsyncHandler<TOutgoingData, TIncomingData>} IncomingAsyncHandler 
+ */
+
+/**
+ * @template TData
+ * @typedef {Donuts.Remote.IMessage<TData>} IMessage 
+ */
+
+/**
+ * @typedef ITargetInfo
+ * @property {string} targetName
+ * @property {ICommunicationSource} [source]
+ */
+
 /**
  * @class
  * @template TOutgoingData, TIncomingData
- * @implements {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncomingData>}
+ * @implements {ICommunicationPipeline<TOutgoingData, TIncomingData>}
  */
 class CommunicationPipeline extends EventEmitter {
     /**
@@ -39,14 +67,14 @@ class CommunicationPipeline extends EventEmitter {
         /**
          * @public
          * @readonly
-         * @type {Array<Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
+         * @type {Array<OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
          */
         this.outgoingPipe = [];
 
         /**
          * @public
          * @readonly
-         * @type {Array<Donuts.Remote.IncomingAsyncHandler<TOutgoingData, TIncomingData>>}
+         * @type {Array<IncomingAsyncHandler<TOutgoingData, TIncomingData>>}
          */
         this.incomingPipe = [];
 
@@ -73,22 +101,29 @@ class CommunicationPipeline extends EventEmitter {
         /**
          * @private
          * @readonly
-         * @type {Array<Donuts.Remote.ICommunicationSource>}
+         * @type {Array<ICommunicationSource>}
          */
         this.sources = [];
 
         /**
          * @private
          * @readonly
-         * @type {Donuts.IStringKeyDictionary<Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
+         * @type {Donuts.IStringKeyDictionary<OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
          */
         this.targets = Object.create(null);
 
         /**
          * @private
          * @readonly
-         * @param {Donuts.Remote.ICommunicationSource} source
-         * @param {Donuts.Remote.IMessage<TIncomingData>} incomingMsg
+         * @type {Map<OutgoingAsyncHandler<TOutgoingData, TIncomingData>, ITargetInfo>}
+         */
+        this.targetInfoDictionary = new Map();
+
+        /**
+         * @private
+         * @readonly
+         * @param {ICommunicationSource} source
+         * @param {IMessage<TIncomingData>} incomingMsg
          * @returns {void}
          */
         this.onIncomingMessage = (source, incomingMsg) => {
@@ -98,24 +133,42 @@ class CommunicationPipeline extends EventEmitter {
         /**
          * @private
          * @readonly
-         * @param {Donuts.Remote.ICommunicationSource} source
-         * @param {string} targetName
-         * @param {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>} targetAsyncHandler
+         * @param {ICommunicationSource} source
+         * @param {OutgoingAsyncHandler<TOutgoingData, TIncomingData>} targetAsyncHandler
          * @returns {void}
          */
-        this.onTargetAcquired = (source, targetName, targetAsyncHandler) => {
-            this.setTarget(targetName, targetAsyncHandler);
+        this.onTargetAcquired = (source, targetAsyncHandler) => {
+            /** @type {ITargetInfo} */
+            let targetInfo = this.targetInfoDictionary.get(targetAsyncHandler);
+
+            if (!targetInfo) {
+                targetInfo = Object.create(null);
+
+                targetInfo.targetName= random.generateUid();
+                targetInfo.source = source;
+            }
+
+            this.targetInfoDictionary.set(targetAsyncHandler, targetInfo);
+            this.setTarget(targetInfo.targetName, targetAsyncHandler);
         };
 
         /**
          * @private
          * @readonly
-         * @param {Donuts.Remote.ICommunicationSource} source
-         * @param {string} targetName
+         * @param {ICommunicationSource} source
+         * @param {OutgoingAsyncHandler<TOutgoingData, TIncomingData>} targetAsyncHandler
          * @returns {void}
          */
-        this.onTargetLost = (source, targetName) => {
-            this.setTarget(targetName, undefined);
+        this.onTargetLost = (source, targetAsyncHandler) => {
+            /** @type {ITargetInfo} */
+            const targetInfo = this.targetInfoDictionary.get(targetAsyncHandler);
+
+            if (!targetInfo) {
+                return;
+            }
+
+            this.setTarget(targetInfo.targetName, undefined);
+            this.targetInfoDictionary.delete(targetAsyncHandler);
         };
     }
 
@@ -155,7 +208,7 @@ class CommunicationPipeline extends EventEmitter {
 
     /**
      * @public
-     * @param {Donuts.Remote.ICommunicationSource} source
+     * @param {ICommunicationSource} source
      * @return {this}
      */
     addSource(source) {
@@ -175,7 +228,7 @@ class CommunicationPipeline extends EventEmitter {
 
     /**
      * @public
-     * @param {Donuts.Remote.ICommunicationSource} source
+     * @param {ICommunicationSource} source
      * @return {this}
      */
     removeSource(source) {
@@ -190,9 +243,12 @@ class CommunicationPipeline extends EventEmitter {
             source.off("target-acquired", this.onTargetAcquired);
             source.off("target-lost", this.onTargetLost);
 
-            if (utils.isFunction(source.getTargetNames)) {
-                for (const targetName of source.getTargetNames()) {
-                    this.setTarget(targetName, undefined);
+            for(const entry of this.targetInfoDictionary.entries()) {
+                /** @type {ITargetInfo} */
+                const targetInfo = entry[1];
+
+                if (targetInfo.source === source) {
+                    this.targetInfoDictionary.delete(entry[0]);
                 }
             }
         }
@@ -202,7 +258,7 @@ class CommunicationPipeline extends EventEmitter {
 
     /**
      * @public
-     * @return {Array.<Donuts.Remote.ICommunicationSource>}
+     * @return {Array.<ICommunicationSource>}
      */
     getSources() {
         this.validateDisposal();
@@ -213,7 +269,7 @@ class CommunicationPipeline extends EventEmitter {
     /**
      * @public
      * @param {string} name
-     * @param {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>} target
+     * @param {OutgoingAsyncHandler<TOutgoingData, TIncomingData>} target
      * @return {this}
      */
     setTarget(name, target) {
@@ -235,7 +291,7 @@ class CommunicationPipeline extends EventEmitter {
     /**
      * @public
      * @param {string} name
-     * @return {Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>}
+     * @return {OutgoingAsyncHandler<TOutgoingData, TIncomingData>}
      */
     getTarget(name) {
         this.validateDisposal();
@@ -245,7 +301,7 @@ class CommunicationPipeline extends EventEmitter {
 
     /**
      * @public
-     * @return {Donuts.IStringKeyDictionary.<Donuts.Remote.OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
+     * @return {Donuts.IStringKeyDictionary.<OutgoingAsyncHandler<TOutgoingData, TIncomingData>>}
      */
     getTargets() {
         this.validateDisposal();
@@ -262,12 +318,12 @@ class CommunicationPipeline extends EventEmitter {
     async pipeAsync(data, target) {
         this.validateDisposal();
 
-        /** @type {Donuts.Remote.IMessage<TOutgoingData>} */
+        /** @type {IMessage<TOutgoingData>} */
         const outgoingMsg = this.generateOutgoingMessage(data);
 
         this.logMessage(outgoingMsg);
 
-        /** @type {Donuts.Remote.IMessage<TIncomingData>} */
+        /** @type {IMessage<TIncomingData>} */
         let incomingMsg = undefined;
 
         for (const asyncHandler of this.outgoingPipe) {
@@ -317,7 +373,7 @@ class CommunicationPipeline extends EventEmitter {
     /**
      * @protected
      * @virtual
-     * @param {Donuts.Remote.IMessage<TIncomingData>} incomingMsg
+     * @param {IMessage<TIncomingData>} incomingMsg
      * @returns {Promise<void>}
      */
     async emitIncomingMessageAsync(incomingMsg) {
@@ -342,10 +398,10 @@ class CommunicationPipeline extends EventEmitter {
      * @protected
      * @virtual
      * @param {TOutgoingData} outgoingData 
-     * @returns {Donuts.Remote.IMessage<TOutgoingData>}
+     * @returns {IMessage<TOutgoingData>}
      */
     generateOutgoingMessage(outgoingData) {
-        /** @type {Donuts.Remote.IMessage<TOutgoingData>} */
+        /** @type {IMessage<TOutgoingData>} */
         const outgoingMsg = Object.create(null);
 
         outgoingMsg.data = Object.assign(Object.assign(Object.create(null), this.outgoingDataTemplate), outgoingData);
@@ -360,7 +416,7 @@ class CommunicationPipeline extends EventEmitter {
     /**
      * @protected
      * @virtual
-     * @param {Donuts.Remote.IMessage<TOutgoingData | TIncomingData>} message
+     * @param {IMessage<TOutgoingData | TIncomingData>} message
      * @param {string} [text]
      * @param {Donuts.Logging.Severity} [severity]
      * @returns {void}

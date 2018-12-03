@@ -6,7 +6,7 @@
 
 /** @typedef {import("net").Socket} NetSocket */
 /** @typedef {import("net").Server} NetServer */
-/** @typedef {import("../outgoing-adapters/socket-adapter").SocketAdapter} SocketAdapter */
+/** @typedef {import("../socket-adapter").SocketAdapter} SocketAdapter */
 
 /** 
  * @template TOutgoingData, TIncommingData
@@ -21,8 +21,7 @@
  */
 
 const { EventEmitter } = require("donuts.node/event-emitter");
-const { SocketAdapter } = require("../outgoing-adapters/socket-adapter");
-const Random = require("donuts.node/random");
+const { SocketAdapter } = require("../socket-adapter");
 
 /**
  * @class
@@ -62,13 +61,6 @@ class SocketSource extends EventEmitter {
          */
         this.server = server;
 
-        /** 
-         * @private
-         * @readonly
-         * @type {Donuts.IStringKeyDictionary<SocketAdapter>}
-         */
-        this.socketAdapterDictionary = Object.create(null);
-
         server.on("connection",
             /**
              * @param {NetSocket} socket
@@ -77,18 +69,14 @@ class SocketSource extends EventEmitter {
             (socket) => {
                 /** @type {SocketAdapter} */
                 const adapter = new SocketAdapter(socket, this.timeout);
-
-                /** @type {string} */
-                const targetName = Random.generateUid();
+                const outgoingAsyncHandler = adapter.handleOutgoingMessage;
 
                 socket.on("close",
                     /**
                      * @returns {void}
                      */
                     () => {
-                        delete this.socketAdapterDictionary[targetName];
-
-                        this.emit("target-lost", this, targetName);
+                        this.emit("target-lost", this, outgoingAsyncHandler);
                     });
 
                 adapter.on("message",
@@ -101,27 +89,8 @@ class SocketSource extends EventEmitter {
                         this.emit("message", this, incomingMessage);
                     });
 
-                this.socketAdapterDictionary[targetName] = adapter;
-                this.emit("target-acquired", this, targetName, adapter.handleOutgoingMessage);
+                this.emit("target-acquired", this, outgoingAsyncHandler);
             });
-
-        server.on("close",
-            /**
-             * @returns {void}
-             */
-            () => {
-                for (const targetName in this.socketAdapterDictionary) {
-                    this.emit("target-lost", this, targetName);
-                }
-            });
-    }
-
-    /**
-     * @public
-     * @returns {Array<string>}
-     */
-    getTargetNames() {
-        return Object.keys(this.socketAdapterDictionary);
     }
 }
 exports.SocketSource = SocketSource;

@@ -32,6 +32,12 @@ declare export class CommunicationPipeline<TOutgoingData, TIncomingData>
     public disposeAsync(): Promise<void>;
 
     public addSource(source: ICommunicationSource): this;
+    
+    /**
+     * Removing a source could be costy as it requires to remove all the targets that the source generates before.
+     * @param source The source to be removed.
+     * @returns This pipeline.
+     */
     public removeSource(source: ICommunicationSource): this;
     public getSources(): Array<ICommunicationSource>;
 

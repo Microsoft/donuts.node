@@ -35,7 +35,7 @@ class ObjectRemotingProxy {
 
     /**
      * @public
-     * @returns {Donuts.Remote.ICommunicator}
+     * @returns {Donuts.Remote.ICommunicationPipeline<any, any>}
      */
     get communicator() {
         return this._communicator;

@@ -7,8 +7,8 @@
 /** @typedef {import("child_process").ChildProcess} ChildProcess */
 
 /** 
- * @template TOutgoingData, TIncommingData
- * @typedef {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncommingData>} ICommunicationPipeline 
+ * @template TOutgoingData, TIncomingData
+ * @typedef {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncomingData>} ICommunicationPipeline 
  */
 
 /** @typedef {Donuts.Remote.ICommunicationSource} ICommunicationSource */
@@ -30,7 +30,7 @@ const utils = require("donuts.node/utils");
 
 /**
  * @class
- * @template TOutgoingData, TIncommingData
+ * @template TOutgoingData, TIncomingData
  * @implements {ICommunicationSource}
  */
 class ProcessAdapter extends EventEmitter {
@@ -116,11 +116,11 @@ class ProcessAdapter extends EventEmitter {
         /**
          * @public
          * @readonly
-         * @param {ICommunicationPipeline<TOutgoingData, TIncommingData>} pipeline
+         * @param {ICommunicationPipeline<TOutgoingData, TIncomingData>} pipeline
          * @param {IMessage<TOutgoingData>} outgoingMsg
-         * @returns {Promise<IMessage<TIncommingData>>}
+         * @returns {Promise<IMessage<TIncomingData>>}
          */
-        this.handleOutgoingMessage = async (pipeline, outgoingMsg) => {
+        this.handleoutgoingMail = async (pipeline, outgoingMsg) => {
             /** @type {IMessage<TOutgoingData>} */
             const msg = Object.assign(Object.create(null), outgoingMsg);
 

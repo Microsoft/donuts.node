@@ -13,15 +13,15 @@ declare export class SocketSource
 
     public constructor(server: NetServer);
 
-    public on<TIncommingData>(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<TIncommingData>) => void);
-    public once<TIncommingData>(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<TIncommingData>) => void);
-    public off<TIncommingData>(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<TIncommingData>) => void);
+    public on<TIncomingData>(event: "message", handler: (source: ICommunicationSource, incomingMail: IMessage<TIncomingData>) => void);
+    public once<TIncomingData>(event: "message", handler: (source: ICommunicationSource, incomingMail: IMessage<TIncomingData>) => void);
+    public off<TIncomingData>(event: "message", handler: (source: ICommunicationSource, incomingMail: IMessage<TIncomingData>) => void);
 
-    public on<TOutgoingData, TIncommingData>(event: "target-acquired", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingAsyncHandler<TOutgoingData, TIncommingData>) => void);
-    public once<TOutgoingData, TIncommingData>(event: "target-acquired", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingAsyncHandler<TOutgoingData, TIncommingData>) => void);
-    public off<TOutgoingData, TIncommingData>(event: "target-acquired", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingAsyncHandler<TOutgoingData, TIncommingData>) => void);
+    public on<TOutgoingData, TIncomingData>(event: "target-acquired", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>) => void);
+    public once<TOutgoingData, TIncomingData>(event: "target-acquired", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>) => void);
+    public off<TOutgoingData, TIncomingData>(event: "target-acquired", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>) => void);
 
-    public on(event: "target-lost", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingAsyncHandler<TOutgoingData, TIncommingData>) => void);
-    public once(event: "target-lost", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingAsyncHandler<TOutgoingData, TIncommingData>) => void);
-    public off(event: "target-lost", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingAsyncHandler<TOutgoingData, TIncommingData>) => void);
+    public on(event: "target-lost", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>) => void);
+    public once(event: "target-lost", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>) => void);
+    public off(event: "target-lost", handler: (source: ICommunicationSource, targetAsyncHandler: OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>) => void);
 }

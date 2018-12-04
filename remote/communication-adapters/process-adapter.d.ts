@@ -16,9 +16,9 @@ declare export class ProcessAdapter
 
     public constructor(socket: ChildProcess, timeout?: number);
 
-    public readonly handleOutgoingMessage: (pipeline: ICommunicationPipeline<any, any>, outgoingMsg: IMessage<any>) => Promise<IMessage<any>>;
+    public readonly handleoutgoingMail: (pipeline: ICommunicationPipeline<any, any>, outgoingMsg: IMessage<any>) => Promise<IMessage<any>>;
 
-    public on(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<any>) => void);
-    public once(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<any>) => void);
-    public off(event: "message", handler: (source: ICommunicationSource, incomingMessage: IMessage<any>) => void);
+    public on(event: "message", handler: (source: ICommunicationSource, incomingMail: IMessage<any>) => void);
+    public once(event: "message", handler: (source: ICommunicationSource, incomingMail: IMessage<any>) => void);
+    public off(event: "message", handler: (source: ICommunicationSource, incomingMail: IMessage<any>) => void);
 }

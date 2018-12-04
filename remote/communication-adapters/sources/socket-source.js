@@ -9,8 +9,8 @@
 /** @typedef {import("../socket-adapter").SocketAdapter} SocketAdapter */
 
 /** 
- * @template TOutgoingData, TIncommingData
- * @typedef {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncommingData>} ICommunicationPipeline 
+ * @template TOutgoingData, TIncomingData
+ * @typedef {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncomingData>} ICommunicationPipeline 
  */
 
 /** @typedef {Donuts.Remote.ICommunicationSource} ICommunicationSource */
@@ -69,27 +69,27 @@ class SocketSource extends EventEmitter {
             (socket) => {
                 /** @type {SocketAdapter} */
                 const adapter = new SocketAdapter(socket, this.timeout);
-                const outgoingAsyncHandler = adapter.handleOutgoingMessage;
+                const OutgoingMailAsyncHandler = adapter.handleoutgoingMail;
 
                 socket.on("close",
                     /**
                      * @returns {void}
                      */
                     () => {
-                        this.emit("target-lost", this, outgoingAsyncHandler);
+                        this.emit("target-lost", this, OutgoingMailAsyncHandler);
                     });
 
                 adapter.on("message",
                     /**
                      * @param {ICommunicationSource} source
-                     * @param {IMessage<any>} incomingMessage
+                     * @param {IMessage<any>} incomingMail
                      * @returns {void}
                      */
-                    (source, incomingMessage) => {
-                        this.emit("message", this, incomingMessage);
+                    (source, incomingMail) => {
+                        this.emit("message", this, incomingMail);
                     });
 
-                this.emit("target-acquired", this, outgoingAsyncHandler);
+                this.emit("target-acquired", this, OutgoingMailAsyncHandler);
             });
     }
 }

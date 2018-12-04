@@ -10,7 +10,7 @@ const util = require("./npm.util");
 
 /**
  * @param {string} url
- * @returns {Promise<import("http").IncomingMessage>}
+ * @returns {Promise<import("http").incomingMail>}
  */
 function httpsGetAsync(url) {
     return new Promise((resolve, reject) => {

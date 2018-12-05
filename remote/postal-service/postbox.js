@@ -4,42 +4,34 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-const { EventEmitter } = require("donuts.node/event-emitter");
 const random = require("donuts.node/random");
 const utils = require("donuts.node/utils");
-
-/** @typedef {Donuts.Remote.ICommunicationSource} ICommunicationSource */
+const { EventEmitter } = require("donuts.node/event-emitter");
 
 /**
  * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.ICommunicationPipeline<TOutgoingData, TIncomingData>} ICommunicationPipeline 
+ * @typedef {Donuts.Remote.PostalService.IPostBox<TOutgoingData, TIncomingData>} IPostBox 
  */
 
 /**
  * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>} OutgoingMailAsyncHandler 
+ * @typedef {Donuts.Remote.PostalService.OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>} OutgoingMailAsyncHandler 
  */
 
 /**
  * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.IncomingMailAsyncHandler<TOutgoingData, TIncomingData>} IncomingMailAsyncHandler 
+ * @typedef {Donuts.Remote.PostalService.IncomingMailAsyncHandler<TOutgoingData, TIncomingData>} IncomingMailAsyncHandler 
  */
 
 /**
  * @template TData
- * @typedef {Donuts.Remote.IMessage<TData>} IMessage 
- */
-
-/**
- * @typedef ITargetInfo
- * @property {string} targetName
- * @property {ICommunicationSource} [source]
+ * @typedef {Donuts.Remote.PostalService.IMail<TData>} IMail 
  */
 
 /**
  * @class
  * @template TOutgoingData, TIncomingData
- * @implements {ICommunicationPipeline<TOutgoingData, TIncomingData>}
+ * @implements {IPostBox<TOutgoingData, TIncomingData>}
  */
 class Postbox extends EventEmitter {
     /**
@@ -60,9 +52,9 @@ class Postbox extends EventEmitter {
 
         /**
          * @public
-         * @type {TOutgoingData}
+         * @type {IMail<TOutgoingData>}
          */
-        this.outgoingDataTemplate = undefined;
+        this.outgoingMailTemplate = undefined;
 
         /**
          * @public
@@ -112,72 +104,112 @@ class Postbox extends EventEmitter {
             this.incomingPipe.splice(0);
         }
 
+        this.outgoingMailTemplate = undefined;
         this.disposed = true;
     }
 
     /**
      * @public
-     * @param {TOutgoingData} data 
-     * @param {string} [target]
-     * @returns {Promise<TIncomingData>}
+     * @param {IMail<TOutgoingData>} outgoingMail 
+     * @returns {Promise<IMail<TIncomingData>>}
      */
-    async pipeAsync(data, target) {
+    async sendMailAsync(outgoingMail) {
         this.validateDisposal();
 
-        /** @type {IMessage<TOutgoingData>} */
-        const outgoingMsg = this.generateoutgoingMail(data);
+        outgoingMail = this.generateOutgoingMail(outgoingMail);
 
-        this.logMessage(outgoingMsg);
+        this.logMessage(outgoingMail);
 
-        /** @type {IMessage<TIncomingData>} */
-        let incomingMsg = await this.PipeToOutgoingPipeAsync(outgoingMsg);
+        /** @type {IMail<TIncomingData>} */
+        let incomingMail = await this.PipeToOutgoingPipeAsync(outgoingMail);
 
-        if (!incomingMsg) {
-            this.logMessage(outgoingMsg, "No outgoing handler or target handler handles the message.", "error");
+        if (!incomingMail) {
+            this.logMessage(outgoingMail, "No outgoing handler or target handler handles the message.", "error");
             throw new Error("No outgoing handler or target handler handles the message.");
         }
 
-        this.logMessage(incomingMsg);
+        this.logMessage(incomingMail);
 
-        incomingMsg = await this.PipeToIncomingPipeAsync(outgoingMsg, incomingMsg);
+        incomingMail = await this.PipeToIncomingPipeAsync(outgoingMail, incomingMail);
 
-        this.logMessage(incomingMsg, "Incoming message processing completed.");
+        this.logMessage(incomingMail, "Incoming message processing completed.");
 
-        return incomingMsg.data;
+        return incomingMail;
     }
 
     /**
-     * @protected
-     * @virtual
-     * @param {IMessage<TIncomingData>} incomingMsg
+     * @public
+     * @param {IMail<TOutgoingData>} outgoingMail 
      * @returns {Promise<void>}
      */
-    async emitincomingMailAsync(incomingMsg) {
-        this.logMessage(incomingMsg);
+    async dropMailAsync(outgoingMail) {
+        this.validateDisposal();
 
-        for (const asyncHandler of this.incomingPipe) {
-            try {
-                incomingMsg = await asyncHandler(this, undefined, incomingMsg);
+        outgoingMail = this.generateOutgoingMail(outgoingMail);
 
-            } catch (err) {
-                this.logMessage(incomingMsg, err && utils.isFunction(err.toString) ? err.toString() : JSON.stringify(err), "error");
-                throw err;
-            }
+        this.logMessage(outgoingMail);
+
+        await this.PipeToOutgoingPipeAsync(outgoingMail);
+    }
+
+    /**
+     * @public
+     * @param {TOutgoingData} data 
+     * @param {URL} [to]
+     * @param {string} [type]
+     * @returns {Promise<TIncomingData>}
+     */
+    async sendAsync(data, to, type) {
+        /** @type {IMail<TOutgoingData>} */
+        const outgoingMail = Object.create(null);
+
+        outgoingMail.data = data;
+
+        if (to instanceof URL) {
+            outgoingMail.to = to;
         }
 
-        this.logMessage(incomingMsg, "Incoming message processing completed.");
+        if (type && typeof type === "string") {
+            outgoingMail.type = type;
+        }
 
-        this.emit("data", this, incomingMsg.data);
+        const incomingMail = await this.sendMailAsync(outgoingMail);
+
+        return incomingMail.data;
+    }
+
+    /**
+     * @public
+     * @param {TOutgoingData} data 
+     * @param {URL} [to]
+     * @param {string} [type]
+     * @returns {Promise<void>}
+     */
+    async dropAsync(data, to, type) {
+        /** @type {IMail<TOutgoingData>} */
+        const outgoingMail = Object.create(null);
+
+        outgoingMail.data = data;
+
+        if (to instanceof URL) {
+            outgoingMail.to = to;
+        }
+
+        if (type && typeof type === "string") {
+            outgoingMail.type = type;
+        }
+
+        await this.dropMailAsync(outgoingMail);
     }
 
     /**
      * @protected
      * @virtual
-     * @param {IMessage<TOutgoingData>} outgoingMsg
-     * @return {Promise<IMessage<TIncomingData>>}
+     * @param {IMail<TOutgoingData>} outgoingMsg
+     * @return {Promise<IMail<TIncomingData>>}
      */
     async PipeToOutgoingPipeAsync(outgoingMsg) {
-        /** @type {IMessage<TIncomingData>} */
+        /** @type {IMail<TIncomingData>} */
         let incomingMsg = undefined;
 
         for (const asyncHandler of this.outgoingPipe) {
@@ -200,9 +232,9 @@ class Postbox extends EventEmitter {
     /**
      * @protected
      * @virtual
-     * @param {IMessage<TOutgoingData>} outgoingMsg
-     * @param {IMessage<TIncomingData>} incomingMsg
-     * @return {Promise<IMessage<TIncomingData>>}
+     * @param {IMail<TOutgoingData>} outgoingMsg
+     * @param {IMail<TIncomingData>} incomingMsg
+     * @return {Promise<IMail<TIncomingData>>}
      */
     async PipeToIncomingPipeAsync(outgoingMsg, incomingMsg) {
         for (const asyncHandler of this.incomingPipe) {
@@ -221,26 +253,27 @@ class Postbox extends EventEmitter {
     /**
      * @protected
      * @virtual
-     * @param {TOutgoingData} outgoingData 
-     * @returns {IMessage<TOutgoingData>}
+     * @param {IMail<TOutgoingData>} mail 
+     * @returns {IMail<TOutgoingData>}
      */
-    generateoutgoingMail(outgoingData) {
-        /** @type {IMessage<TOutgoingData>} */
-        const outgoingMsg = Object.create(null);
+    generateOutgoingMail(mail) {
+        /** @type {IMail<TOutgoingData>} */
+        const outgoingMail =
+            Object.assign(
+                Object.create(Object.getPrototypeOf(mail) || Object.getPrototypeOf(this.outgoingMailTemplate)),
+                this.outgoingMailTemplate,
+                mail);
 
-        outgoingMsg.data = Object.assign(Object.assign(Object.create(null), this.outgoingDataTemplate), outgoingData);
-        outgoingMsg.id = random.generateUid();
-        outgoingMsg.source = this.id;
-        outgoingMsg.operationId = random.generateUid();
-        outgoingMsg.timestamp = Date.now();
+        outgoingMail.id = random.generateUid();
+        outgoingMail.timestamp = Date.now();
 
-        return outgoingMsg;
+        return outgoingMail;
     }
 
     /**
      * @protected
      * @virtual
-     * @param {IMessage<TOutgoingData | TIncomingData>} message
+     * @param {IMail<TOutgoingData | TIncomingData>} message
      * @param {string} [text]
      * @param {Donuts.Logging.Severity} [severity]
      * @returns {void}
@@ -263,12 +296,12 @@ class Postbox extends EventEmitter {
             msg += utils.string.format(" ~{,4:F0}", Date.now() - message.timestamp);
         }
 
-        if (message.source && message.source !== this.id) {
-            msg += " <= " + message.source;
+        if (message.from && message.from) {
+            msg += " <= " + message.from.href;
         }
 
-        if (message.target && message.target !== this.id) {
-            msg += " => " + message.target;
+        if (message.to && message.to) {
+            msg += " => " + message.to.href;
         }
 
         if (text) {
@@ -277,11 +310,10 @@ class Postbox extends EventEmitter {
 
         this.log.writeAsync(
             severity,
-            "<{}>{,8} {}{,8}{}{}", // Format: <{Id}>{ModuleName} {OperationName}{OperationId?}{Msg?}
+            "<{}>{,8} {,8}{}{}", // Format: <{Id}>{ModuleName} {Type}{Result}{Msg?}
             this.id,
             this.moduleName,
-            message.operationId ? `<${message.operationId}>` : "",
-            message.operationName || "",
+            message.type,
             message.operationDescription ? " " + message.operationDescription : "",
             msg);
     }

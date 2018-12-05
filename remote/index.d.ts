@@ -4,6 +4,7 @@
 //-----------------------------------------------------------------------------
 
 /// <reference path="./types.remote.d.ts" />
+/// <reference path="./postal-service/types.d.ts" />
 
 /**
  * Check if the given object is a ChannelProxy (IChannelProxy).

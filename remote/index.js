@@ -103,7 +103,7 @@ exports.connect = (connectionInfo) => {
         throw new Error(`Cannot find the init function: ${connectionInfo.initFunction}`);
     }
 
-    const { Communicator } = require("./postbox");
+    const { Communicator } = require("./postal-service/postboxservice/postbox");
 
     return new Communicator(init(...connectionInfo.initFunctionParams), connectionInfo.communicatorOptions);
 }

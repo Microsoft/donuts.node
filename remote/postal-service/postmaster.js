@@ -6,49 +6,51 @@
 
 const random = require("donuts.node/random");
 const utils = require("donuts.node/utils");
-const { CommunicationPipeline } = require("./communicator");
-
-/** @typedef {Donuts.Remote.ICommunicationSource} ICommunicationSource */
+const { PostBox } = require("./postbox");
 
 /**
  * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.IMultiSourceCommunicationPipeline<TOutgoingData, TIncomingData>} IMultiSourceCommunicationPipeline 
+ * @typedef {Donuts.Remote.PostalService.IPostBox<TOutgoingData, TIncomingData>} IPostBox 
  */
 
 /**
  * @template TOutgoingData, TIncomingData
- * @typedef {import("./communicator").CommunicationPipeline<TOutgoingData, TIncomingData>} CommunicationPipeline 
+ * @typedef {Donuts.Remote.PostalService.IPostMaster<TOutgoingData, TIncomingData>} IPostMaster 
  */
 
 /**
  * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>} OutgoingMailAsyncHandler 
+ * @typedef {Donuts.Remote.PostalService.IPostalCarrier<TOutgoingData, TIncomingData>} IPostalCarrier 
  */
 
 /**
  * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.IncomingMailAsyncHandler<TOutgoingData, TIncomingData>} IncomingMailAsyncHandler 
+ * @typedef {Donuts.Remote.PostalService.OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>} OutgoingMailAsyncHandler 
+ */
+
+/**
+ * @template TOutgoingData, TIncomingData
+ * @typedef {Donuts.Remote.PostalService.IncomingMailAsyncHandler<TOutgoingData, TIncomingData>} IncomingMailAsyncHandler 
  */
 
 /**
  * @template TData
- * @typedef {Donuts.Remote.IMessage<TData>} IMessage 
+ * @typedef {Donuts.Remote.PostalService.IMail<TData>} IMail 
  */
 
 /**
- * @typedef ITargetInfo
- * @property {string} targetName
- * @property {ICommunicationSource} [source]
+ * @typedef IPostBoxInfo 
+ * @property {IPostalCarrier<any, any>} carrier
+ * @property {string} origin 
  */
 
 /**
  * @class
  * @template TOutgoingData, TIncomingData
- * @extends {CommunicationPipeline<TOutgoingData, TIncomingData>}
- * @implements {IMultiSourceCommunicationPipeline<TOutgoingData, TIncomingData>}
+ * @extends {PostBox<TOutgoingData, TIncomingData>}
+ * @implements {IPostMaster<TOutgoingData, TIncomingData>}
  */
-class MultiSourceCommunicationPipeline
-    extends CommunicationPipeline {
+class PostMaster extends PostBox {
     /**
      * @public
      * @param {Donuts.Logging.ILog} log
@@ -59,76 +61,79 @@ class MultiSourceCommunicationPipeline
         super(log, id, moduleName);
 
         /**
-         * @private
+         * @public
          * @readonly
-         * @type {Array<ICommunicationSource>}
+         * @type {Donuts.IStringKeyDictionary<IPostBox<TOutgoingData, TIncomingData>>}
          */
-        this.sources = [];
+        this.postboxes = Object.create(null);
 
         /**
          * @private
          * @readonly
-         * @type {Donuts.IStringKeyDictionary<OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>>}
+         * @type {Array<IPostalCarrier<TOutgoingData, TIncomingData>>}
          */
-        this.targets = Object.create(null);
+        this.carriers = [];
 
         /**
          * @private
          * @readonly
-         * @type {Map<OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>, ITargetInfo>}
+         * @type {Map<IPostBox<TOutgoingData, TIncomingData>, IPostBoxInfo>}
          */
-        this.targetInfoDictionary = new Map();
+        this.postboxInfos = new Map();
 
         /**
          * @private
          * @readonly
-         * @param {ICommunicationSource} source
-         * @param {IMessage<TIncomingData>} incomingMsg
-         * @returns {void}
+         * @param {IPostalCarrier<TOutgoingData, TIncomingData>} carrier
+         * @param {IPostBox<TOutgoingData, TIncomingData>} postbox
+         * @param {IMail<TIncomingData>} incomingMail
+         * @returns {Promise<IMail<TOutgoingData>>}
          */
-        this.onincomingMail = (source, incomingMsg) => {
-            this.emitincomingMailAsync(incomingMsg);
+        this.onIncomingMail = async (carrier, postbox, incomingMail) => {
+            incomingMail = await this.PipeToIncomingPipeAsync(undefined, incomingMail);
+
+            this.emit("mail", this, postbox, incomingMail);
         };
 
         /**
          * @private
          * @readonly
-         * @param {ICommunicationSource} source
-         * @param {OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>} targetAsyncHandler
+         * @param {IPostalCarrier<TOutgoingData, TIncomingData>} carrier
+         * @param {IPostBox<TOutgoingData, TIncomingData>} postbox
          * @returns {void}
          */
-        this.onTargetAcquired = (source, targetAsyncHandler) => {
-            /** @type {ITargetInfo} */
-            let targetInfo = this.targetInfoDictionary.get(targetAsyncHandler);
+        this.onTargetAcquired = (carrier, postbox) => {
+            /** @type {IPostBoxInfo} */
+            let postboxInfo = this.postboxInfos.get(postbox);
 
-            if (!targetInfo) {
-                targetInfo = Object.create(null);
+            if (!postboxInfo) {
+                postboxInfo = Object.create(null);
 
-                targetInfo.targetName = random.generateUid();
-                targetInfo.source = source;
+                postboxInfo.origin = random.generateUid();
+                postboxInfo.carrier = carrier;
             }
 
-            this.targetInfoDictionary.set(targetAsyncHandler, targetInfo);
-            this.setTarget(targetInfo.targetName, targetAsyncHandler);
+            this.postboxInfos.set(postbox, postboxInfo);
+            this.postboxes[postboxInfo.origin] = postbox;
         };
 
         /**
          * @private
          * @readonly
-         * @param {ICommunicationSource} source
-         * @param {OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>} targetAsyncHandler
+         * @param {IPostalCarrier<TOutgoingData, TIncomingData>} carrier
+         * @param {IPostBox<TOutgoingData, TIncomingData>} postbox
          * @returns {void}
          */
-        this.onTargetLost = (source, targetAsyncHandler) => {
-            /** @type {ITargetInfo} */
-            const targetInfo = this.targetInfoDictionary.get(targetAsyncHandler);
+        this.onTargetLost = (carrier, postbox) => {
+            /** @type {IPostBoxInfo} */
+            const postboxInfo = this.postboxInfos.get(postbox);
 
-            if (!targetInfo) {
+            if (!postboxInfo) {
                 return;
             }
-
-            this.setTarget(targetInfo.targetName, undefined);
-            this.targetInfoDictionary.delete(targetAsyncHandler);
+            
+            delete this.postboxes[postboxInfo.origin];
+            this.postboxInfos.delete(postbox);
         };
     }
 
@@ -141,9 +146,11 @@ class MultiSourceCommunicationPipeline
             return;
         }
 
-        if (this.sources.length > 0) {
-            for (const source of this.sources) {
-                source.off("message", this.onincomingMail);
+        if (this.carriers.length > 0) {
+            for (const source of this.carriers) {
+                source.off("mail", this.onIncomingMail);
+                source.off("postbox-acquired", this.onTargetAcquired);
+                source.off("postbox-lost", this.onTargetLost);
             }
 
             this.sources.splice(0);
@@ -300,4 +307,4 @@ class MultiSourceCommunicationPipeline
         return Object.assign(Object.create(null), this.targets);
     }
 }
-exports.MultiSourceCommunicationPipeline = MultiSourceCommunicationPipeline;
+exports.PostMaster = PostMaster;

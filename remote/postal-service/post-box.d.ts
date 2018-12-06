@@ -14,7 +14,7 @@ declare export class PostBox<TOutgoingData, TIncomingData>
     extends EventEmitter
     implements IPostBox<TOutMsg, TInMsg>, IDisposable {
         
-    constructor(log: Donuts.Logging.ILog, id?: string, moduleName?: string);
+    constructor(log?: Donuts.Logging.ILog, id?: string, moduleName?: string);
 
     public readonly id: string;
     public readonly outgoingPipe: Array<OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>>;

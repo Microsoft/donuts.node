@@ -36,6 +36,51 @@ class EventEmitter {
      * @param {(...args: Array<any>) => void} handler 
      * @returns {this}
      */
+    preOn(event, handler) {
+        if (!utils.isString(event)) {
+            throw new Error("event must be a string.");
+        }
+
+        if (!utils.isFunction(handler)) {
+            throw new Error("handler must be a function.");
+        }
+
+        const handlers = this.handlersDict[event] = this.handlersDict[event] || [];
+
+        handlers.splice(0, 0, handler);
+
+        return this;
+    }
+
+    /**
+     * 
+     * @public
+     * @param {string} event 
+     * @param {(...args: Array<any>) => void} handler 
+     * @returns {this}
+     */
+    preOnce(event, handler) {
+        if (!utils.isString(event)) {
+            throw new Error("event must be a string.");
+        }
+
+        if (!utils.isFunction(handler)) {
+            throw new Error("handler must be a function.");
+        }
+
+        // @ts-ignore
+        handler[this.symbol_once] = true;
+
+        return this.preOn(event, handler);
+    }
+
+    /**
+     * 
+     * @public
+     * @param {string} event 
+     * @param {(...args: Array<any>) => void} handler 
+     * @returns {this}
+     */
     on(event, handler) {
         if (!utils.isString(event)) {
             throw new Error("event must be a string.");
@@ -102,7 +147,7 @@ class EventEmitter {
      * @public
      * @param {string} event 
      * @param  {...any} args 
-     * @returns {this}
+     * @returns {any}
      */
     emit(event, ...args) {
         if (!utils.isString(event)) {
@@ -116,7 +161,11 @@ class EventEmitter {
                 const handler = handlers[handlerIndex];
 
                 try {
-                    handler(...args);
+                    const result = handler(...args);
+
+                    if (result !== undefined) {
+                        return result;
+                    }
 
                 } finally {
                     // @ts-ignore
@@ -130,7 +179,7 @@ class EventEmitter {
             }
         }
 
-        return this;
+        return undefined;
     }
 }
 exports.EventEmitter = EventEmitter;

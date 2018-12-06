@@ -36,7 +36,7 @@ const { EventEmitter } = require("donuts.node/event-emitter");
 class Postbox extends EventEmitter {
     /**
      * @public
-     * @param {Donuts.Logging.ILog} log
+     * @param {Donuts.Logging.ILog} [log]
      * @param {string} [id]
      * @param {string} [moduleName]
      */
@@ -117,6 +117,7 @@ class Postbox extends EventEmitter {
         this.validateDisposal();
 
         outgoingMail = this.generateOutgoingMail(outgoingMail);
+        outgoingMail.cid = random.generateUid();
 
         this.logMessage(outgoingMail);
 
@@ -146,7 +147,9 @@ class Postbox extends EventEmitter {
         this.validateDisposal();
 
         outgoingMail = this.generateOutgoingMail(outgoingMail);
-
+        
+        delete outgoingMail.cid;
+        
         this.logMessage(outgoingMail);
 
         await this.PipeToOutgoingPipeAsync(outgoingMail);

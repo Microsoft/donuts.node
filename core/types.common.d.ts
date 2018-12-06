@@ -23,10 +23,18 @@ namespace Donuts {
     }
 
     interface IEventEmitter {
-        on(event: string, handler: (...args: Array<any>) => void): this;
-        once(event: string, handler: (...args: Array<any>) => void): this;
-        off(event: string, handler: (...args: Array<any>) => void): this;
+        preOn(event: string, handler: (...args: Array<any>) => any): this;
+        preOnce(event: string, handler: (...args: Array<any>) => any): this;
+        on(event: string, handler: (...args: Array<any>) => any): this;
+        once(event: string, handler: (...args: Array<any>) => any): this;
+        off(event: string, handler: (...args: Array<any>) => any): this;
 
-        emit(event: string, ...args: Array<any>): this;
+        emit(event: string, ...args: Array<any>): any;
+    }
+
+    type ConditionalOperator = "AND" | "OR";
+
+    interface ICondition<T> {
+        match(input: T): boolean;
     }
 }

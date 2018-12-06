@@ -4,8 +4,10 @@
 //-----------------------------------------------------------------------------
 
 declare export class EventEmitter implements Donuts.IEventEmitter {
-    public on(event: string, handler: (...args: Array<any>) => void): this;
-    public once(event: string, handler: (...args: Array<any>) => void): this;
-    public off(event: string, handler: (...args: Array<any>) => void): this;
-    public emit(event: string, ...args: Array<any>): this;
+    public preOn(event: string, handler: (...args: Array<any>) => any): this;
+    public preOnce(event: string, handler: (...args: Array<any>) => any): this;
+    public on(event: string, handler: (...args: Array<any>) => any): this;
+    public once(event: string, handler: (...args: Array<any>) => any): this;
+    public off(event: string, handler: (...args: Array<any>) => any): this;
+    public emit(event: string, ...args: Array<any>): any;
 }

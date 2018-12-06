@@ -4,10 +4,6 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-const random = require("donuts.node/random");
-const utils = require("donuts.node/utils");
-const { EventEmitter } = require("donuts.node/event-emitter");
-
 /**
  * @template TOutgoingData, TIncomingData
  * @typedef {Donuts.Remote.PostalService.IPostBox<TOutgoingData, TIncomingData>} IPostBox 
@@ -28,12 +24,70 @@ const { EventEmitter } = require("donuts.node/event-emitter");
  * @typedef {Donuts.Remote.PostalService.IMail<TData>} IMail 
  */
 
+/** @typedef {import("donuts.node/event-emitter").EventEmitter} EventEmitter */
+
+const random = require("donuts.node/random");
+const utils = require("donuts.node/utils");
+const { EventEmitter } = require("donuts.node/event-emitter");
+
 /**
  * @class
  * @template TOutgoingData, TIncomingData
+ * @extends {EventEmitter}
  * @implements {IPostBox<TOutgoingData, TIncomingData>}
  */
 class Postbox extends EventEmitter {
+    /**
+     * @public
+     * @static
+     * @param {Donuts.Logging.ILog} log
+     * @param {string} postboxId
+     * @param {string} postboxModuleName
+     * @param {IMail<any>} message
+     * @param {string} [text]
+     * @param {Donuts.Logging.Severity} [severity]
+     * @returns {void}
+     */
+    static logMessage(log, postboxId, postboxModuleName, message, text, severity) {
+        if (!log) {
+            return;
+        }
+
+        severity = severity || "info";
+
+        /** @type {string} */
+        let msg = "";
+
+        if (message.id) {
+            msg += " " + message.id;
+        }
+
+        if (typeof message.timestamp === "number") {
+            msg += utils.string.format(" ~{,4:F0}", Date.now() - message.timestamp);
+        }
+
+        if (message.from && message.from) {
+            msg += " <= " + message.from.href;
+        }
+
+        if (message.to && message.to) {
+            msg += " => " + message.to.href;
+        }
+
+        if (text) {
+            msg += ": " + text;
+        }
+
+        log.writeAsync(
+            severity,
+            "<{}>{,8} {,8}{}{}", // Format: <{Id}>{ModuleName} {Type}{Result}{Msg?}
+            postboxId,
+            postboxModuleName,
+            message.type,
+            message.operationDescription ? " " + message.operationDescription : "",
+            msg);
+    }
+
     /**
      * @public
      * @param {Donuts.Logging.ILog} [log]
@@ -96,6 +150,8 @@ class Postbox extends EventEmitter {
      * @returns {Promise<void>}
      */
     async disposeAsync() {
+        this.disposed = true;
+
         if (this.outgoingPipe.length > 0) {
             this.outgoingPipe.splice(0);
         }
@@ -105,7 +161,6 @@ class Postbox extends EventEmitter {
         }
 
         this.outgoingMailTemplate = undefined;
-        this.disposed = true;
     }
 
     /**
@@ -115,6 +170,10 @@ class Postbox extends EventEmitter {
      */
     async sendMailAsync(outgoingMail) {
         this.validateDisposal();
+
+        if (!outgoingMail) {
+            throw new Error("outgoingMail must be a valid IMail.");
+        }
 
         outgoingMail = this.generateOutgoingMail(outgoingMail);
         outgoingMail.cid = random.generateUid();
@@ -146,10 +205,14 @@ class Postbox extends EventEmitter {
     async dropMailAsync(outgoingMail) {
         this.validateDisposal();
 
+        if (!outgoingMail) {
+            throw new Error("outgoingMail must be a valid IMail.");
+        }
+
         outgoingMail = this.generateOutgoingMail(outgoingMail);
-        
+
         delete outgoingMail.cid;
-        
+
         this.logMessage(outgoingMail);
 
         await this.PipeToOutgoingPipeAsync(outgoingMail);
@@ -282,43 +345,7 @@ class Postbox extends EventEmitter {
      * @returns {void}
      */
     logMessage(message, text, severity) {
-        if (!this.log) {
-            return;
-        }
-
-        severity = severity || "info";
-
-        /** @type {string} */
-        let msg = "";
-
-        if (message.id) {
-            msg += " " + message.id;
-        }
-
-        if (typeof message.timestamp === "number") {
-            msg += utils.string.format(" ~{,4:F0}", Date.now() - message.timestamp);
-        }
-
-        if (message.from && message.from) {
-            msg += " <= " + message.from.href;
-        }
-
-        if (message.to && message.to) {
-            msg += " => " + message.to.href;
-        }
-
-        if (text) {
-            msg += ": " + text;
-        }
-
-        this.log.writeAsync(
-            severity,
-            "<{}>{,8} {,8}{}{}", // Format: <{Id}>{ModuleName} {Type}{Result}{Msg?}
-            this.id,
-            this.moduleName,
-            message.type,
-            message.operationDescription ? " " + message.operationDescription : "",
-            msg);
+        Postbox.logMessage(this.log, this.id, this.moduleName, message, text, severity);
     }
 
     /**

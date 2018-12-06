@@ -13,7 +13,15 @@ import { EventEmitter } from "donuts.node/event-emitter";
 declare export class PostBox<TOutgoingData, TIncomingData>
     extends EventEmitter
     implements IPostBox<TOutMsg, TInMsg>, IDisposable {
-        
+
+    public static logMessage(
+        log: Donuts.Logging.ILog,
+        postboxId: string,
+        postboxModuleName: string,
+        message?: IMail<any>,
+        text?: string,
+        severity?: Donuts.Logging.Severity): void;
+
     constructor(log?: Donuts.Logging.ILog, id?: string, moduleName?: string);
 
     public readonly id: string;

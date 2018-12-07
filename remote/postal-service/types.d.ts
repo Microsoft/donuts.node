@@ -55,7 +55,7 @@ namespace Donuts.Remote.PostalService {
         acquirePostBox(mail: IMail<TOutgoingData>): IPostBox<TOutgoingData, TIncomingData>;
     }
 
-    interface IPostOfficeError extends Error {
+    interface IPostError extends Error {
         mail?: IMail<any>;
         postbox?: IPostBox<any, any>;
         carrier?: IPostalCarrier<any, any>;
@@ -70,11 +70,11 @@ namespace Donuts.Remote.PostalService {
         addPostBox(postbox: IPostBox<TOutgoingData, TIncomingData>): this;
         removePostBox(postbox: IPostBox<TOutgoingData, TIncomingData>): this;
 
-        preOn(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
-        preOnce(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
-        on(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
-        once(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
-        off(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
+        preOn(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        preOnce(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        on(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        once(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        off(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostError) => void);
     }
 
     interface IPostMan<TOutgoingData, TIncomingData> {

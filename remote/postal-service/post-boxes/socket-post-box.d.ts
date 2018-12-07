@@ -12,7 +12,7 @@ declare export class SocketPostBox<TOutgoingData, TIncomingData>
     implements IPostBox<TOutgoingData, TIncomingData> {
     public readonly origin: string;
 
-    public constructor(socket: Socket, timeout?: number);
+    public constructor(origin: string, socket: Socket, timeout?: number);
 
     public sendMailAsync(mail: IMail<TOutgoingData>): Promise<IMail<TIncomingData>>;
     public dropMail(mail: IMail<TOutgoingData>): void;

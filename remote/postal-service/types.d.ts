@@ -37,6 +37,12 @@ namespace Donuts.Remote.PostalService {
         on(event: "mail", asyncHandler: (postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
         once(event: "mail", asyncHandler: (postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
         off(event: "mail", asyncHandler: (postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+
+        preOn(event: "error", handler: (postbox: IPostBox<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        preOnce(event: "error", handler: (postbox: IPostBox<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        on(event: "error", handler: (postbox: IPostBox<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        once(event: "error", handler: (postbox: IPostBox<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        off(event: "error", handler: (postbox: IPostBox<TOutgoingData, TIncomingData>, error: IPostError) => void);
     }
 
     interface IPostalCarrier<TOutgoingData, TIncomingData> extends IEventEmitter {
@@ -52,7 +58,14 @@ namespace Donuts.Remote.PostalService {
         once(event: "postbox-lost", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
         off(event: "postbox-lost", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
 
-        acquirePostBox(mail: IMail<TOutgoingData>): IPostBox<TOutgoingData, TIncomingData>;
+        preOn(event: "error", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        preOnce(event: "error", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        on(event: "error", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        once(event: "error", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, error: IPostError) => void);
+        off(event: "error", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, error: IPostError) => void);
+
+        isDeliverable(mail: IMail<TOutgoingData>): boolean;
+        acquirePostBoxAsync(mail: IMail<TOutgoingData>): Promise<IPostBox<TOutgoingData, TIncomingData>>;
     }
 
     interface IPostError extends Error {
@@ -83,21 +96,5 @@ namespace Donuts.Remote.PostalService {
 
         addMailSlot(slotName: string, condition: ICondition<IMail<TIncomingData>>, mailSlotAsyncHandler: (mail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>): this;
         removeMailSlot(slotName: string): this;
-    }
-
-    interface ISource<TOutgoingData, TIncomingData> extends IEventEmitter {
-        sendAsync(mail: IMail<TOutgoingData>): Promise<IMail<TIncomingData>>;
-
-        preOn(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        preOnce(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        on(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        once(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        off(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-
-        preOn(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
-        preOnce(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
-        on(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
-        once(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
-        off(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
     }
 }

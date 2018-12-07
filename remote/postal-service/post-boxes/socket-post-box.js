@@ -26,13 +26,14 @@ const { Socket } = require("net");
  * @extends {EventEmitter}
  * @implements {ISource<TOutgoingData, TIncomingData>}
  */
-class SocketSource extends EventEmitter {
+class SocketPostBox extends EventEmitter {
     /**
      * @public
      * @param {Socket} socket
      * @param {number} [timeout] timeout in milliseconds.
+     * @param {string} [origin]
      */
-    constructor(socket, timeout) {
+    constructor(socket, timeout, origin) {
         if (!(socket instanceof Socket)) {
             throw new Error("socket must be a valid net.Socket.");
         }
@@ -52,6 +53,21 @@ class SocketSource extends EventEmitter {
          * @type {number}
          */
         this.timeout = timeout;
+
+        /**
+         * @private
+         * @readonly
+         * @type {string}
+         */
+        this._origin = origin || this.socket.localAddress;
+    }
+
+    /**
+     * @public
+     * @returns {string}
+     */
+    get origin() {
+        return this._origin;
     }
 
     /**

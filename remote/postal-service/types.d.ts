@@ -4,44 +4,42 @@
 //-----------------------------------------------------------------------------
 
 namespace Donuts.Remote.PostalService {
-    interface IMail<TData> extends Donuts.IStringKeyDictionary<any> {
+    interface IMail<TData> {
+        /**
+         * Mail ID, identifies this mail.
+         */
+        id: string;
+        to: URL;
+        /**
+         * In milliseconds.
+         */
+        timestamp: number;
+        data: TData;
+
         /**
          * Conversation ID, identifies the conversation.
          */
         cid?: string;
-
-        /**
-         * Mail ID, identifies this mail.
-         */
-        id?: string;
         from?: URL;
-        to?: URL;
         type?: string;
 
-        /**
-         * In milliseconds.
-         */
-        timestamp?: number;
-
-        data: TData;
+        metadata?: Donuts.IStringKeyDictionary<any>;
     }
 
-    interface IPostBox<TOutgoingData, TIncomingData> {
-        readonly id: string;
-
-        outgoingMailTemplate: IMail<TOutgoingData>;
+    interface IPostBox<TOutgoingData, TIncomingData> extends IEventEmitter {
+        readonly origin: string;
 
         sendMailAsync(mail: IMail<TOutgoingData>): Promise<IMail<TIncomingData>>;
-        dropMailAsync(mail: IMail<TOutgoingData>): Promise<void>;
+        dropMail(mail: IMail<TOutgoingData>): void;
+
+        preOn(event: "mail", asyncHandler: (postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+        preOnce(event: "mail", asyncHandler: (postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+        on(event: "mail", asyncHandler: (postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+        once(event: "mail", asyncHandler: (postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+        off(event: "mail", asyncHandler: (postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
     }
 
-    interface IPostalCarrier<TOutgoingData, TIncomingData> extends IEventEmitter {
-        preOn(event: "mail", asyncHandler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        preOnce(event: "mail", asyncHandler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        on(event: "mail", asyncHandler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        once(event: "mail", asyncHandler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        off(event: "mail", asyncHandler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-
+    interface IPostalCarrier<TOutgoingData, TIncomingData> extends IPostBox<TOutgoingData, TIncomingData> {
         preOn(event: "postbox-acquired", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
         preOnce(event: "postbox-acquired", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
         on(event: "postbox-acquired", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
@@ -53,34 +51,23 @@ namespace Donuts.Remote.PostalService {
         on(event: "postbox-lost", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
         once(event: "postbox-lost", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
         off(event: "postbox-lost", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
+
+        isDeliverable(mail: IMail<TOutgoingData>): boolean;
     }
 
-    interface IPostMaster<TOutgoingData, TIncomingData> extends IPostBox<TOutgoingData, TIncomingData>, IEventEmitter {
+    interface IPostOffice<TOutgoingData, TIncomingData> extends IPostBox<TOutgoingData, TIncomingData> {
         addCarrier(carrier: IPostalCarrier<TOutgoingData, TIncomingData>): this;
         removeCarrier(carrier: IPostalCarrier<TOutgoingData, TIncomingData>): this;
-        getCarriers(): Array<IPostalCarrier<TOutgoingData, TIncomingData>>;
 
-        /**
-         * The postboxes mapped with the origin of the to field.
-         */
-        readonly postboxes: Donuts.IStringKeyDictionary<IPostBox<TOutgoingData, TIncomingData>>;
-
-        preOn(event: "mail", asyncHandler: (postmaster: IPostMaster<TOutgoingData, TIncomingData>, carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>): this;
-        preOnce(event: "mail", asyncHandler: (postmaster: IPostMaster<TOutgoingData, TIncomingData>, carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>): this;
-        on(event: "mail", asyncHandler: (postmaster: IPostMaster<TOutgoingData, TIncomingData>, carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>): this;
-        once(event: "mail", asyncHandler: (postmaster: IPostMaster<TOutgoingData, TIncomingData>, carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>): this;
-        off(event: "mail", asyncHandler: (postmaster: IPostMaster<TOutgoingData, TIncomingData>, carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>): this;
+        addPostBox(postbox: IPostBox<TOutgoingData, TIncomingData>): this;
+        removePostBox(postbox: IPostBox<TOutgoingData, TIncomingData>): this;
     }
 
     interface IPostMan<TOutgoingData, TIncomingData> {
-        isDeliverable(incomingMail: IMail<TIncomingData>): boolean;
-        deliverAsync(postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>): Promise<IMail<TOutgoingData>>;
-    }
+        createPostBox(origin: string): IPostBox<TOutgoingData, TIncomingData>;
+        getAllPostBoxes(): Array<IPostBox<TOutgoingData, TIncomingData>>;
 
-    interface IPostOffice<TOutgoingData, TIncomingData> extends IPostMaster<TOutgoingData, TIncomingData> {
-        readonly postmans: Array<IPostMan<TOutgoingData, TIncomingData>>;
+        addMailSlot(slotName: string, condition: ICondition<IMail<TIncomingData>>, mailSlotAsyncHandler: (mail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>): this;
+        removeMailSlot(slotName: string): this;
     }
-
-    type OutgoingMailAsyncHandler<TOutgoingData, TIncomingData> = (postbox: IPostBox<TOutgoingData, TIncomingData>, outgoingMail: IMail<TOutgoingData>) => Promise<IMail<TIncomingData>>;
-    type IncomingMailAsyncHandler<TOutgoingData, TIncomingData> = (postbox: IPostBox<TOutgoingData, TIncomingData>, outgoingMail: IMail<TOutgoingData>, incomingMsg: IMail<TIncomingData>) => Promise<IMail<TIncomingData>>;
 }

@@ -39,7 +39,7 @@ namespace Donuts.Remote.PostalService {
         off(event: "mail", asyncHandler: (postbox: IPostBox<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
     }
 
-    interface IPostalCarrier<TOutgoingData, TIncomingData> extends IPostBox<TOutgoingData, TIncomingData> {
+    interface IPostalCarrier<TOutgoingData, TIncomingData> extends IEventEmitter {
         preOn(event: "postbox-acquired", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
         preOnce(event: "postbox-acquired", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
         on(event: "postbox-acquired", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
@@ -52,15 +52,29 @@ namespace Donuts.Remote.PostalService {
         once(event: "postbox-lost", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
         off(event: "postbox-lost", handler: (carrier: IPostalCarrier<TOutgoingData, TIncomingData>, postbox: IPostBox<TOutgoingData, TIncomingData>) => void);
 
-        isDeliverable(mail: IMail<TOutgoingData>): boolean;
+        acquirePostBox(mail: IMail<TOutgoingData>): IPostBox<TOutgoingData, TIncomingData>;
     }
 
-    interface IPostOffice<TOutgoingData, TIncomingData> extends IPostBox<TOutgoingData, TIncomingData> {
+    interface IPostOfficeError extends Error {
+        mail?: IMail<any>;
+        postbox?: IPostBox<any, any>;
+        carrier?: IPostalCarrier<any, any>;
+        postOffice?: IPostOffice<any, any>;
+        code?: string;
+    }
+
+    interface IPostOffice<TOutgoingData, TIncomingData> extends IEventEmitter {
         addCarrier(carrier: IPostalCarrier<TOutgoingData, TIncomingData>): this;
         removeCarrier(carrier: IPostalCarrier<TOutgoingData, TIncomingData>): this;
 
         addPostBox(postbox: IPostBox<TOutgoingData, TIncomingData>): this;
         removePostBox(postbox: IPostBox<TOutgoingData, TIncomingData>): this;
+
+        preOn(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
+        preOnce(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
+        on(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
+        once(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
+        off(event: "error", handler: (postOffice: IPostOffice<TOutgoingData, TIncomingData>, error: IPostOfficeError) => void);
     }
 
     interface IPostMan<TOutgoingData, TIncomingData> {

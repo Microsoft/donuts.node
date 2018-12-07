@@ -84,4 +84,20 @@ namespace Donuts.Remote.PostalService {
         addMailSlot(slotName: string, condition: ICondition<IMail<TIncomingData>>, mailSlotAsyncHandler: (mail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>): this;
         removeMailSlot(slotName: string): this;
     }
+
+    interface ISource<TOutgoingData, TIncomingData> extends IEventEmitter {
+        sendAsync(mail: IMail<TOutgoingData>): Promise<IMail<TIncomingData>>;
+
+        preOn(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+        preOnce(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+        on(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+        once(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+        off(event: "mail", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+
+        preOn(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
+        preOnce(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
+        on(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
+        once(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
+        off(event: "error", asyncHandler: (source: ISource<TOutgoingData, TIncomingData>, error: any) => void);
+    }
 }

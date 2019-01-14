@@ -43,12 +43,12 @@ class Postbox extends EventEmitter {
      * @param {Donuts.Logging.ILog} log
      * @param {string} postboxId
      * @param {string} postboxModuleName
-     * @param {IMail<any>} message
+     * @param {IMail<any>} mail
      * @param {string} [text]
      * @param {Donuts.Logging.Severity} [severity]
      * @returns {void}
      */
-    static logMessage(log, postboxId, postboxModuleName, message, text, severity) {
+    static logMail(log, postboxId, postboxModuleName, mail, text, severity) {
         if (!log) {
             return;
         }
@@ -58,21 +58,18 @@ class Postbox extends EventEmitter {
         /** @type {string} */
         let msg = "";
 
-        if (message.id) {
-            msg += " " + message.id;
+        if (mail.id) {
+            msg += " " + mail.id;
         }
 
-        if (typeof message.timestamp === "number") {
-            msg += utils.string.format(" ~{,4:F0}", Date.now() - message.timestamp);
+        if (typeof mail.timestamp === "number") {
+            msg += utils.string.format(" ~{,4:F0}", Date.now() - mail.timestamp);
         }
 
-        if (message.from && message.from) {
-            msg += " <= " + message.from.href;
-        }
-
-        if (message.to && message.to) {
-            msg += " => " + message.to.href;
-        }
+        msg += utils.string.format(
+            "{} => {}", 
+            mail.from ? mail.from.href : "",
+            mail.to ? mail.to.href : "");
 
         if (text) {
             msg += ": " + text;
@@ -80,11 +77,10 @@ class Postbox extends EventEmitter {
 
         log.writeAsync(
             severity,
-            "<{}>{,8} {,8}{}{}", // Format: <{Id}>{ModuleName} {Type}{Result}{Msg?}
+            "<{}>{,8} {,8}{}", // Format: <{Id}>{ModuleName} {Type}{Msg?}
             postboxId,
             postboxModuleName,
-            message.type,
-            message.operationDescription ? " " + message.operationDescription : "",
+            mail.type,
             msg);
     }
 
@@ -200,9 +196,9 @@ class Postbox extends EventEmitter {
     /**
      * @public
      * @param {IMail<TOutgoingData>} outgoingMail 
-     * @returns {Promise<void>}
+     * @returns {void}
      */
-    async dropMailAsync(outgoingMail) {
+    dropMail(outgoingMail) {
         this.validateDisposal();
 
         if (!outgoingMail) {
@@ -214,8 +210,7 @@ class Postbox extends EventEmitter {
         delete outgoingMail.cid;
 
         this.logMessage(outgoingMail);
-
-        await this.PipeToOutgoingPipeAsync(outgoingMail);
+        this.PipeToOutgoingPipeAsync(outgoingMail);
     }
 
     /**
@@ -249,9 +244,9 @@ class Postbox extends EventEmitter {
      * @param {TOutgoingData} data 
      * @param {URL} [to]
      * @param {string} [type]
-     * @returns {Promise<void>}
+     * @returns {void}
      */
-    async dropAsync(data, to, type) {
+    drop(data, to, type) {
         /** @type {IMail<TOutgoingData>} */
         const outgoingMail = Object.create(null);
 
@@ -265,7 +260,7 @@ class Postbox extends EventEmitter {
             outgoingMail.type = type;
         }
 
-        await this.dropMailAsync(outgoingMail);
+        this.dropMail(outgoingMail);
     }
 
     /**
@@ -345,7 +340,7 @@ class Postbox extends EventEmitter {
      * @returns {void}
      */
     logMessage(message, text, severity) {
-        Postbox.logMessage(this.log, this.id, this.moduleName, message, text, severity);
+        Postbox.logMail(this.log, this.id, this.moduleName, message, text, severity);
     }
 
     /**

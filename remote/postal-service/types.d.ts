@@ -4,12 +4,21 @@
 //-----------------------------------------------------------------------------
 
 namespace Donuts.Remote.PostalService {
+    interface OutgoingMailAsyncHandler<TOutgoingData, TIncomingData> {
+        (postbox: IPostBox<TOutgoingData, TIncomingData>, outgoingMail: IMail<TOutgoingData>): Promise<IMail<TIncomingData>>;
+    }
+
+    interface IncomingMailAsyncHandler<TOutgoingData, TIncomingData> {
+        (postbox: IPostBox<TOutgoingData, TIncomingData>, outgoingMail: IMail<TOutgoingData>, incomingMail: IMail<TIncomingData>): Promise<IMail<TIncomingData>>;
+    }
+
     interface IMail<TData> {
         /**
          * Mail ID, identifies this mail.
          */
         id: string;
         to: URL;
+
         /**
          * In milliseconds.
          */
@@ -27,8 +36,6 @@ namespace Donuts.Remote.PostalService {
     }
 
     interface IPostBox<TOutgoingData, TIncomingData> extends IEventEmitter {
-        readonly origin: string;
-
         sendMailAsync(mail: IMail<TOutgoingData>): Promise<IMail<TIncomingData>>;
         dropMail(mail: IMail<TOutgoingData>): void;
 

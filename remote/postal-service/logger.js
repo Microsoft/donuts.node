@@ -3,6 +3,15 @@
 // Licensed under the MIT License. See License file under the project root for license information.
 //-----------------------------------------------------------------------------
 
+/**
+ * @template TData
+ * @typedef {Donuts.Remote.PostalService.IMail<TData>} IMail 
+ */
+
+/**
+ * @typedef {Donuts.Remote.PostalService.IPostalError} PostalError
+ */
+
 const utils = require("donuts.node/utils");
 
 class Logger {
@@ -50,12 +59,12 @@ class Logger {
 
     /**
      * 
-     * @param {Donuts.Logging.Severity} severity 
-     * @param {Donuts.Remote.PostalService.IMail<any>} mail 
-     * @param {string} [message] 
+     * @param {IMail<any>} mail
+     * @param {string} [message]
+     * @param {Donuts.Logging.Severity} [severity] 
      * @returns {void}
      */
-    logMail(severity, mail, message) {
+    logMail(mail, message, severity) {
         severity = severity || "info";
 
         /** @type {string} */
@@ -70,7 +79,7 @@ class Logger {
         }
 
         msg += utils.string.format(
-            " {} => {}", 
+            " {} => {}",
             mail.from ? mail.from.href : "",
             mail.to ? mail.to.href : "");
 
@@ -87,6 +96,57 @@ class Logger {
             this.moduleName,
             mail.type,
             msg);
+    }
+
+    /**
+     * 
+     * @param {IMail<any>} mail
+     * @param {PostalError} error
+     * @param {string} [message]
+     * @returns {void}
+     */
+    logMailError(mail, error, message) {
+        
+    }
+
+    /**
+     * 
+     * @param {string} message 
+     */
+    logVerbose(message) {
+    }
+
+    /**
+     * 
+     * @param {string} message 
+     */
+    logInfo(message) {
+    }
+
+    /**
+     * 
+     * @param {string} message 
+     * @param {PostalError} [error] 
+     */
+    logWarning(message, error) {
+
+    }
+
+    /**
+     * 
+     * @param {string} message 
+     * @param {PostalError} [error] 
+     */
+    logError(message, error) {
+
+    }
+
+    /**
+     * 
+     * @param {string} message 
+     * @param {PostalError} [error] 
+     */
+    logCritical(message, error) {
     }
 }
 exports.Logger = Logger;

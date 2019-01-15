@@ -75,7 +75,7 @@ namespace Donuts.Remote.PostalService {
         acquirePostBoxAsync(mail: IMail<TOutgoingData>): Promise<IPostBox<TOutgoingData, TIncomingData>>;
     }
 
-    interface IPostError extends Error {
+    interface IPostalError extends Error {
         mail?: IMail<any>;
         postbox?: IPostBox<any, any>;
         carrier?: IPostalCarrier<any, any>;

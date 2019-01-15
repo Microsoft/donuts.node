@@ -29,6 +29,7 @@
 const random = require("donuts.node/random");
 const utils = require("donuts.node/utils");
 const { EventEmitter } = require("donuts.node/event-emitter");
+const { Logger } = require("./logger");
 
 /**
  * @class
@@ -37,53 +38,6 @@ const { EventEmitter } = require("donuts.node/event-emitter");
  * @implements {IPostBox<TOutgoingData, TIncomingData>}
  */
 class Postbox extends EventEmitter {
-    /**
-     * @public
-     * @static
-     * @param {Donuts.Logging.ILog} log
-     * @param {string} postboxId
-     * @param {string} postboxModuleName
-     * @param {IMail<any>} mail
-     * @param {string} [text]
-     * @param {Donuts.Logging.Severity} [severity]
-     * @returns {void}
-     */
-    static logMail(log, postboxId, postboxModuleName, mail, text, severity) {
-        if (!log) {
-            return;
-        }
-
-        severity = severity || "info";
-
-        /** @type {string} */
-        let msg = "";
-
-        if (mail.id) {
-            msg += " " + mail.id;
-        }
-
-        if (typeof mail.timestamp === "number") {
-            msg += utils.string.format(" ~{,4:F0}", Date.now() - mail.timestamp);
-        }
-
-        msg += utils.string.format(
-            "{} => {}", 
-            mail.from ? mail.from.href : "",
-            mail.to ? mail.to.href : "");
-
-        if (text) {
-            msg += ": " + text;
-        }
-
-        log.writeAsync(
-            severity,
-            "<{}>{,8} {,8}{}", // Format: <{Id}>{ModuleName} {Type}{Msg?}
-            postboxId,
-            postboxModuleName,
-            mail.type,
-            msg);
-    }
-
     /**
      * @public
      * @param {Donuts.Logging.ILog} [log]
@@ -121,18 +75,11 @@ class Postbox extends EventEmitter {
         this.incomingPipe = [];
 
         /**
-         * @protected
-         * @readonly
-         * @type {string}
-         */
-        this.moduleName = moduleName || "REMOTE";
-
-        /**
          * @protected 
          * @readonly
-         * @type {Donuts.Logging.ILog}
+         * @type {import("./logger").Logger}
          */
-        this.log = log;
+        this.log = new Logger(log, this.id, moduleName || "REMOTE");
 
         /**
          * @protected
@@ -174,21 +121,21 @@ class Postbox extends EventEmitter {
         outgoingMail = this.generateOutgoingMail(outgoingMail);
         outgoingMail.cid = random.generateUid();
 
-        this.logMessage(outgoingMail);
+        this.log.logMail(outgoingMail);
 
         /** @type {IMail<TIncomingData>} */
         let incomingMail = await this.PipeToOutgoingPipeAsync(outgoingMail);
 
         if (!incomingMail) {
-            this.logMessage(outgoingMail, "No outgoing handler or target handler handles the message.", "error");
+            this.log.logMail(outgoingMail, "No outgoing handler or target handler handles the message.", "error");
             throw new Error("No outgoing handler or target handler handles the message.");
         }
 
-        this.logMessage(incomingMail);
+        this.log.logMail(incomingMail);
 
         incomingMail = await this.PipeToIncomingPipeAsync(outgoingMail, incomingMail);
 
-        this.logMessage(incomingMail, "Incoming message processing completed.");
+        this.log.logMail(incomingMail, "Incoming message processing completed.");
 
         return incomingMail;
     }
@@ -209,7 +156,7 @@ class Postbox extends EventEmitter {
 
         delete outgoingMail.cid;
 
-        this.logMessage(outgoingMail);
+        this.log.logMail(outgoingMail);
         this.PipeToOutgoingPipeAsync(outgoingMail);
     }
 
@@ -278,7 +225,7 @@ class Postbox extends EventEmitter {
                 incomingMsg = await asyncHandler(this, outgoingMsg);
 
             } catch (err) {
-                this.logMessage(outgoingMsg, err && utils.isFunction(err.toString) ? err.toString() : JSON.stringify(err), "error");
+                this.log.logMailError(outgoingMsg, err);
                 throw err;
             }
 
@@ -303,7 +250,7 @@ class Postbox extends EventEmitter {
                 incomingMsg = await asyncHandler(this, outgoingMsg, incomingMsg);
 
             } catch (err) {
-                this.logMessage(incomingMsg, err && utils.isFunction(err.toString) ? err.toString() : JSON.stringify(err), "error");
+                this.log.logMailError(incomingMsg, err);
                 throw err;
             }
         }
@@ -329,18 +276,6 @@ class Postbox extends EventEmitter {
         outgoingMail.timestamp = Date.now();
 
         return outgoingMail;
-    }
-
-    /**
-     * @protected
-     * @virtual
-     * @param {IMail<TOutgoingData | TIncomingData>} message
-     * @param {string} [text]
-     * @param {Donuts.Logging.Severity} [severity]
-     * @returns {void}
-     */
-    logMessage(message, text, severity) {
-        Postbox.logMail(this.log, this.id, this.moduleName, message, text, severity);
     }
 
     /**

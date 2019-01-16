@@ -27,7 +27,6 @@
 /** @typedef {import("donuts.node/event-emitter").EventEmitter} EventEmitter */
 
 const random = require("donuts.node/random");
-const utils = require("donuts.node/utils");
 const { EventEmitter } = require("donuts.node/event-emitter");
 const { Logger } = require("./logger");
 

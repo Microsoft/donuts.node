@@ -41,9 +41,8 @@ class Postbox extends EventEmitter {
      * @public
      * @param {Donuts.Logging.ILog} [log]
      * @param {string} [id]
-     * @param {string} [moduleName]
      */
-    constructor(log, id, moduleName) {
+    constructor(log, id) {
         super();
 
         /**
@@ -78,7 +77,7 @@ class Postbox extends EventEmitter {
          * @readonly
          * @type {import("./logger").Logger}
          */
-        this.log = new Logger(log, this.id, moduleName || "REMOTE");
+        this.log = new Logger(log, this.id);
 
         /**
          * @protected

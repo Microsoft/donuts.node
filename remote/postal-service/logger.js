@@ -20,19 +20,14 @@ class Logger {
      * 
      * @param {Donuts.Logging.ILog} log 
      * @param {string} componentId
-     * @param {string} moduleName
      */
-    constructor(log, componentId, moduleName) {
+    constructor(log, componentId) {
         if (!log) {
             throw new Error("log must be provided");
         }
 
         if (!utils.isString(componentId)) {
             throw new Error("componentId must be provided.");
-        }
-
-        if (!utils.isString(moduleName)) {
-            throw new Error("moduleName must be provided.");
         }
 
         /**
@@ -54,7 +49,7 @@ class Logger {
          * @readonly
          * @type {string}
          */
-        this.moduleName = moduleName;
+        this.moduleName = "postal";
     }
 
     /**

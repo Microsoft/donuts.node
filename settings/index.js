@@ -52,14 +52,26 @@ exports.openSettings = (name, parentSettings) => {
     const { local } = require("donuts.node/path");
     const { existsSync } = require("fs");
 
+    const altSettingsPath = path.join(shell.getDir("UserData"), name + ".json");
+
     /** @type {string} */
     let settingsPath = local(name + ".json", true);
 
-    if (!existsSync(settingsPath)) {
-        settingsPath = path.join(shell.getDir("UserData"), name + ".json");
+    /** @type {Donuts.Settings.ISettings} */
+    let settings = null;
+
+    if (existsSync(settingsPath)) {
+        settings = new FileSettings(settingsPath, null, parentSettings);
+
+    } else {
+        settings = new FileSettings(altSettingsPath, null, parentSettings);
     }
 
-    return new FileSettings(settingsPath, null, parentSettings);
+    if (settings.readonly) {
+        settings = new FileSettings(altSettingsPath, null, settings);
+    }
+
+    return settings;
 }
 
 /** @type {Donuts.Settings.ISettings} */

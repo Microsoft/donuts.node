@@ -4,12 +4,12 @@
 //-----------------------------------------------------------------------------
 
 namespace Donuts.Remote.PostalService {
-    interface OutgoingMailAsyncHandler<TOutgoingData, TIncomingData> {
-        (postbox: IPostBox<TOutgoingData, TIncomingData>, outgoingMail: IMail<TOutgoingData>): Promise<IMail<TIncomingData>>;
+    interface OutgoingMailAsyncHandler {
+        (postbox: IPostBox, outgoingMail: IMail<any>): Promise<IMail<any>>;
     }
 
-    interface IncomingMailAsyncHandler<TOutgoingData, TIncomingData> {
-        (postbox: IPostBox<TOutgoingData, TIncomingData>, outgoingMail: IMail<TOutgoingData>, incomingMail: IMail<TIncomingData>): Promise<IMail<TIncomingData>>;
+    interface IncomingMailAsyncHandler {
+        (postbox: IPostBox, outgoingMail: IMail<any>, incomingMail: IMail<any>): Promise<IMail<any>>;
     }
 
     interface IMail<TData> {
@@ -30,24 +30,24 @@ namespace Donuts.Remote.PostalService {
          */
         cid?: string;
         from?: URL;
-        type?: string;
-
+        
         metadata?: Donuts.IStringKeyDictionary<any>;
     }
 
-    interface IPostBox<TOutgoingData, TIncomingData> extends IEventEmitter {
+    interface IPostal extends IEventEmitter {
+        readonly id: string;
         readonly location?: URL;
 
-        sendMailAsync(mail: IMail<TOutgoingData>): Promise<IMail<TIncomingData>>;
-        dropMail(mail: IMail<TOutgoingData>): void;
+        sendMailAsync<TIncomingData>(mail: IMail<any>): Promise<IMail<TIncomingData>>;
+        dropMail(mail: IMail<any>): void;
 
-        deliverMailAsync(mail: IMail<TIncomingData>): Promise<IMail<TOutgoingData>>;
+        deliverMailAsync(mail: IMail<any>): Promise<IMail<any>>;
 
-        preOn(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        preOnce(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        on(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        once(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
-        off(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<TIncomingData>) => Promise<IMail<TOutgoingData>>);
+        preOn(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<any>) => Promise<IMail<any>>);
+        preOnce(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<any>) => Promise<IMail<any>>);
+        on(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<any>) => Promise<IMail<any>>);
+        once(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<any>) => Promise<IMail<any>>);
+        off(event: "mail", asyncHandler: (emitter: this, incomingMail: IMail<any>) => Promise<IMail<any>>);
 
         preOn(event: "error", handler: (emitter: this, error: IPostError) => void);
         preOnce(event: "error", handler: (emitter: this, error: IPostError) => void);
@@ -56,23 +56,32 @@ namespace Donuts.Remote.PostalService {
         off(event: "error", handler: (emitter: this, error: IPostError) => void);
     }
 
-    interface IPostalCarrier<TOutgoingData, TIncomingData> extends IEventEmitter {
-        isSendable(mail: IMail<TOutgoingData>): boolean;
+    interface IPostBox extends IPostal {
+        readonly outgoingMailTemplate: IMail<any>;
+        readonly outgoingPipe: Array<OutgoingMailAsyncHandler>;
+        readonly incomingPipe: Array<IncomingMailAsyncHandler>;
+
+        sendAsync<TIncomingData>(data: any, to?: URL): Promise<TIncomingData>;
+        drop(data: any, to?: URL): void;
     }
 
-    interface IPostOffice<TOutgoingData, TIncomingData> extends IPostalCarrier {
-        addCarrier(carrier: IPostalCarrier<TOutgoingData, TIncomingData>): this;
-        removeCarrier(carrier: IPostalCarrier<TOutgoingData, TIncomingData>): this;
+    interface IPostalCarrier extends IPostal {
+        isSendable(mail: IMail<any>): boolean;
+    }
 
-        addPostBox(postbox: IPostBox<TOutgoingData, TIncomingData>): this;
-        removePostBox(postbox: IPostBox<TOutgoingData, TIncomingData>): this;
+    interface IPostOffice extends IPostalCarrier {
+        addCarrier(carrier: IPostalCarrier): this;
+        removeCarrier(carrier: IPostalCarrier): this;
+
+        addPostBox(postbox: IPostBox): this;
+        removePostBox(postbox: IPostBox): this;
     }
 
     interface IPostalError extends Error {
         mail?: IMail<any>;
-        postbox?: IPostBox<any, any>;
-        carrier?: IPostalCarrier<any, any>;
-        postOffice?: IPostOffice<any, any>;
+        postbox?: IPostBox;
+        carrier?: IPostalCarrier;
+        postOffice?: IPostOffice;
         code?: string;
     }
 }

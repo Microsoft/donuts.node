@@ -4,20 +4,9 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-/**
- * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.PostalService.IPostBox<TOutgoingData, TIncomingData>} IPostBox 
- */
-
-/**
- * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.PostalService.OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>} OutgoingMailAsyncHandler 
- */
-
-/**
- * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.PostalService.IncomingMailAsyncHandler<TOutgoingData, TIncomingData>} IncomingMailAsyncHandler 
- */
+/** @typedef {Donuts.Remote.PostalService.IPostBox} IPostBox */
+/** @typedef {Donuts.Remote.PostalService.OutgoingMailAsyncHandler} OutgoingMailAsyncHandler */
+/** @typedef {Donuts.Remote.PostalService.IncomingMailAsyncHandler} IncomingMailAsyncHandler */
 
 /**
  * @template TData
@@ -32,9 +21,8 @@ const { Logger } = require("./logger");
 
 /**
  * @class
- * @template TOutgoingData, TIncomingData
  * @extends {EventEmitter}
- * @implements {IPostBox<TOutgoingData, TIncomingData>}
+ * @implements {IPostBox}
  */
 class Postbox extends EventEmitter {
     /**
@@ -54,21 +42,21 @@ class Postbox extends EventEmitter {
 
         /**
          * @public
-         * @type {IMail<TOutgoingData>}
+         * @type {IMail<any>}
          */
         this.outgoingMailTemplate = undefined;
 
         /**
          * @public
          * @readonly
-         * @type {Array<OutgoingMailAsyncHandler<TOutgoingData, TIncomingData>>}
+         * @type {Array<OutgoingMailAsyncHandler>}
          */
         this.outgoingPipe = [];
 
         /**
          * @public
          * @readonly
-         * @type {Array<IncomingMailAsyncHandler<TOutgoingData, TIncomingData>>}
+         * @type {Array<IncomingMailAsyncHandler>}
          */
         this.incomingPipe = [];
 
@@ -105,8 +93,9 @@ class Postbox extends EventEmitter {
     }
 
     /**
+     * @template TIncomingData
      * @public
-     * @param {IMail<TOutgoingData>} outgoingMail 
+     * @param {IMail<any>} outgoingMail 
      * @returns {Promise<IMail<TIncomingData>>}
      */
     async sendMailAsync(outgoingMail) {
@@ -140,7 +129,7 @@ class Postbox extends EventEmitter {
 
     /**
      * @public
-     * @param {IMail<TOutgoingData>} outgoingMail 
+     * @param {IMail<any>} outgoingMail 
      * @returns {void}
      */
     dropMail(outgoingMail) {
@@ -160,23 +149,28 @@ class Postbox extends EventEmitter {
 
     /**
      * @public
-     * @param {TOutgoingData} data 
+     * @param {IMail<any>} mail 
+     * @returns {Promise<IMail<any>>}
+     */
+    async deliverMailAsync(mail) {
+
+    }
+
+    /**
+     * @template TIncomingData
+     * @public
+     * @param {any} data 
      * @param {URL} [to]
-     * @param {string} [type]
      * @returns {Promise<TIncomingData>}
      */
-    async sendAsync(data, to, type) {
-        /** @type {IMail<TOutgoingData>} */
+    async sendAsync(data, to) {
+        /** @type {IMail<any>} */
         const outgoingMail = Object.create(null);
 
         outgoingMail.data = data;
 
         if (to instanceof URL) {
             outgoingMail.to = to;
-        }
-
-        if (type && typeof type === "string") {
-            outgoingMail.type = type;
         }
 
         const incomingMail = await this.sendMailAsync(outgoingMail);
@@ -186,13 +180,12 @@ class Postbox extends EventEmitter {
 
     /**
      * @public
-     * @param {TOutgoingData} data 
+     * @param {any} data 
      * @param {URL} [to]
-     * @param {string} [type]
      * @returns {void}
      */
-    drop(data, to, type) {
-        /** @type {IMail<TOutgoingData>} */
+    drop(data, to) {
+        /** @type {IMail<any>} */
         const outgoingMail = Object.create(null);
 
         outgoingMail.data = data;
@@ -200,22 +193,18 @@ class Postbox extends EventEmitter {
         if (to instanceof URL) {
             outgoingMail.to = to;
         }
-
-        if (type && typeof type === "string") {
-            outgoingMail.type = type;
-        }
-
+        
         this.dropMail(outgoingMail);
     }
 
     /**
      * @protected
      * @virtual
-     * @param {IMail<TOutgoingData>} outgoingMsg
-     * @return {Promise<IMail<TIncomingData>>}
+     * @param {IMail<any>} outgoingMsg
+     * @return {Promise<IMail<any>>}
      */
     async PipeToOutgoingPipeAsync(outgoingMsg) {
-        /** @type {IMail<TIncomingData>} */
+        /** @type {IMail<any>} */
         let incomingMsg = undefined;
 
         for (const asyncHandler of this.outgoingPipe) {
@@ -238,9 +227,9 @@ class Postbox extends EventEmitter {
     /**
      * @protected
      * @virtual
-     * @param {IMail<TOutgoingData>} outgoingMsg
-     * @param {IMail<TIncomingData>} incomingMsg
-     * @return {Promise<IMail<TIncomingData>>}
+     * @param {IMail<any>} outgoingMsg
+     * @param {IMail<any>} incomingMsg
+     * @return {Promise<IMail<any>>}
      */
     async PipeToIncomingPipeAsync(outgoingMsg, incomingMsg) {
         for (const asyncHandler of this.incomingPipe) {
@@ -259,11 +248,11 @@ class Postbox extends EventEmitter {
     /**
      * @protected
      * @virtual
-     * @param {IMail<TOutgoingData>} mail 
-     * @returns {IMail<TOutgoingData>}
+     * @param {IMail<any>} mail 
+     * @returns {IMail<any>}
      */
     generateOutgoingMail(mail) {
-        /** @type {IMail<TOutgoingData>} */
+        /** @type {IMail<any>} */
         const outgoingMail =
             Object.assign(
                 Object.create(Object.getPrototypeOf(mail) || Object.getPrototypeOf(this.outgoingMailTemplate)),

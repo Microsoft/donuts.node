@@ -47,7 +47,7 @@ namespace Donuts.Remote.PostalService {
         readonly incomingPipe: Array<IncomingMailAsyncHandler>;
 
         readonly id: string;
-        readonly location?: URL;
+        readonly url?: URL;
 
         sendMailAsync<TIncomingData>(mail: IMail<any>): Promise<IMail<TIncomingData>>;
         dropMail(mail: IMail<any>): void;

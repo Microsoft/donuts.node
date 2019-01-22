@@ -4,19 +4,22 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-/** 
- * @template TOutgoingData, TIncomingData
- * @typedef {import("./postal").Postal} Postal
- */
+/** @typedef {import("./postal").Postal} Postal */
 
 const { Postal } = require("./postal");
 
 /**
  * @class
+ * @abstract
  * @extends {Postal}
  */
 class PostCarrier extends Postal {
-
-    
+    /**
+     * @public
+     * @param {URL} url
+     */
+    constructor(url) {
+        super(url);
+    }
 }
 exports.PostCarrier = PostCarrier;

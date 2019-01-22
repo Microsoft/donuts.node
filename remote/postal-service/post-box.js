@@ -18,14 +18,14 @@ const { Postal } = require("./postal");
  * @class
  * @extends {Postal}
  */
-class Postbox extends Postal {
+class PostBox extends Postal {
     /**
      * @public
      * @param {PostOffice} postOffice
-     * @param {URL} [location]
+     * @param {URL} [url]
      */
-    constructor(postOffice, location) {
-        super(location);
+    constructor(postOffice, url) {
+        super(url);
 
         /**
          * @public
@@ -55,4 +55,4 @@ class Postbox extends Postal {
         this.postOffice.dropMail(outgoingMail);
     }
 }
-exports.Postbox = Postbox;
+exports.PostBox = PostBox;

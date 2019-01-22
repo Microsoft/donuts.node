@@ -28,9 +28,9 @@ const { EventEmitter } = require("donuts.node/event-emitter");
 class Postal extends EventEmitter {
     /**
      * @public
-     * @param {URL} [location]
+     * @param {URL} [url]
      */
-    constructor(location) {
+    constructor(url) {
         super();
 
         /**
@@ -45,7 +45,7 @@ class Postal extends EventEmitter {
          * @readonly
          * @type {URL}
          */
-        this.location = location || null;
+        this.url = url || null;
 
         /**
          * @public

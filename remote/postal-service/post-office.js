@@ -16,6 +16,8 @@
 
 const { Postal } = require("./postal");
 const { PostCarrier } = require("./post-carrier");
+const { PostBox } = require("./post-box");
+const { Router } = require("./router");
 
 /**
  * @class
@@ -24,133 +26,129 @@ const { PostCarrier } = require("./post-carrier");
 class PostOffice extends Postal {
     /**
      * @public
-     * @param {URL} [location]
+     * @param {URL} [url]
      */
-    constructor(location) {
-        super(location);
+    constructor(url) {
+        super(url);
+
+        /** @type {import("./router").Router<IPostBox>} */
+        const postboxRouter = new Router();
+
+        /** @type {import("./router").Router<PostCarrier>} */
+        const carrierRouter = new Router();
+
+        /**
+         * @public
+         * @param {string} url
+         * @returns {IPostBox}
+         */
+        this.createPostBox = (url) => {
+            this.validateDisposal();
+
+            const postbox = new PostBox(this, new URL(url, this.url || undefined));
+
+            postboxRouter.push(postbox.url, postbox);
+
+            return postbox;
+        };
+
+        /**
+         * @public
+         * @param {IPostBox} postbox
+         * @returns {this}
+         */
+        this.attachPostBox = (postbox) => {
+            if (!postbox) {
+                return;
+            }
+
+            this.validateDisposal();
+
+            postboxRouter.push(postbox.url, postbox);
+
+            return this;
+        };
+
+        /**
+         * @public
+         * @param {IPostBox} postbox
+         * @returns {this}
+         */
+        this.deletePostBox = (postbox) => {
+            if (!postbox) {
+                return;
+            }
+
+            this.validateDisposal();
+
+            postboxRouter.delete(postbox.url);
+
+            return this;
+        };
 
         /**
          * @protected
-         * @readonly
-         * @type {Map<string | RegExp, PostCarrier>}
+         * @param {URL} url
+         * @returns {IPostBox}
          */
-        this.carrierMap = new Map();
+        this.getMatchedPostBox = (url) => {
+            if (!(url instanceof URL)) {
+                throw new Error("A valid URL must be provided.");
+            }
+
+            this.validateDisposal();
+
+            return postboxRouter.get(url);
+        };
+
+        /**
+         * @public
+         * @param {PostCarrier} carrier
+         * @returns {this}
+         */
+        this.addCarrier = (carrier) => {
+            if (!(carrier instanceof PostCarrier)) {
+                throw new Error("carrier must be an instance of PostCarrier.");
+            }
+
+            this.validateDisposal();
+
+            carrierRouter.push(carrier.url, carrier);
+
+            return this;
+        };
+
+        /**
+         * @public
+         * @param {PostCarrier} carrier
+         * @returns {this}
+         */
+        this.removeCarrier = (carrier) => {
+            if (!(carrier instanceof PostCarrier)) {
+                throw new Error("carrier must be an instance of PostCarrier.");
+            }
+
+            this.validateDisposal();
+
+            carrierRouter.delete(carrier.url);
+
+            return this;
+        };
 
         /**
          * @protected
-         * @readonly
-         * @type {Map<string | RegExp, IPostBox>}
+         * @param {URL} url
+         * @returns {PostCarrier}
          */
-        this.postboxMap = new Map();
-    }
-
-    /**
-     * @public
-     * @returns {Iterable<IPostBox>}
-     */
-    postBoxes() {
-        return this.postboxMap.values();
-    }
-
-    /**
-     * @public
-     * @param {IPostBox} postbox
-     * @returns {this}
-     */
-    addPostBox(postbox) {
-        if (!postbox) {
-            throw new Error("postbox must be provided.");
-        }
-
-        this.validateDisposal();
-
-        const keys = this.generateMapKeys(postbox);
-
-        for (const key of keys) {
-            this.postboxMap.set(key, postbox);
-        }
-
-        return this;
-    }
-
-    /**
-     * @public
-     * @param {IPostBox} postbox
-     * @returns {this}
-     */
-    removePostBox(postbox) {
-        if (!postbox) {
-            return;
-        }
-
-        this.validateDisposal();
-
-        const keys = this.generateMapKeys(postbox);
-
-        for (const key of keys) {
-            if (postbox === this.postboxMap.get(key)) {
-                this.postboxMap.delete(key);
+        this.getMatchedCarrier = (url) => {
+            if (!(url instanceof URL)) {
+                throw new Error("A valid URL must be provided.");
             }
-        }
 
-        return this;
-    }
+            this.validateDisposal();
 
-    /**
-     * @public
-     * @returns {Iterable<PostCarrier>}
-     */
-    carriers() {
-        return this.carrierMap.values();
-    }
-
-    /**
-     * @public
-     * @param {PostCarrier} carrier
-     * @returns {this}
-     */
-    addCarrier(carrier) {
-        if (!(carrier instanceof PostCarrier)) {
-            throw new Error("carrier must be an instance of PostCarrier.");
-        }
-
-        this.validateDisposal();
-
-        const keys = this.generateMapKeys(carrier);
-
-        for (const key of keys) {
-            this.carrierMap.set(key, carrier);
-        }
-
-        return this;
-    }
-
-
-    /**
-     * @public
-     * @param {PostCarrier} carrier
-     * @returns {this}
-     */
-    removeCarrier(carrier) {
-        if (!carrier) {
-            return;
-        }
-
-        if (!(carrier instanceof PostCarrier)) {
-            throw new Error("carrier must be an instance of PostCarrier.");
-        }
-
-        this.validateDisposal();
-
-        const keys = this.generateMapKeys(carrier);
-
-        for (const key of keys) {
-            if (carrier === this.carrierMap.get(key)) {
-                this.carrierMap.delete(key);
-            }
-        }
-
-        return this;
+            return carrierRouter.get(url);
+        };
     }
 
     /**
@@ -173,34 +171,19 @@ class PostOffice extends Postal {
 
     /**
      * @protected
-     * @param {URL} url
-     * @returns {IPostBox}
-     */
-    getMatchedPostBox(url) {
-        const incomingMailUrl = `${url.protocol}://${url.host}${url.pathname}`;
-
-        let postbox = this.postboxMap.get(incomingMailUrl);
-
-        if (!postbox) {
-            for (const postboxPattern of this.postboxMap.keys()) {
-                if (postboxPattern instanceof RegExp && postboxPattern.test(incomingMailUrl)) {
-                    postbox = this.postboxMap.get(postboxPattern);
-                    break;
-                }
-            }
-        }
-
-        return postbox;
-    }
-
-    /**
-     * @protected
      * @abstract
      * @param {IMail<any>} outgoingMail
      * @returns {Promise<IMail<any>>}
      */
-    async doSendMailAsync(outgoingMail) {
-        throw new Error("Not implemented!");
+    doSendMailAsync(outgoingMail) {
+        /** @type {PostCarrier} */
+        const carrier = this.getMatchedCarrier(outgoingMail.to);
+
+        if (!carrier) {
+            throw new Error(`Unable to find the correct carrier to send mail: ${outgoingMail.id} => ${outgoingMail.to.href}`);
+        }
+
+        return carrier.sendMailAsync(outgoingMail);
     }
 
     /**
@@ -210,20 +193,14 @@ class PostOffice extends Postal {
      * @returns {void}
      */
     doDropMail(outgoingMail) {
-        throw new Error("Not implemented!");
-    }
+        /** @type {PostCarrier} */
+        const carrier = this.getMatchedCarrier(outgoingMail.to);
 
-    /**
-     * @protected
-     * @param {IPostBox} postal
-     * @returns {Array<string | RegExp>}
-     */
-    generateMapKeys(postal) {
-        if (!postal.location) {
-            return [/.*/ig];
+        if (!carrier) {
+            throw new Error(`Unable to find the correct carrier to drop mail: ${outgoingMail.id} => ${outgoingMail.to.href}`);
         }
 
-        
+        carrier.dropMail(outgoingMail);
     }
 }
 exports.PostOffice = PostOffice;

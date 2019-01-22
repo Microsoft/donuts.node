@@ -6,16 +6,16 @@
 
 /** 
  * @template TOutgoingData, TIncomingData
- * @typedef {import("./post-box").Postbox<TOutgoingData, TIncomingData>} Postbox 
+ * @typedef {import("./postal").Postal} Postal
  */
 
-const { Postbox } = require("./post-box");
+const { Postal } = require("./postal");
 
 /**
- * @template TOutgoingData, TIncomingData
- * @extends {Postbox<TOutgoingData, TIncomingData>}
+ * @class
+ * @extends {Postal}
  */
-class PostCarrier extends Postbox {
+class PostCarrier extends Postal {
 
     
 }

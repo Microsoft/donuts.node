@@ -12,29 +12,40 @@ namespace Donuts.Remote.PostalService {
         (postbox: IPostBox, outgoingMail: IMail<any>, incomingMail: IMail<any>): Promise<IMail<any>>;
     }
 
-    interface IMail<TData> {
+    interface IMail<TData> extends IMailMetadata {
         /**
          * Mail ID, identifies this mail.
          */
         id: string;
-        to: URL;
-
-        /**
-         * In milliseconds.
-         */
-        timestamp: number;
-        data: TData;
 
         /**
          * Conversation ID, identifies the conversation.
          */
         cid?: string;
+
+        to: URL;
         from?: URL;
+
+        /**
+         * In milliseconds.
+         */
+        sentTime: number;
+
+        /**
+         * In milliseconds.
+         */
+        receivedTime: number;
         
-        metadata?: Donuts.IStringKeyDictionary<any>;
+        metadata?: Donuts.IStringKeyDictionary<any>;       
+
+        data?: TData
     }
 
-    interface IPostal extends IEventEmitter {
+    interface IPostBox {
+        readonly outgoingMailTemplate: IMail<any>;
+        readonly outgoingPipe: Array<OutgoingMailAsyncHandler>;
+        readonly incomingPipe: Array<IncomingMailAsyncHandler>;
+
         readonly id: string;
         readonly location?: URL;
 
@@ -56,32 +67,9 @@ namespace Donuts.Remote.PostalService {
         off(event: "error", handler: (emitter: this, error: IPostError) => void);
     }
 
-    interface IPostBox extends IPostal {
-        readonly outgoingMailTemplate: IMail<any>;
-        readonly outgoingPipe: Array<OutgoingMailAsyncHandler>;
-        readonly incomingPipe: Array<IncomingMailAsyncHandler>;
-
-        sendAsync<TIncomingData>(data: any, to?: URL): Promise<TIncomingData>;
-        drop(data: any, to?: URL): void;
-    }
-
-    interface IPostalCarrier extends IPostal {
-        isSendable(mail: IMail<any>): boolean;
-    }
-
-    interface IPostOffice extends IPostalCarrier {
-        addCarrier(carrier: IPostalCarrier): this;
-        removeCarrier(carrier: IPostalCarrier): this;
-
-        addPostBox(postbox: IPostBox): this;
-        removePostBox(postbox: IPostBox): this;
-    }
-
     interface IPostalError extends Error {
         mail?: IMail<any>;
-        postbox?: IPostBox;
-        carrier?: IPostalCarrier;
-        postOffice?: IPostOffice;
+        emitter?: IPostBox;
         code?: string;
     }
 }

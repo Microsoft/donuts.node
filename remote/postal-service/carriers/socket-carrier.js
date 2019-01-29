@@ -4,29 +4,15 @@
 //-----------------------------------------------------------------------------
 'use strict';
 
-/** @typedef {import("net").Server} SocketServer */
-/** @typedef {import("donuts.node/event-emitter").EventEmitter} EventEmitter */
-
-/** 
- * @template TOutgoingData, TIncomingData
- * @typedef {import("../simple-post-box").SimplePostBox<TOutgoingData, TIncomingData>} SimplePostBox 
- */
-
-
-/**
- * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.PostalService.IPostalCarrier<TOutgoingData, TIncomingData>} IPostalCarrier
- */
-
 /**
  * @template TData
  * @typedef {Donuts.Remote.PostalService.IMail<TData>} IMail
  */
 
-/**
- * @template TOutgoingData, TIncomingData
- * @typedef {Donuts.Remote.PostalService.IPostBox<TOutgoingData, TIncomingData>} IPostBox
- */
+/** @typedef {Donuts.Remote.PostalService.IPostBox} IPostBox */
+
+/** @typedef {import("../postal").Postal} Postal */
+/** @typedef {import("../post-carrier").PostCarrier} PostCarrier */
 
 /**
  * @typedef IMailPromiseRecord
@@ -35,24 +21,62 @@
  */
 
 const SocketServer = require("net").Server;
-const { EventEmitter } = require("donuts.node/event-emitter");
-const { SimplePostBox } = require("../simple-post-box");
+const { PostCarrier } = require("../post-carrier");
 
 /**
- * @template TOutgoingData, TIncomingData
  * @class
- * @extends {EventEmitter}
- * @implements {IPostalCarrier}
- * @implements {Donuts.IDisposable}
+ * @extends {PostCarrier}
  */
-class SocketCarrier extends EventEmitter {
+class SocketCarrier extends PostCarrier {
+    /**
+     * @public
+     * @param {URL} url 
+     * @returns {SocketCarrier}
+     */
+    static createByUrl(url) {
+        /** @type {SocketServer} */
+        let server;
+
+        const ipc = require("donuts.node-ipc");
+
+        switch (url.protocol) {
+            case "ipc:":
+                if (url.search || url.hash) {
+                    throw new Error("search and hash in the url is not supported by ipc protocol.")
+                }
+
+                /** @type {Array<string>} */
+                const pathSegements = [];
+
+                pathSegements.push(url.hostname, url.port);
+
+                if (url.username) {
+                    pathSegements.push(url.username);
+                    pathSegements.push(url.password);
+                }
+
+                if (url.pathname && url.pathname !== "/") {
+                    pathSegements.push(...url.pathname.split("/"));
+                }
+
+                server = ipc.host(...pathSegements);
+                break;
+
+            case "tcp:":
+                break;
+
+            default:
+                throw new Error(`Not supported protocol: ${url.protocol}`);
+        }
+
+        return new SocketCarrier(server);
+    }
+
     /**
      * @public
      * @param {SocketServer} server
-     * @param {number} [timeout]
-     * @param {Donuts.Logging.ILog} log
      */
-    constructor(server, timeout, log) {
+    constructor(server) {
         if (!(server instanceof SocketServer)) {
             throw new Error("server must be an instance of net.Server");
         }

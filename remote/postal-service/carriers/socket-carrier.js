@@ -29,66 +29,12 @@ const { PostCarrier } = require("../post-carrier");
  */
 class SocketCarrier extends PostCarrier {
     /**
-     * @public
-     * @param {URL} url 
-     * @returns {SocketCarrier}
+     * @private
+     * @param {URL} [url]
      */
-    static createByUrl(url) {
-        /** @type {SocketServer} */
-        let server;
+    constructor(url) {
 
-        const ipc = require("donuts.node-ipc");
-
-        switch (url.protocol) {
-            case "ipc:":
-                if (url.search || url.hash) {
-                    throw new Error("search and hash in the url is not supported by ipc protocol.")
-                }
-
-                /** @type {Array<string>} */
-                const pathSegements = [];
-
-                pathSegements.push(url.hostname, url.port);
-
-                if (url.username) {
-                    pathSegements.push(url.username);
-                    pathSegements.push(url.password);
-                }
-
-                if (url.pathname && url.pathname !== "/") {
-                    pathSegements.push(...url.pathname.split("/"));
-                }
-
-                server = ipc.host(...pathSegements);
-                break;
-
-            case "tcp:":
-                break;
-
-            default:
-                throw new Error(`Not supported protocol: ${url.protocol}`);
-        }
-
-        return new SocketCarrier(server);
-    }
-
-    /**
-     * @public
-     * @param {SocketServer} server
-     */
-    constructor(server) {
-        if (!(server instanceof SocketServer)) {
-            throw new Error("server must be an instance of net.Server");
-        }
-
-        super();
-
-        /**
-         * @private
-         * @readonly
-         * @type {Donuts.Logging.ILog}
-         */
-        this.log = log;
+        super(url);
 
         /**
          * @private 
@@ -100,9 +46,10 @@ class SocketCarrier extends PostCarrier {
         /**
          * @private
          * @readonly
+         * Timeout in millionseconds.
          * @type {number}
          */
-        this.timeout = timeout;
+        this.timeout = 60000;
 
         /**
          * @private
@@ -222,4 +169,75 @@ class SocketCarrier extends PostCarrier {
             });
     }
 }
-exports.SocketCarrier = SocketCarrier;
+
+/**
+ * @param {URL} url 
+ * @returns {Promise<SocketCarrier>}
+ */
+async function createSocketServerByUrl(url) {
+    /** @type {SocketServer} */
+    let server;
+
+    const ipc = require("donuts.node-ipc");
+
+    switch (url.protocol) {
+        case "ipc:":
+            if (url.search || url.hash) {
+                throw new Error("search and hash in the url is not supported by ipc protocol.");
+            }
+
+            /** @type {Array<string>} */
+            const pathSegements = [];
+
+            pathSegements.push(url.hostname, url.port);
+
+            if (url.username) {
+                pathSegements.push(url.username);
+                pathSegements.push(url.password);
+            }
+
+            if (url.pathname && url.pathname !== "/") {
+                pathSegements.push(...url.pathname.split("/"));
+            }
+
+            server = await ipc.hostAsync(...pathSegements);
+            break;
+
+        case "tcp:":
+            if (url.search || url.hash || url.username || (url.pathname && url.pathname !== "/")) {
+                throw new Error("Only hostname and port in the url are supported by tcp protocol.");
+            }
+
+            if (!Number.isInteger(Number.parseInt(url.port))) {
+                throw new Error("port in the url must be specified as an integer in tcp protocol.");
+            }
+
+            server = await new Promise((resolve, reject) => {
+                const tcpsvr = new SocketServer();
+
+                tcpsvr.listen(
+                    Number.parseInt(url.port),
+                    url.hostname,
+                    null,
+                    /**
+                     * @param {Error} e
+                     */
+                    (e) => {
+                        if (e) {
+                            reject(e);
+
+                        } else {
+                            resolve(tcpsvr);
+                        }
+                    });
+            });
+
+            break;
+
+        default:
+            throw new Error(`Not supported protocol: ${url.protocol}`);
+    }
+
+    return new SocketCarrier(server);
+}
+exports.createByUrlAsync = createByUrlAsync;

@@ -5,6 +5,6 @@
 
 import { Socket, Server } from "net";
 
-declare export function connect(...pathSegments: Array<string>): Socket;
+declare export function connectAsync(...pathSegments: Array<string>): Promise<Socket>;
 
-declare export function host(...pathSegments: Array<string>): Server;
+declare export function hostAsync(...pathSegments: Array<string>): Promise<Server>;

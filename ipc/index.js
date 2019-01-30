@@ -65,13 +65,36 @@ function generateIpcPath(...segments) {
 /**
  * 
  * @param {...string} pathSegments 
- * @returns {import("net").Socket}
+ * @returns {Promise<import("net").Socket>}
  */
-exports.connect = (...pathSegments) => net.connect({ path: generateIpcPath(...pathSegments) });
+exports.connectAsync = (...pathSegments) => new Promise((resolve, reject) => {
+    const client = net.connect({ path: generateIpcPath(...pathSegments) });
+
+    client
+        .once("connect", () => resolve(client))
+        .once("error", (err) => reject(err));
+});
 
 /**
  * 
  * @param {...string} pathSegments 
- * @returns {import("net").Server}
+ * @returns {Promise<import("net").Server>}
  */
-exports.host = (...pathSegments) => net.createServer().listen(generateIpcPath(...pathSegments));
+exports.hostAsync = (...pathSegments) => new Promise((resolve, reject) => {
+    const svr = net.createServer();
+
+    svr.listen(
+        generateIpcPath(...pathSegments),
+        null,
+        /**
+         * @param {Error} e
+         */
+        (e) => {
+            if (e) {
+                reject(e);
+
+            } else {
+                resolve(svr);
+            }
+        });
+}); 

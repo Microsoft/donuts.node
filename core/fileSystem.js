@@ -8,6 +8,7 @@ const util = require("util");
 const path = require("path");
 const fs = require("fs");
 const utils = require("./utils");
+const random = require("./random");
 
 /**
  * @param {string} path
@@ -173,6 +174,11 @@ exports.unlinkAsync = util.promisify(fs.unlink);
 exports.copyFileAsync = util.promisify(fs.copyFile);
 exports.accessAsync = util.promisify(fs.access);
 
+exports.openAsync = util.promisify(fs.open);
+exports.closeAsync = util.promisify(fs.close);
+exports.writeAsync = util.promisify(fs.write);
+exports.readAsync = util.promisify(fs.read);
+
 /**
  * @param {string} path
  * @returns {Promise<boolean>}
@@ -333,3 +339,114 @@ exports.removeFileAsync = async (target) => {
 
     await exports.unlinkAsync(target);
 }
+
+/**
+ * @returns {string}
+ */
+function getTempDir() {
+    return require("./shell").getDir("Temp");
+}
+
+/**
+ * 
+ * @param {string} [parentDir]
+ * @param {string} [ext]
+ * @param {string} [prefix]
+ * @param {string | number} [mode]
+ * @returns {string}
+ */
+exports.tempDirSync = (parentDir, ext, prefix, mode) => {
+    const dirPath = exports.tempNameSync(parentDir, ext, prefix);
+
+    fs.mkdirSync(dirPath, mode);
+
+    return dirPath;
+};
+
+/**
+ * 
+ * @param {string} [parentDir]
+ * @param {string} [ext]
+ * @param {string} [prefix]
+ * @param {string | number} [mode]
+ * @returns {string}
+ */
+exports.tempFileSync = (parentDir, ext, prefix, mode) => {
+    const filePath = exports.tempNameSync(parentDir, ext, prefix);
+
+    fs.closeSync(fs.openSync(filePath, "w", mode));
+
+    return filePath;
+};
+
+/**
+ * 
+ * @param {string} [parentDir]
+ * @param {string} [ext]
+ * @param {string} [prefix]
+ * @returns {string}
+ */
+exports.tempNameSync = (parentDir, ext, prefix) => {
+    parentDir = path.resolve(parentDir || getTempDir());
+
+    if (!fs.statSync(parentDir).isDirectory()) {
+        throw new Error("parentDir must point to a directory.");
+    }
+
+    if (!ext) {
+        ext = "";
+    }
+
+    if (!prefix) {
+        prefix = "";
+    }
+
+    /** @type {string} */
+    let fullName;
+
+    /** @type {number} */
+    let times = 0;
+
+    do {
+        if (times >= 100) {
+            throw new Error("Cannot find a unique name in 10 times.");
+        }
+
+        times++;
+        fullName = path.join(parentDir, prefix + random.generateUid(8 + Math.floor(times / 3)) + ext);
+    } while (fs.existsSync(fullName));
+
+    return fullName;
+};
+
+/**
+ * 
+ * @param {string} [parentDir]
+ * @param {string} [ext]
+ * @param {string} [prefix]
+ * @param {number} [mode]
+ * @returns {Promise<string>}
+ */
+exports.tempDirAsync = async (parentDir, ext, prefix, mode) => {
+    const dirPath = exports.tempNameSync(parentDir, ext, prefix);
+
+    await exports.mkdirAsync(dirPath, mode);
+
+    return dirPath;
+};
+
+/**
+ * 
+ * @param {string} [parentDir]
+ * @param {string} [ext]
+ * @param {string} [prefix]
+ * @param {number} [mode]
+ * @returns {Promise<string>}
+ */
+exports.tempFileAsync = async (parentDir, ext, prefix, mode) => {
+    const filePath = exports.tempNameSync(parentDir, ext, prefix);
+
+    await exports.closeAsync(await exports.openAsync(filePath, "w", mode));
+
+    return filePath;
+};

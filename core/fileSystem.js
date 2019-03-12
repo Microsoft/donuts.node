@@ -341,6 +341,15 @@ exports.removeFileAsync = async (target) => {
 }
 
 /**
+ * @typedef ITempOptions
+ * @property {string}  [parentDir]
+ * @property {string}  [ext]
+ * @property {string}  [prefix]
+ * @property {boolean} [keep]
+ * @property {number}  [mode]
+ */
+
+/**
  * @returns {string}
  */
 function getTempDir() {
@@ -349,32 +358,66 @@ function getTempDir() {
 
 /**
  * 
- * @param {string} [parentDir]
+ * @param {string | ITempOptions} [parentDirOrOptions]
  * @param {string} [ext]
  * @param {string} [prefix]
+ * @param {boolean} [keep]
+ * @param {string | number} [mode]
+ * @returns {ITempOptions}
+ */
+function getTempSettings(parentDirOrOptions, ext, prefix, keep, mode) {
+    if (!utils.isObject(parentDirOrOptions)) {
+        return {
+            parentDir: parentDirOrOptions,
+            ext: ext,
+            prefix: prefix,
+            keep: keep,
+            mode: mode
+        };
+    }
+
+    return parentDirOrOptions;
+}
+
+/**
+ * 
+ * @param {string | ITempOptions} [parentDirOrOptions]
+ * @param {string} [ext]
+ * @param {string} [prefix]
+ * @param {boolean} [keep]
  * @param {string | number} [mode]
  * @returns {string}
  */
-exports.tempDirSync = (parentDir, ext, prefix, mode) => {
+exports.tempDirSync = (...args) => {
+    const { parentDir, ext, prefix, keep, mode } = getTempSettings(...args);
     const dirPath = exports.tempNameSync(parentDir, ext, prefix);
 
     fs.mkdirSync(dirPath, mode);
+
+    if (keep !== true) {
+        process.once("exit", () => exports.removeDirectorySync(dirPath));
+    }
 
     return dirPath;
 };
 
 /**
  * 
- * @param {string} [parentDir]
+ * @param {string | ITempOptions} [parentDirOrOptions]
  * @param {string} [ext]
  * @param {string} [prefix]
  * @param {string | number} [mode]
  * @returns {string}
  */
-exports.tempFileSync = (parentDir, ext, prefix, mode) => {
+exports.tempFileSync = (...args) => {
+    const { parentDir, ext, prefix, keep, mode } = getTempSettings(...args);
     const filePath = exports.tempNameSync(parentDir, ext, prefix);
 
     fs.closeSync(fs.openSync(filePath, "w", mode));
+
+    if (keep !== true) {
+        process.once("exit", () => exports.removeFileSync(filePath));
+    }
 
     return filePath;
 };
@@ -421,32 +464,42 @@ exports.tempNameSync = (parentDir, ext, prefix) => {
 
 /**
  * 
- * @param {string} [parentDir]
+ * @param {string | ITempOptions} [parentDirOrOptions]
  * @param {string} [ext]
  * @param {string} [prefix]
  * @param {number} [mode]
  * @returns {Promise<string>}
  */
-exports.tempDirAsync = async (parentDir, ext, prefix, mode) => {
+exports.tempDirAsync = async (...args) => {
+    const { parentDir, ext, prefix, keep, mode } = getTempSettings(...args);
     const dirPath = exports.tempNameSync(parentDir, ext, prefix);
 
     await exports.mkdirAsync(dirPath, mode);
+
+    if (keep !== true) {
+        process.once("exit", () => exports.removeDirectorySync(dirPath));
+    }
 
     return dirPath;
 };
 
 /**
  * 
- * @param {string} [parentDir]
+ * @param {string | ITempOptions} [parentDirOrOptions]
  * @param {string} [ext]
  * @param {string} [prefix]
  * @param {number} [mode]
  * @returns {Promise<string>}
  */
-exports.tempFileAsync = async (parentDir, ext, prefix, mode) => {
+exports.tempFileAsync = async (...args) => {
+    const { parentDir, ext, prefix, keep, mode } = getTempSettings(...args);
     const filePath = exports.tempNameSync(parentDir, ext, prefix);
 
     await exports.closeAsync(await exports.openAsync(filePath, "w", mode));
+
+    if (keep !== true) {
+        process.once("exit", () => exports.removeFileSync(filePath));
+    }
 
     return filePath;
 };

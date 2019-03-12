@@ -35,9 +35,24 @@ declare export function createDirectoryAsync(dirname: string): Promise<void>;
 declare export function removeDirectoryAsync(target: string): Promise<void>;
 declare export function removeFileAsync(target: string): Promise<void>;
 
-declare export function tempDirSync(parentDir?: string, ext?: string, prefix?: string, mode?: number): string;
-declare export function tempFileSync(parentDir?: string, ext?: string, prefix?: string, mode?: number): string;
+declare interface ITempOptions {
+    parentDir?: string;
+    ext?: string;
+    prefix?: string;
+    keep?: boolean;
+    mode?: number;
+}
+
+declare export function tempDirSync(options?: ITempOptions): string;
+declare export function tempDirSync(parentDir?: string, ext?: string, prefix?: string, keep?: boolean, mode?: number): string;
+
+declare export function tempFileSync(options: ITempOptions): string;
+declare export function tempFileSync(parentDir?: string, ext?: string, prefix?: string, keep?: boolean, mode?: number): string;
+
 declare export function tempNameSync(parentDir?: string, ext?: string, prefix?: string): string;
 
-declare export function tempDirAsync(parentDir?: string, ext?: string, prefix?: string, mode?: number): Promise<string>;
-declare export function tempFileAsync(parentDir?: string, ext?: string, prefix?: string, mode?: number): Promise<string>;
+declare export function tempDirAsync(options: ITempOptions): Promise<string>;
+declare export function tempDirAsync(parentDir?: string, ext?: string, prefix?: string, keep?: boolean, mode?: number): Promise<string>;
+
+declare export function tempFileAsync(options: ITempOptions): Promise<string>;
+declare export function tempFileAsync(parentDir?: string, ext?: string, prefix?: string, keep?: boolean, mode?: number): Promise<string>;

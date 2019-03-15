@@ -78,7 +78,7 @@ class FileSettings extends Settings {
      * @param {T} value 
      * @returns {Promise<void>}
      */
-    async set(settingPath, value) {
+    async setAsync(settingPath, value) {
         await super.setAsync(settingPath, value);
 
         fs.writeFileSync(this.settingsPath, JSON.stringify(this.settings, null, 4), { encoding: "utf8" });
